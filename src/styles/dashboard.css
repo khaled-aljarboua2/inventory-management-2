@@ -1,0 +1,167 @@
+/* ==========================================
+   Dashboard Layout
+========================================== */
+
+.dashboard {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.dashboard-content {
+  padding: 24px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.dashboard-title h1 {
+  font-size: 30px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dashboard-title p {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+/* ==========================================
+   Stats Grid
+========================================== */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+/* ==========================================
+   Stat Card
+========================================== */
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 22px;
+  transition: all .25s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,.04);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,.08);
+}
+
+.stat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-card-title {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.stat-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+.stat-card-value {
+  margin-top: 18px;
+  font-size: 34px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.stat-card-footer {
+  margin-top: 12px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* ==========================================
+   Cards Colors
+========================================== */
+
+.bg-blue {
+  background: #2563eb;
+}
+
+.bg-green {
+  background: #16a34a;
+}
+
+.bg-orange {
+  background: #ea580c;
+}
+
+.bg-purple {
+  background: #7c3aed;
+}
+
+/* ==========================================
+   Dashboard Sections
+========================================== */
+
+.dashboard-section {
+  background: white;
+  border-radius: 18px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  margin-top: 28px;
+}
+
+.dashboard-section-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #111827;
+}
+
+/* ==========================================
+   Responsive
+========================================== */
+
+@media (max-width:1200px){
+
+.stats-grid{
+grid-template-columns:repeat(2,1fr);
+}
+
+}
+
+@media (max-width:768px){
+
+.dashboard-content{
+padding:16px;
+}
+
+.dashboard-header{
+flex-direction:column;
+align-items:flex-start;
+gap:16px;
+}
+
+.stats-grid{
+grid-template-columns:1fr;
+}
+
+.stat-card-value{
+font-size:28px;
+}
+
+}
