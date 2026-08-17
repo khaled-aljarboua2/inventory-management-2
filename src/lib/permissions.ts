@@ -1,0 +1,87 @@
+import { createClient } from "@/lib/supabase/server";
+
+export const PERMISSIONS = {
+  DASHBOARD_VIEW: "dashboard.view",
+
+  STOCK_VIEW: "stock.view",
+  STOCK_COUNT: "stock.count",
+  STOCK_ADJUST: "stock.adjust",
+  STOCK_RECEIVE: "stock.receive",
+
+  TRANSFERS_VIEW: "transfers.view",
+  TRANSFERS_CREATE: "transfers.create",
+  TRANSFERS_UPDATE: "transfers.update",
+  TRANSFERS_APPROVE: "transfers.approve",
+  TRANSFERS_PREPARE: "transfers.prepare",
+  TRANSFERS_SHIP: "transfers.ship",
+  TRANSFERS_RECEIVE: "transfers.receive",
+  TRANSFERS_CANCEL: "transfers.cancel",
+  TRANSFERS_DELETE: "transfers.delete",
+
+  PURCHASES_VIEW: "purchases.view",
+  PURCHASES_CREATE: "purchases.create",
+  PURCHASES_UPDATE: "purchases.update",
+  PURCHASES_APPROVE: "purchases.approve",
+  PURCHASES_CANCEL: "purchases.cancel",
+  PURCHASES_DELETE: "purchases.delete",
+
+  SUPPLIERS_VIEW: "suppliers.view",
+  SUPPLIERS_CREATE: "suppliers.create",
+  SUPPLIERS_UPDATE: "suppliers.update",
+  SUPPLIERS_DELETE: "suppliers.delete",
+
+  PRODUCTS_VIEW: "products.view",
+  PRODUCTS_CREATE: "products.create",
+  PRODUCTS_UPDATE: "products.update",
+  PRODUCTS_DELETE: "products.delete",
+
+  LOCATIONS_VIEW: "locations.view",
+  LOCATIONS_CREATE: "locations.create",
+  LOCATIONS_UPDATE: "locations.update",
+  LOCATIONS_DELETE: "locations.delete",
+
+  USERS_VIEW: "users.view",
+  USERS_CREATE: "users.create",
+  USERS_UPDATE: "users.update",
+  USERS_DELETE: "users.delete",
+  USERS_DISABLE: "users.disable",
+  USERS_MANAGE_ACCESS: "users.manage_access",
+
+  SETTINGS_VIEW: "settings.view",
+  SETTINGS_UPDATE: "settings.update",
+} as const;
+
+export async function getCurrentPermissions() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Set<string>();
+  }
+
+  const codes = Object.values(PERMISSIONS);
+
+  const results = await Promise.all(
+    codes.map(async (code) => {
+      const { data, error } =
+        await supabase.rpc("has_permission", {
+          permission_code: code,
+        });
+
+      return {
+        code,
+        allowed:
+          !error && data === true,
+      };
+    })
+  );
+
+  return new Set(
+    results
+      .filter((item) => item.allowed)
+      .map((item) => item.code)
+  );
+}

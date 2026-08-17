@@ -1,6 +1,3 @@
-"use client";
-
-import Link from "next/link";
 import {
   LayoutDashboard,
   Package,
@@ -8,44 +5,65 @@ import {
   Building2,
   ArrowRightLeft,
   ClipboardList,
+  ClipboardCheck,
+  ShoppingCart,
+  Truck,
   Users,
   Settings,
+  Ruler,
+  Boxes,
 } from "lucide-react";
 
-const items = [
-  { title: "لوحة التحكم", href: "/dashboard", icon: LayoutDashboard },
-  { title: "المنتجات", href: "/products", icon: Package },
-  { title: "المستودعات", href: "/warehouses", icon: Warehouse },
-  { title: "الفروع", href: "/branches", icon: Building2 },
-  { title: "طلبات النقل", href: "/transfers", icon: ArrowRightLeft },
-  { title: "حركة المخزون", href: "/inventory", icon: ClipboardList },
-  { title: "المستخدمون", href: "/users", icon: Users },
-  { title: "الإعدادات", href: "/settings", icon: Settings },
-];
+import { getCurrentPermissions } from "@/lib/permissions";
+import SidebarNav from "./SidebarNav";
 
-export default function Sidebar() {
+export default async function Sidebar() {
+  const permissions =
+    await getCurrentPermissions();
+
   return (
-    <aside className="w-72 border-l bg-white h-screen p-5">
-      <h2 className="text-2xl font-bold mb-8">
-        إدارة المخزون
-      </h2>
+    <aside
+      dir="rtl"
+      className="flex h-screen w-64 shrink-0 flex-col border-l border-slate-200 bg-white"
+    >
+      <div className="border-b border-slate-100 px-6 py-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+            <Package
+              size={21}
+              strokeWidth={2.2}
+            />
+          </div>
 
-      <nav className="space-y-2">
-        {items.map((item) => {
-          const Icon = item.icon;
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-slate-900">
+              إدارة المخزون
+            </h2>
 
-          return (
-            <Link
-              key={item.title}
-              href={item.href}
-              className="flex items-center gap-3 rounded-lg px-4 py-3 hover:bg-slate-100 transition"
-            >
-              <Icon size={20} />
-              <span>{item.title}</span>
-            </Link>
-          );
-        })}
-      </nav>
+            <p className="mt-0.5 text-xs text-slate-400">
+              Inventory Management
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <SidebarNav
+        permissions={Array.from(
+          permissions
+        )}
+      />
+
+      <div className="border-t border-slate-100 p-4">
+        <div className="rounded-xl bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium text-slate-500">
+            نظام إدارة المخزون
+          </p>
+
+          <p className="mt-1 text-[11px] text-slate-400">
+            الإصدار 1.0
+          </p>
+        </div>
+      </div>
     </aside>
   );
 }
