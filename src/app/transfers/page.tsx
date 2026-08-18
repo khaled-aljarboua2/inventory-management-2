@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 import TransfersList from "./TransfersList";
 
 export default async function TransfersPage() {
@@ -77,9 +78,7 @@ export default async function TransfersPage() {
     dbUser.location_id;
 
   const roleName =
-    Array.isArray(dbUser.roles)
-      ? dbUser.roles[0]?.name
-      : dbUser.roles?.name;
+    firstRelation(dbUser.roles)?.name;
 
   const isGeneralManager =
     roleName ===
@@ -287,6 +286,18 @@ export default async function TransfersPage() {
           ?.length ?? 0,
     }));
 
+  const normalizedProducts = (products ?? []).map(
+    (product) => ({
+      ...product,
+      product_units: (
+        product.product_units ?? []
+      ).map((productUnit) => ({
+        ...productUnit,
+        units: firstRelation(productUnit.units),
+      })),
+    })
+  );
+
   // ============================================================
   // الصفحة
   // ============================================================
@@ -327,8 +338,7 @@ export default async function TransfersPage() {
             locations ?? []
           }
           products={
-            (products ??
-              []) as any
+            normalizedProducts as any
           }
 
           currentLocationId={

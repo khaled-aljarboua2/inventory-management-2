@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 
 export const PERMISSIONS = {
   DASHBOARD_VIEW: "dashboard.view",
@@ -96,7 +97,10 @@ export async function getCurrentUserProfile() {
     return null;
   }
 
-  return profile;
+  return {
+    ...profile,
+    roles: firstRelation(profile.roles),
+  };
 }
 
 // ============================================================
@@ -144,7 +148,7 @@ export async function hasPermission(
   const permissions =
     await getCurrentPermissions();
 
-  return permissions.includes(
+  return permissions.has(
     permissionCode
   );
 }
@@ -157,7 +161,7 @@ export async function hasAnyPermission(
 
   return permissionCodes.some(
     (permission) =>
-      permissions.includes(permission)
+      permissions.has(permission)
   );
 }
 
@@ -169,6 +173,6 @@ export async function hasAllPermissions(
 
   return permissionCodes.every(
     (permission) =>
-      permissions.includes(permission)
+      permissions.has(permission)
   );
 }

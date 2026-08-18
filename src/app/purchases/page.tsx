@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 import PurchaseTable from "./PurchaseTable";
 
 export default async function PurchasesPage() {
@@ -169,6 +170,28 @@ export default async function PurchasesPage() {
     unitsError,
   ].filter(Boolean);
 
+  const normalizedOrders = (orders ?? []).map(
+    (order) => ({
+      ...order,
+      suppliers: firstRelation(
+        order.suppliers
+      ),
+      locations: firstRelation(
+        order.locations
+      ),
+      purchase_order_items:
+        (order.purchase_order_items ?? []).map(
+          (item) => ({
+            ...item,
+            products: firstRelation(
+              item.products
+            ),
+            units: firstRelation(item.units),
+          })
+        ),
+    })
+  );
+
   return (
     <DashboardLayout>
       <div
@@ -247,7 +270,7 @@ export default async function PurchasesPage() {
         ===================================================== */}
 
         <PurchaseTable
-          orders={orders ?? []}
+          orders={normalizedOrders}
           suppliers={suppliers ?? []}
           locations={locations ?? []}
           products={products ?? []}

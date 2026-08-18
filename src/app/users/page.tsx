@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import UsersTable from "./UsersTable";
 
@@ -328,6 +329,14 @@ export default async function UsersPage() {
     );
   }
 
+  const normalizedUsers: UserRow[] = (
+    users ?? []
+  ).map((user) => ({
+    ...user,
+    roles: firstRelation(user.roles),
+    locations: firstRelation(user.locations),
+  }));
+
   return (
     <DashboardLayout>
       <div
@@ -358,7 +367,7 @@ export default async function UsersPage() {
 
         <UsersTable
           users={
-            (users ?? []) as UserRow[]
+            normalizedUsers
           }
           roles={
             (roles ?? []) as Role[]

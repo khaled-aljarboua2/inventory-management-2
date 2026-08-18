@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 
 async function getCurrentUser() {
   const supabase =
@@ -91,9 +92,12 @@ export async function GET(
       );
     }
 
+    const countLocation =
+      firstRelation(count.locations);
+
     if (
-      !count.locations ||
-      count.locations.company_id !==
+      !countLocation ||
+      countLocation.company_id !==
         user.company_id
     ) {
       return NextResponse.json(
@@ -142,12 +146,20 @@ export async function GET(
       );
     }
 
+    const normalizedItems = (items ?? []).map(
+      (item) => ({
+        ...item,
+        products: firstRelation(item.products),
+      })
+    );
+
     return NextResponse.json({
       success: true,
       count: {
         ...count,
+        locations: countLocation,
         items:
-          items ?? [],
+          normalizedItems,
       },
     });
   } catch (error) {
@@ -227,9 +239,12 @@ export async function PATCH(
       );
     }
 
+    const countLocation =
+      firstRelation(count.locations);
+
     if (
-      !count.locations ||
-      count.locations.company_id !==
+      !countLocation ||
+      countLocation.company_id !==
         user.company_id
     ) {
       return NextResponse.json(

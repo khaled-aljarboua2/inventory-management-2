@@ -14,7 +14,20 @@ import {
 
 import { useTheme } from "@/components/theme/ThemeProvider";
 
-export default function Topbar() {
+type Profile = {
+  full_name: string;
+  username: string | null;
+  email: string;
+  roles: {
+    name: string;
+  } | null;
+} | null;
+
+export default function Topbar({
+  profile,
+}: {
+  profile: Profile;
+}) {
   const [profileOpen, setProfileOpen] =
     useState(false);
 
@@ -25,6 +38,15 @@ export default function Topbar() {
     theme,
     toggleTheme,
   } = useTheme();
+
+  const displayName =
+    profile?.full_name?.trim() ||
+    profile?.username ||
+    profile?.email ||
+    "مستخدم النظام";
+
+  const roleName =
+    profile?.roles?.name ?? "مستخدم";
 
   return (
     <header
@@ -374,7 +396,7 @@ export default function Topbar() {
                   dark:text-slate-100
                 "
               >
-                المدير
+                {displayName}
               </p>
 
               <p
@@ -383,7 +405,7 @@ export default function Topbar() {
                   text-slate-400
                 "
               >
-                Administrator
+                {roleName}
               </p>
             </div>
 
@@ -444,7 +466,7 @@ export default function Topbar() {
                     dark:text-slate-100
                   "
                 >
-                  المدير
+                  {displayName}
                 </p>
 
                 <p
@@ -454,7 +476,7 @@ export default function Topbar() {
                     text-slate-400
                   "
                 >
-                  Administrator
+                  {roleName}
                 </p>
               </div>
 

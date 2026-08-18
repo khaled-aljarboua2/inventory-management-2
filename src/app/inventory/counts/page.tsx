@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 import StockCountTable from "./StockCountTable";
 
 type StockCount = {
@@ -190,10 +191,17 @@ export default async function StockCountsPage() {
   // ============================================================
 
   const companyCounts: StockCount[] =
-    (counts ?? []).filter(
-      (count: any) =>
-        count.locations
-    );
+    (counts ?? [])
+      .map((count) => ({
+        ...count,
+        locations: firstRelation(
+          count.locations
+        ),
+      }))
+      .filter(
+        (count): count is StockCount =>
+          count.locations !== null
+      );
 
   // ============================================================
   // الصفحة

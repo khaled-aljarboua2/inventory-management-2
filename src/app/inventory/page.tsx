@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 import {
   AlertTriangle,
   Boxes,
@@ -154,8 +155,16 @@ export default async function InventoryPage() {
   // التحقق من الشركة
   // ============================================================
 
-  const inventory =
-    (balances ?? []) as InventoryBalance[];
+  const inventory: InventoryBalance[] =
+    (balances ?? []).map((balance) => ({
+      ...balance,
+      products: firstRelation(
+        balance.products
+      ),
+      locations: firstRelation(
+        balance.locations
+      ),
+    }));
 
   const locationIds = [
     ...new Set(

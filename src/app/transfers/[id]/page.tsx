@@ -1,6 +1,7 @@
 import Link from "next/link";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 import TransferActions from "./TransferActions";
 import {
   ArrowRight,
@@ -380,16 +381,45 @@ export default async function TransferDetailsPage({
     );
   }
 
+  const normalizedTransfer: Transfer = {
+    ...transfer,
+    from_location: firstRelation(
+      transfer.from_location
+    ),
+    to_location: firstRelation(
+      transfer.to_location
+    ),
+    transfer_items: (
+      transfer.transfer_items ?? []
+    ).map((item) => ({
+      ...item,
+      products: firstRelation(item.products),
+      units: firstRelation(item.units),
+    })),
+  };
+
+  const normalizedProducts: Product[] = (
+    products ?? []
+  ).map((product) => ({
+    ...product,
+    product_units: (
+      product.product_units ?? []
+    ).map((productUnit) => ({
+      ...productUnit,
+      units: firstRelation(productUnit.units),
+    })),
+  }));
+
   // ============================================================
   // التحقق من الشركة
   // ============================================================
 
   const fromCompanyId =
-    transfer.from_location
+    normalizedTransfer.from_location
       ?.company_id;
 
   const toCompanyId =
-    transfer.to_location
+    normalizedTransfer.to_location
       ?.company_id;
 
   if (
@@ -426,7 +456,7 @@ export default async function TransferDetailsPage({
 
   const currentStatus =
     String(
-      transfer.status
+      normalizedTransfer.status
     ).toLowerCase();
 
   const status =
@@ -495,7 +525,7 @@ export default async function TransferDetailsPage({
 
                   <h1 className="mt-1 font-mono text-2xl font-bold text-slate-900">
                     {
-                      transfer.request_number
+                      normalizedTransfer.request_number
                     }
                   </h1>
                 </div>
@@ -514,7 +544,7 @@ export default async function TransferDetailsPage({
 
                 <span className="text-sm text-slate-400">
                   {formatDate(
-                    transfer.request_date
+                    normalizedTransfer.request_date
                   )}
                 </span>
               </div>
@@ -522,20 +552,19 @@ export default async function TransferDetailsPage({
 
             <TransferActions
               transferId={
-                transfer.id
+                normalizedTransfer.id
               }
               status={
                 currentStatus
               }
               items={
-                transfer.transfer_items
+                normalizedTransfer.transfer_items
               }
               products={
-                (products ??
-                  []) as Product[]
+                normalizedProducts
               }
               notes={
-                transfer.notes
+                normalizedTransfer.notes
               }
             />
           </div>
@@ -571,14 +600,14 @@ export default async function TransferDetailsPage({
           <LocationCard
             title="الموقع المصدر"
             location={
-              transfer.from_location
+              normalizedTransfer.from_location
             }
           />
 
           <LocationCard
             title="الموقع الوجهة"
             location={
-              transfer.to_location
+              normalizedTransfer.to_location
             }
           />
         </div>
@@ -629,7 +658,7 @@ export default async function TransferDetailsPage({
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {transfer.transfer_items
+                {normalizedTransfer.transfer_items
                   ?.length ===
                 0 ? (
                   <tr>
@@ -641,7 +670,7 @@ export default async function TransferDetailsPage({
                     </td>
                   </tr>
                 ) : (
-                  transfer.transfer_items.map(
+                  normalizedTransfer.transfer_items.map(
                     (item) => (
                       <tr
                         key={item.id}
@@ -731,14 +760,14 @@ export default async function TransferDetailsPage({
             الملاحظات
         ====================================================== */}
 
-        {transfer.notes && (
+        {normalizedTransfer.notes && (
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900">
               ملاحظات الطلب
             </h2>
 
             <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
-              {transfer.notes}
+              {normalizedTransfer.notes}
             </p>
           </section>
         )}

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 import StatCard from "./StatCard";
 
 export default async function StatsGrid() {
@@ -69,7 +70,7 @@ export default async function StatsGrid() {
   // ============================================================
 
   const roleName =
-    currentUser.roles?.name ?? "";
+    firstRelation(currentUser.roles)?.name ?? "";
 
   const isBranchUser =
     roleName.toLowerCase() === "branch";
@@ -84,6 +85,10 @@ export default async function StatsGrid() {
       count: "exact",
       head: true,
     })
+    .eq(
+      "company_id",
+      currentUser.company_id
+    )
     .eq("is_active", true);
 
   // ============================================================
