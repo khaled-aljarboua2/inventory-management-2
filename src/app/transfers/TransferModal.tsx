@@ -23,7 +23,6 @@ type ProductUnit = {
   unit_id: string;
   conversion_factor: number;
   is_base: boolean;
-
   units: {
     id: string;
     name: string;
@@ -50,6 +49,8 @@ type Props = {
   locations: Location[];
   products: Product[];
 
+  // موجودة للتوافق مع الصفحة الحالية،
+  // لكن لم تعد تستخدم لتحديد المصدر.
   currentLocationId: string | null;
   isGeneralManager: boolean;
 
@@ -59,78 +60,52 @@ type Props = {
 export default function TransferModal({
   locations,
   products,
-  currentLocationId,
-  isGeneralManager,
   onClose,
 }: Props) {
-  const [fromLocation, setFromLocation] =
-    useState("");
-
-  const [toLocation, setToLocation] =
-    useState(
-      isGeneralManager
-        ? ""
-        : currentLocationId ?? ""
-    );
-
-  const [notes, setNotes] =
-    useState("");
-
-  const [rows, setRows] =
-    useState<TransferRow[]>([
-      {
-        id: crypto.randomUUID(),
-        product_id: "",
-        unit_id: "",
-        quantity: "1",
-      },
-    ]);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
   // ==========================================================
   // المواقع
+  // ==========================================================
+
+  // جميع المستخدمين يختارون المصدر بأنفسهم
+  const [fromLocation, setFromLocation] = useState("");
+
+  // جميع المستخدمين يختارون الوجهة بأنفسهم
+  const [toLocation, setToLocation] = useState("");
+
+  const [notes, setNotes] = useState("");
+
+  const [rows, setRows] = useState<TransferRow[]>([
+    {
+      id: crypto.randomUUID(),
+      product_id: "",
+      unit_id: "",
+      quantity: "1",
+    },
+  ]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // ==========================================================
+  // المواقع النشطة
   // ==========================================================
 
   const activeLocations = useMemo(
     () =>
       (locations ?? []).filter(
-        (location) =>
-          location.is_active !== false
+        (location) => location.is_active !== false
       ),
     [locations]
   );
 
   // ==========================================================
-  // موقع المستخدم الحالي
-  // ==========================================================
-
-  const currentLocation = useMemo(
-    () =>
-      activeLocations.find(
-        (location) =>
-          location.id ===
-          currentLocationId
-      ) ?? null,
-    [
-      activeLocations,
-      currentLocationId,
-    ]
-  );
-
-  // ==========================================================
-  // المنتجات
+  // المنتجات النشطة
   // ==========================================================
 
   const activeProducts = useMemo(
     () =>
       (products ?? []).filter(
-        (product) =>
-          product.is_active !== false
+        (product) => product.is_active !== false
       ),
     [products]
   );
@@ -142,7 +117,6 @@ export default function TransferModal({
   function addRow() {
     setRows((current) => [
       ...current,
-
       {
         id: crypto.randomUUID(),
         product_id: "",
@@ -160,10 +134,7 @@ export default function TransferModal({
     setRows((current) =>
       current.length === 1
         ? current
-        : current.filter(
-            (row) =>
-              row.id !== id
-          )
+        : current.filter((row) => row.id !== id)
     );
   }
 
@@ -182,26 +153,19 @@ export default function TransferModal({
           return row;
         }
 
-        if (
-          field === "product_id"
-        ) {
-          const product =
-            activeProducts.find(
-              (item) =>
-                item.id === value
-            );
+        if (field === "product_id") {
+          const product = activeProducts.find(
+            (item) => item.id === value
+          );
 
           return {
             ...row,
             product_id: value,
             unit_id:
               product?.product_units?.find(
-                (unit) =>
-                  unit.is_base
+                (unit) => unit.is_base
               )?.unit_id ??
-              product
-                ?.product_units?.[0]
-                ?.unit_id ??
+              product?.product_units?.[0]?.unit_id ??
               "",
           };
         }
@@ -226,51 +190,30 @@ export default function TransferModal({
     setError("");
 
     // --------------------------------------------------------
-    // التحقق من المصدر
+    // المصدر
     // --------------------------------------------------------
 
     if (!fromLocation) {
-      setError(
-        "حدد موقع المصدر من القائمة أولًا."
-      );
+      setError("حدد موقع المصدر من القائمة أولًا.");
       return;
     }
 
     // --------------------------------------------------------
-    // التحقق من الوجهة
+    // الوجهة
     // --------------------------------------------------------
 
     if (!toLocation) {
-      setError(
-        "لم يتم تحديد موقع الوجهة."
-      );
+      setError("حدد موقع الوجهة من القائمة أولًا.");
       return;
     }
 
     // --------------------------------------------------------
-    // منع نفس المصدر والوجهة
+    // منع تطابق المصدر والوجهة
     // --------------------------------------------------------
 
-    if (
-      fromLocation === toLocation
-    ) {
+    if (fromLocation === toLocation) {
       setError(
         "لا يمكن أن يكون المصدر والوجهة نفس الموقع."
-      );
-      return;
-    }
-
-    // --------------------------------------------------------
-    // الفرع يجب أن تكون وجهته موقعه
-    // --------------------------------------------------------
-
-    if (
-      !isGeneralManager &&
-      currentLocationId &&
-      toLocation !== currentLocationId
-    ) {
-      setError(
-        "لا يمكن إنشاء طلب إلا إلى موقع فرعك."
       );
       return;
     }
@@ -279,30 +222,21 @@ export default function TransferModal({
     // التحقق من المنتجات
     // --------------------------------------------------------
 
-    if (
-      !Array.isArray(rows) ||
-      rows.length === 0
-    ) {
-      setError(
-        "أضف منتجًا واحدًا على الأقل."
-      );
+    if (!Array.isArray(rows) || rows.length === 0) {
+      setError("أضف منتجًا واحدًا على الأقل.");
       return;
     }
 
-    const invalidRow =
-      rows.find((row) => {
-        const quantity =
-          Number(row.quantity);
+    const invalidRow = rows.find((row) => {
+      const quantity = Number(row.quantity);
 
-        return (
-          !row.product_id ||
-          !row.unit_id ||
-          !Number.isFinite(
-            quantity
-          ) ||
-          quantity <= 0
-        );
-      });
+      return (
+        !row.product_id ||
+        !row.unit_id ||
+        !Number.isFinite(quantity) ||
+        quantity <= 0
+      );
+    });
 
     if (invalidRow) {
       setError(
@@ -314,38 +248,23 @@ export default function TransferModal({
     setLoading(true);
 
     try {
-      const result =
-        await createTransfer({
-          sourceLocationId:
-            fromLocation,
+      const result = await createTransfer({
+        sourceLocationId: fromLocation,
+        destinationLocationId: toLocation,
 
-          destinationLocationId:
-            toLocation,
+        notes,
 
-          notes,
-
-          items: rows.map(
-            (row) => ({
-              product_id:
-                row.product_id,
-
-              unit_id:
-                row.unit_id,
-
-              requested_quantity:
-                Number(
-                  row.quantity
-                ),
-            })
-          ),
-        });
+        items: rows.map((row) => ({
+          product_id: row.product_id,
+          unit_id: row.unit_id,
+          requested_quantity: Number(row.quantity),
+        })),
+      });
 
       if (!result.success) {
         setError(
-          result.error ||
-            "تعذر إنشاء طلب النقل."
+          result.error || "تعذر إنشاء طلب النقل."
         );
-
         return;
       }
 
@@ -374,9 +293,7 @@ export default function TransferModal({
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <ArrowLeftRight
-                size={20}
-              />
+              <ArrowLeftRight size={20} />
             </div>
 
             <div>
@@ -385,9 +302,7 @@ export default function TransferModal({
               </h2>
 
               <p className="mt-1 text-xs text-slate-400">
-                {isGeneralManager
-                  ? "إنشاء طلب نقل بين أي موقعين."
-                  : "إنشاء طلب نقل إلى موقع فرعك."}
+                اختر موقع المصدر وموقع الوجهة لإنشاء طلب النقل.
               </p>
             </div>
           </div>
@@ -433,44 +348,36 @@ export default function TransferModal({
               <select
                 value={fromLocation}
                 onChange={(event) => {
-                  setFromLocation(
-                    event.target.value
-                  );
+                  const value = event.target.value;
+
+                  setFromLocation(value);
+
+                  if (value === toLocation) {
+                    setToLocation("");
+                  }
                 }}
                 disabled={
                   loading ||
-                  activeLocations.length ===
-                    0
+                  activeLocations.length === 0
                 }
                 required
                 className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:bg-slate-100"
               >
                 <option value="">
-                  {activeLocations.length ===
-                  0
+                  {activeLocations.length === 0
                     ? "لا توجد مواقع متاحة"
                     : "اختر موقع المصدر"}
                 </option>
 
-                {activeLocations.map(
-                  (location) => (
-                    <option
-                      key={
-                        location.id
-                      }
-                      value={
-                        location.id
-                      }
-                      disabled={
-                        location.id ===
-                        toLocation
-                      }
-                    >
-                      {location.name} —{" "}
-                      {location.code}
-                    </option>
-                  )
-                )}
+                {activeLocations.map((location) => (
+                  <option
+                    key={location.id}
+                    value={location.id}
+                    disabled={location.id === toLocation}
+                  >
+                    {location.name} — {location.code}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -483,91 +390,50 @@ export default function TransferModal({
                 موقع الوجهة
               </label>
 
-              {isGeneralManager ? (
-                <select
-                  value={toLocation}
-                  onChange={(event) =>
-                    setToLocation(
-                      event.target
-                        .value
-                    )
-                  }
-                  disabled={
-                    loading ||
-                    activeLocations.length ===
-                      0
-                  }
-                  required
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:bg-slate-100"
-                >
-                  <option value="">
-                    {activeLocations.length ===
-                    0
-                      ? "لا توجد مواقع متاحة"
-                      : "اختر موقع الوجهة"}
+              <select
+                value={toLocation}
+                onChange={(event) => {
+                  setToLocation(event.target.value);
+                }}
+                disabled={
+                  loading ||
+                  activeLocations.length === 0
+                }
+                required
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+              >
+                <option value="">
+                  {activeLocations.length === 0
+                    ? "لا توجد مواقع متاحة"
+                    : "اختر موقع الوجهة"}
+                </option>
+
+                {activeLocations.map((location) => (
+                  <option
+                    key={location.id}
+                    value={location.id}
+                    disabled={location.id === fromLocation}
+                  >
+                    {location.name} — {location.code}
                   </option>
-
-                  {activeLocations.map(
-                    (location) => (
-                      <option
-                        key={
-                          location.id
-                        }
-                        value={
-                          location.id
-                        }
-                        disabled={
-                          location.id ===
-                          fromLocation
-                        }
-                      >
-                        {
-                          location.name
-                        }{" "}
-                        —{" "}
-                        {
-                          location.code
-                        }
-                      </option>
-                    )
-                  )}
-                </select>
-              ) : (
-                <div className="flex h-12 items-center rounded-xl border border-blue-100 bg-blue-50 px-4">
-                  <div>
-                    <p className="text-sm font-semibold text-blue-800">
-                      {currentLocation
-                        ?.name ??
-                        "موقع الفرع"}
-                    </p>
-
-                    <p className="mt-0.5 text-xs text-blue-500">
-                      {currentLocation
-                        ?.code ??
-                        "موقعك المحدد"}
-                    </p>
-                  </div>
-                </div>
-              )}
+                ))}
+              </select>
             </div>
           </div>
 
           {/* ====================================================
-              تنبيه الفرع
+              تنبيه
           ===================================================== */}
 
-          {!isGeneralManager && (
-            <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-              سيتم توجيه طلب النقل إلى موقع فرعك تلقائيًا.
-            </div>
-          )}
+          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            اختر موقع المصدر وموقع الوجهة من المواقع النشطة.
+          </div>
 
           {/* ====================================================
               تنبيه المواقع
           ===================================================== */}
 
-          {activeLocations.length <
-            2 && (
+          {activeLocations.length < 2 && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
               يجب أن يكون لديك موقعان نشطان على الأقل لإنشاء طلب نقل.
             </div>
@@ -594,8 +460,7 @@ export default function TransferModal({
                 onClick={addRow}
                 disabled={
                   loading ||
-                  activeProducts.length ===
-                    0
+                  activeProducts.length === 0
                 }
                 className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -629,89 +494,59 @@ export default function TransferModal({
                     const product =
                       activeProducts.find(
                         (item) =>
-                          item.id ===
-                          row.product_id
+                          item.id === row.product_id
                       );
 
                     const units =
-                      product?.product_units ??
-                      [];
+                      product?.product_units ?? [];
 
                     return (
                       <tr
                         key={row.id}
                         className="transition hover:bg-slate-50/50"
                       >
-                        {/* المنتج */}
-
                         <td className="px-5 py-4">
                           <select
-                            value={
-                              row.product_id
-                            }
-                            onChange={(
-                              event
-                            ) =>
+                            value={row.product_id}
+                            onChange={(event) =>
                               updateRow(
                                 row.id,
                                 "product_id",
-                                event.target
-                                  .value
+                                event.target.value
                               )
                             }
                             disabled={loading}
                             className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                           >
                             <option value="">
-                              {activeProducts.length ===
-                              0
+                              {activeProducts.length === 0
                                 ? "لا توجد منتجات"
                                 : "اختر المنتج"}
                             </option>
 
-                            {activeProducts.map(
-                              (item) => (
-                                <option
-                                  key={
-                                    item.id
-                                  }
-                                  value={
-                                    item.id
-                                  }
-                                >
-                                  {
-                                    item.name
-                                  }{" "}
-                                  —{" "}
-                                  {
-                                    item.sku
-                                  }
-                                </option>
-                              )
-                            )}
+                            {activeProducts.map((item) => (
+                              <option
+                                key={item.id}
+                                value={item.id}
+                              >
+                                {item.name} — {item.sku}
+                              </option>
+                            ))}
                           </select>
                         </td>
 
-                        {/* الوحدة */}
-
                         <td className="px-5 py-4">
                           <select
-                            value={
-                              row.unit_id
-                            }
-                            onChange={(
-                              event
-                            ) =>
+                            value={row.unit_id}
+                            onChange={(event) =>
                               updateRow(
                                 row.id,
                                 "unit_id",
-                                event.target
-                                  .value
+                                event.target.value
                               )
                             }
                             disabled={
-                              loading ||
-                              !product
+                              loading || !product
                             }
                             className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-100"
                           >
@@ -719,52 +554,31 @@ export default function TransferModal({
                               اختر الوحدة
                             </option>
 
-                            {units.map(
-                              (
-                                item
-                              ) => (
-                                <option
-                                  key={
-                                    item.id
-                                  }
-                                  value={
-                                    item.unit_id
-                                  }
-                                >
-                                  {item
-                                    .units
-                                    ?.name ??
-                                    "وحدة"}
-
-                                  {item
-                                    .units
-                                    ?.symbol
-                                    ? ` (${item.units.symbol})`
-                                    : ""}
-                                </option>
-                              )
-                            )}
+                            {units.map((item) => (
+                              <option
+                                key={item.id}
+                                value={item.unit_id}
+                              >
+                                {item.units?.name ?? "وحدة"}
+                                {item.units?.symbol
+                                  ? ` (${item.units.symbol})`
+                                  : ""}
+                              </option>
+                            ))}
                           </select>
                         </td>
-
-                        {/* الكمية */}
 
                         <td className="px-5 py-4">
                           <input
                             type="number"
                             min="0.01"
                             step="any"
-                            value={
-                              row.quantity
-                            }
-                            onChange={(
-                              event
-                            ) =>
+                            value={row.quantity}
+                            onChange={(event) =>
                               updateRow(
                                 row.id,
                                 "quantity",
-                                event.target
-                                  .value
+                                event.target.value
                               )
                             }
                             disabled={loading}
@@ -772,26 +586,19 @@ export default function TransferModal({
                           />
                         </td>
 
-                        {/* حذف */}
-
                         <td className="px-5 py-4">
                           <button
                             type="button"
                             onClick={() =>
-                              removeRow(
-                                row.id
-                              )
+                              removeRow(row.id)
                             }
                             disabled={
                               loading ||
-                              rows.length ===
-                                1
+                              rows.length === 1
                             }
                             className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
                           >
-                            <Trash2
-                              size={17}
-                            />
+                            <Trash2 size={17} />
                           </button>
                         </td>
                       </tr>
@@ -814,9 +621,7 @@ export default function TransferModal({
             <textarea
               value={notes}
               onChange={(event) =>
-                setNotes(
-                  event.target.value
-                )
+                setNotes(event.target.value)
               }
               disabled={loading}
               rows={3}
@@ -843,12 +648,10 @@ export default function TransferModal({
               type="submit"
               disabled={
                 loading ||
-                activeLocations.length <
-                  2 ||
-                activeProducts.length ===
-                  0 ||
-                (!isGeneralManager &&
-                  !currentLocationId)
+                activeLocations.length < 2 ||
+                activeProducts.length === 0 ||
+                !fromLocation ||
+                !toLocation
               }
               className="rounded-xl bg-slate-900 px-7 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
             >

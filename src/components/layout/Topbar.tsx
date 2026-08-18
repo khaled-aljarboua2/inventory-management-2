@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -33,9 +33,19 @@ export default function Topbar({
   const router = useRouter();
   const supabase = createClient();
 
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const [profileOpen, setProfileOpen] =
+    useState(false);
+
+  const [notificationsOpen, setNotificationsOpen] =
+    useState(false);
+
+  const [loggingOut, setLoggingOut] =
+    useState(false);
+
+  const [searchQuery, setSearchQuery] =
+    useState("");
 
   const { theme, toggleTheme } = useTheme();
 
@@ -45,17 +55,93 @@ export default function Topbar({
     profile?.email ||
     "مستخدم النظام";
 
-  const roleName = profile?.roles?.name ?? "مستخدم";
+  const roleName =
+    profile?.roles?.name ?? "مستخدم";
+
+  // ==========================================================
+  // البحث باستخدام Ctrl + K
+  // ==========================================================
+
+  useEffect(() => {
+    function handleKeyboardShortcut(
+      event: KeyboardEvent
+    ) {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === "k"
+      ) {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+
+      if (event.key === "Escape") {
+        searchRef.current?.blur();
+        setSearchQuery("");
+      }
+    }
+
+    window.addEventListener(
+      "keydown",
+      handleKeyboardShortcut
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyboardShortcut
+      );
+    };
+  }, []);
+
+  // ==========================================================
+  // البحث
+  // ==========================================================
+
+  function handleSearchSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+
+    const query =
+      searchQuery.trim();
+
+    if (!query) {
+      return;
+    }
+
+    /*
+     * البحث العام سيتم ربطه لاحقًا
+     * ببيانات Supabase.
+     *
+     * حاليًا لا نرسل أي بيانات غير معروفة
+     * ولا نخمن أسماء الجداول أو الأعمدة.
+     */
+
+    router.push(
+      `/search?q=${encodeURIComponent(query)}`
+    );
+  }
+
+  // ==========================================================
+  // تسجيل الخروج
+  // ==========================================================
 
   async function handleLogout() {
-    if (loggingOut) return;
+    if (loggingOut) {
+      return;
+    }
 
     setLoggingOut(true);
 
-    const { error } = await supabase.auth.signOut();
+    const { error } =
+      await supabase.auth.signOut();
 
     if (error) {
-      console.error("Logout error:", error);
+      console.error(
+        "Logout error:",
+        error
+      );
+
       setLoggingOut(false);
       return;
     }
@@ -69,7 +155,8 @@ export default function Topbar({
       dir="rtl"
       className="
         sticky top-0 z-40
-        flex h-[72px] items-center justify-between
+        flex h-[72px]
+        items-center justify-between
         border-b border-slate-200/80
         bg-white/95
         px-6
@@ -84,9 +171,12 @@ export default function Topbar({
           البحث
       ====================================================== */}
 
-      <div className="relative w-full max-w-xl">
+      <form
+        onSubmit={handleSearchSubmit}
+        className="relative w-full max-w-xl"
+      >
         <Search
-          size={19}
+          size={20}
           strokeWidth={1.8}
           className="
             pointer-events-none
@@ -98,8 +188,16 @@ export default function Topbar({
         />
 
         <input
+          ref={searchRef}
           type="search"
+          value={searchQuery}
+          onChange={(event) =>
+            setSearchQuery(
+              event.target.value
+            )
+          }
           placeholder="ابحث عن منتج، SKU، باركود أو مستودع..."
+          aria-label="البحث في النظام"
           className="
             h-11 w-full
             rounded-xl
@@ -158,13 +256,14 @@ export default function Topbar({
           <span>+</span>
           <span>K</span>
         </div>
-      </div>
+      </form>
 
       {/* =====================================================
           الجانب الآخر
       ====================================================== */}
 
       <div className="mr-6 flex items-center gap-2">
+
         {/* ===================================================
             الوضع الليلي
         ==================================================== */}
@@ -198,9 +297,15 @@ export default function Topbar({
           }
         >
           {theme === "dark" ? (
-            <Sun size={20} strokeWidth={1.9} />
+            <Sun
+              size={20}
+              strokeWidth={1.9}
+            />
           ) : (
-            <Moon size={20} strokeWidth={1.9} />
+            <Moon
+              size={20}
+              strokeWidth={1.9}
+            />
           )}
         </button>
 
@@ -212,7 +317,9 @@ export default function Topbar({
           <button
             type="button"
             onClick={() =>
-              setNotificationsOpen(!notificationsOpen)
+              setNotificationsOpen(
+                !notificationsOpen
+              )
             }
             className={`
               relative
@@ -241,7 +348,10 @@ export default function Topbar({
             `}
             aria-label="الإشعارات"
           >
-            <Bell size={20} strokeWidth={1.9} />
+            <Bell
+              size={20}
+              strokeWidth={1.9}
+            />
 
             <span
               className="
@@ -350,7 +460,11 @@ export default function Topbar({
         <div className="relative">
           <button
             type="button"
-            onClick={() => setProfileOpen(!profileOpen)}
+            onClick={() =>
+              setProfileOpen(
+                !profileOpen
+              )
+            }
             className="
               flex items-center gap-3
               rounded-xl
@@ -362,8 +476,6 @@ export default function Topbar({
               dark:hover:bg-slate-800
             "
           >
-            {/* الصورة */}
-
             <div
               className="
                 flex h-10 w-10
@@ -382,8 +494,6 @@ export default function Topbar({
                 strokeWidth={1.8}
               />
             </div>
-
-            {/* البيانات */}
 
             <div className="hidden text-right sm:block">
               <p
