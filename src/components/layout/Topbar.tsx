@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   Search,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { createClient } from "@/lib/supabase/client";
 
 type Profile = {
   full_name: string;
@@ -28,16 +30,14 @@ export default function Topbar({
 }: {
   profile: Profile;
 }) {
-  const [profileOpen, setProfileOpen] =
-    useState(false);
+  const router = useRouter();
+  const supabase = createClient();
 
-  const [notificationsOpen, setNotificationsOpen] =
-    useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const {
-    theme,
-    toggleTheme,
-  } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   const displayName =
     profile?.full_name?.trim() ||
@@ -45,8 +45,24 @@ export default function Topbar({
     profile?.email ||
     "مستخدم النظام";
 
-  const roleName =
-    profile?.roles?.name ?? "مستخدم";
+  const roleName = profile?.roles?.name ?? "مستخدم";
+
+  async function handleLogout() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("Logout error:", error);
+      setLoggingOut(false);
+      return;
+    }
+
+    router.replace("/login");
+    router.refresh();
+  }
 
   return (
     <header
@@ -149,7 +165,6 @@ export default function Topbar({
       ====================================================== */}
 
       <div className="mr-6 flex items-center gap-2">
-
         {/* ===================================================
             الوضع الليلي
         ==================================================== */}
@@ -183,15 +198,9 @@ export default function Topbar({
           }
         >
           {theme === "dark" ? (
-            <Sun
-              size={20}
-              strokeWidth={1.9}
-            />
+            <Sun size={20} strokeWidth={1.9} />
           ) : (
-            <Moon
-              size={20}
-              strokeWidth={1.9}
-            />
+            <Moon size={20} strokeWidth={1.9} />
           )}
         </button>
 
@@ -203,9 +212,7 @@ export default function Topbar({
           <button
             type="button"
             onClick={() =>
-              setNotificationsOpen(
-                !notificationsOpen
-              )
+              setNotificationsOpen(!notificationsOpen)
             }
             className={`
               relative
@@ -234,12 +241,8 @@ export default function Topbar({
             `}
             aria-label="الإشعارات"
           >
-            <Bell
-              size={20}
-              strokeWidth={1.9}
-            />
+            <Bell size={20} strokeWidth={1.9} />
 
-            {/* نقطة الإشعار */}
             <span
               className="
                 absolute right-2.5 top-2
@@ -347,11 +350,7 @@ export default function Topbar({
         <div className="relative">
           <button
             type="button"
-            onClick={() =>
-              setProfileOpen(
-                !profileOpen
-              )
-            }
+            onClick={() => setProfileOpen(!profileOpen)}
             className="
               flex items-center gap-3
               rounded-xl
@@ -513,6 +512,8 @@ export default function Topbar({
 
               <button
                 type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
                 className="
                   flex w-full
                   items-center gap-3
@@ -524,6 +525,9 @@ export default function Topbar({
 
                   hover:bg-red-50
 
+                  disabled:cursor-not-allowed
+                  disabled:opacity-60
+
                   dark:text-red-400
                   dark:hover:bg-red-950/40
                 "
@@ -531,7 +535,9 @@ export default function Topbar({
                 <LogOut size={17} />
 
                 <span>
-                  تسجيل الخروج
+                  {loggingOut
+                    ? "جاري تسجيل الخروج..."
+                    : "تسجيل الخروج"}
                 </span>
               </button>
             </div>
