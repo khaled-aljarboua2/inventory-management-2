@@ -12,7 +12,91 @@ import UnitsTable from "./UnitsTable";
 export default async function UnitsPage() {
   const supabase = await createClient();
 
-  const { data: units, error } = await supabase
+  // ============================================================
+  // المستخدم الحالي
+  // ============================================================
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
+        >
+          يجب تسجيل الدخول أولًا.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ============================================================
+  // صلاحية عرض الوحدات
+  // ============================================================
+
+  const {
+    data: canViewProducts,
+    error: viewPermissionError,
+  } = await supabase.rpc(
+    "has_permission",
+    {
+      permission_code: "products.view",
+    }
+  );
+
+  if (
+    viewPermissionError ||
+    canViewProducts !== true
+  ) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="mx-auto w-full max-w-[1600px]"
+        >
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+            <h1 className="text-lg font-bold text-amber-800">
+              ليس لديك صلاحية الوصول
+            </h1>
+
+            <p className="mt-2 text-sm text-amber-700">
+              لا تملك الصلاحية اللازمة لعرض وحدات القياس.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ============================================================
+  // صلاحية إضافة الوحدات
+  // ============================================================
+
+  const {
+    data: canCreateProducts,
+    error: createPermissionError,
+  } = await supabase.rpc(
+    "has_permission",
+    {
+      permission_code: "products.create",
+    }
+  );
+
+  const canCreateUnits =
+    !createPermissionError &&
+    canCreateProducts === true;
+
+  // ============================================================
+  // تحميل الوحدات
+  // ============================================================
+
+  const {
+    data: units,
+    error,
+  } = await supabase
     .from("units")
     .select("id, name, symbol")
     .order("name");
@@ -29,6 +113,7 @@ export default async function UnitsPage() {
         {/* =========================
             رأس الصفحة
         ========================== */}
+
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
@@ -59,22 +144,26 @@ export default async function UnitsPage() {
             </p>
           </div>
 
-          <a
-            href="#units-table"
-            className="group inline-flex items-center justify-center gap-2 self-start rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200"
-          >
-            <Plus
-              size={18}
-              className="transition-transform duration-200 group-hover:rotate-90"
-            />
+          {/* إضافة وحدة */}
+          {canCreateUnits && (
+            <a
+              href="#units-table"
+              className="group inline-flex items-center justify-center gap-2 self-start rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200"
+            >
+              <Plus
+                size={18}
+                className="transition-transform duration-200 group-hover:rotate-90"
+              />
 
-            <span>إضافة وحدة</span>
-          </a>
+              <span>إضافة وحدة</span>
+            </a>
+          )}
         </div>
 
         {/* =========================
             الخطأ
         ========================== */}
+
         {error && (
           <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100">
@@ -90,8 +179,10 @@ export default async function UnitsPage() {
         {/* =========================
             الإحصائيات
         ========================== */}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* إجمالي الوحدات */}
+
           <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
             <div className="absolute -left-8 -top-8 h-24 w-24 rounded-full bg-blue-100/60 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -120,6 +211,7 @@ export default async function UnitsPage() {
           </div>
 
           {/* حالة النظام */}
+
           <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
             <div className="absolute -left-8 -top-8 h-24 w-24 rounded-full bg-emerald-100/60 blur-2xl" />
 
@@ -151,6 +243,7 @@ export default async function UnitsPage() {
         {/* =========================
             جدول الوحدات
         ========================== */}
+
         <section
           id="units-table"
           className="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
@@ -178,7 +271,9 @@ export default async function UnitsPage() {
             </div>
           </div>
 
-          <UnitsTable units={unitList} />
+          <UnitsTable
+            units={unitList}
+          />
         </section>
       </div>
     </DashboardLayout>

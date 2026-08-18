@@ -6,6 +6,7 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   ClipboardList,
+  Warehouse,
 } from "lucide-react";
 
 type Transaction = {
@@ -47,6 +48,12 @@ type Transaction = {
     | null;
 };
 
+type Location = {
+  id: string;
+  name: string;
+  code: string;
+};
+
 export default async function TransactionsPage() {
   const supabase = await createClient();
 
@@ -80,9 +87,7 @@ export default async function TransactionsPage() {
     error: userError,
   } = await supabase
     .from("users")
-    .select(
-      "id, company_id, is_active"
-    )
+    .select("id, company_id, is_active")
     .eq("auth_user_id", user.id)
     .eq("is_active", true)
     .single();
@@ -143,10 +148,7 @@ export default async function TransactionsPage() {
         )
       `
     )
-    .eq(
-      "company_id",
-      dbUser.company_id
-    )
+    .eq("company_id", dbUser.company_id)
     .order("created_at", {
       ascending: false,
     });
@@ -170,40 +172,36 @@ export default async function TransactionsPage() {
     );
   }
 
+  // ============================================================
+  // تجهيز الحركات
+  // ============================================================
+
   const transactions: Transaction[] =
     (rawTransactions ?? []).map(
       (item: any) => ({
         id: item.id,
-        company_id:
-          item.company_id,
-        product_id:
-          item.product_id,
-        location_id:
-          item.location_id,
-        transaction_type:
-          String(
-            item.transaction_type ?? ""
-          ),
+        company_id: item.company_id,
+        product_id: item.product_id,
+        location_id: item.location_id,
+        transaction_type: String(
+          item.transaction_type ?? ""
+        ),
         reference_type:
           item.reference_type ?? null,
         reference_id:
           item.reference_id ?? null,
-        quantity:
-          Number(item.quantity ?? 0),
-        quantity_before:
-          Number(
-            item.quantity_before ?? 0
-          ),
-        quantity_after:
-          Number(
-            item.quantity_after ?? 0
-          ),
-        notes:
-          item.notes ?? null,
-        user_id:
-          item.user_id ?? null,
-        created_at:
-          item.created_at,
+        quantity: Number(
+          item.quantity ?? 0
+        ),
+        quantity_before: Number(
+          item.quantity_before ?? 0
+        ),
+        quantity_after: Number(
+          item.quantity_after ?? 0
+        ),
+        notes: item.notes ?? null,
+        user_id: item.user_id ?? null,
+        created_at: item.created_at,
 
         products:
           item.products ?? null,
@@ -214,6 +212,41 @@ export default async function TransactionsPage() {
         users:
           item.users ?? null,
       })
+    );
+
+  // ============================================================
+  // المواقع الموجودة في الحركات
+  // ============================================================
+
+  const locationMap = new Map<
+    string,
+    Location
+  >();
+
+  transactions.forEach(
+    (transaction) => {
+      if (
+        transaction.locations &&
+        !locationMap.has(
+          transaction.locations.id
+        )
+      ) {
+        locationMap.set(
+          transaction.locations.id,
+          transaction.locations
+        );
+      }
+    }
+  );
+
+  const locations =
+    Array.from(
+      locationMap.values()
+    ).sort((a, b) =>
+      a.name.localeCompare(
+        b.name,
+        "ar"
+      )
     );
 
   // ============================================================
@@ -254,28 +287,43 @@ export default async function TransactionsPage() {
             رأس الصفحة
         ======================================================= */}
 
-        <div>
-          <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
-            <Activity size={16} />
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
+              <Activity size={16} />
 
-            <span>
-              إدارة المخزون
-            </span>
+              <span>
+                إدارة المخزون
+              </span>
 
-            <span>/</span>
+              <span>/</span>
 
-            <span className="text-slate-500">
+              <span className="text-slate-500">
+                حركة المخزون
+              </span>
+            </div>
+
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
               حركة المخزون
-            </span>
+            </h1>
+
+            <p className="mt-2 text-sm text-slate-500">
+              سجل مركزي لجميع الحركات التي أثرت
+              على أرصدة المخزون.
+            </p>
           </div>
 
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            حركة المخزون
-          </h1>
+          {/* عدد المواقع */}
+          <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
+            <Warehouse
+              size={17}
+              className="text-blue-500"
+            />
 
-          <p className="mt-2 text-sm text-slate-500">
-            سجل مركزي لجميع الحركات التي أثرت على أرصدة المخزون.
-          </p>
+            <span>
+              {locations.length} موقع
+            </span>
+          </div>
         </div>
 
         {/* ======================================================
@@ -335,11 +383,12 @@ export default async function TransactionsPage() {
         </div>
 
         {/* ======================================================
-            الجدول
+            جدول الحركات
         ======================================================= */}
 
         <TransactionsTable
           transactions={transactions}
+          locations={locations}
         />
       </div>
     </DashboardLayout>
@@ -358,7 +407,7 @@ function StatCard({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500">

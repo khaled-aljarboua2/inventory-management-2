@@ -6,6 +6,69 @@ import ProductsList from "./ProductsList";
 export default async function ProductsPage() {
   const supabase = await createClient();
 
+  // ============================================================
+  // المستخدم الحالي
+  // ============================================================
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
+        >
+          يجب تسجيل الدخول أولًا.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ============================================================
+  // التحقق من صلاحية عرض المنتجات
+  // ============================================================
+
+  const {
+    data: canViewProducts,
+    error: permissionError,
+  } = await supabase.rpc(
+    "has_permission",
+    {
+      permission_code: "products.view",
+    }
+  );
+
+  if (
+    permissionError ||
+    canViewProducts !== true
+  ) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="mx-auto w-full max-w-[1600px]"
+        >
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+            <h1 className="text-lg font-bold text-amber-800">
+              ليس لديك صلاحية الوصول
+            </h1>
+
+            <p className="mt-2 text-sm text-amber-700">
+              لا تملك الصلاحية اللازمة لعرض المنتجات.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ============================================================
+  // تحميل بيانات المنتجات
+  // ============================================================
+
   const [
     { data: products, error: productsError },
     { data: categories, error: categoriesError },
@@ -22,7 +85,9 @@ export default async function ProductsPage() {
         is_active,
         created_at
       `)
-      .order("created_at", { ascending: false }),
+      .order("created_at", {
+        ascending: false,
+      }),
 
     supabase
       .from("categories")

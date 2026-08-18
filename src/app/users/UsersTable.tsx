@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import UserModal from "./UserModal";
+import UserPermissionsModal from "./UserPermissionsModal";
 import { deleteUser } from "./actions";
 
 type UserRow = {
@@ -86,83 +87,96 @@ export default function UsersTable({
   const [modalOpen, setModalOpen] =
     useState(false);
 
-  const [deletingUserId, setDeletingUserId] =
-    useState<string | null>(null);
+  const [
+    permissionsUser,
+    setPermissionsUser,
+  ] = useState<UserRow | null>(null);
 
-  const filteredUsers =
-    useMemo(() => {
-      const query =
-        search.trim().toLowerCase();
+  const [
+    deletingUserId,
+    setDeletingUserId,
+  ] = useState<string | null>(null);
 
-      return users.filter((user) => {
-        const matchesSearch =
-          !query ||
-          user.full_name
-            .toLowerCase()
-            .includes(query) ||
-          user.email
-            .toLowerCase()
-            .includes(query) ||
-          (user.username ?? "")
-            .toLowerCase()
-            .includes(query) ||
-          (user.phone ?? "")
-            .toLowerCase()
-            .includes(query) ||
-          (user.roles?.name ?? "")
-            .toLowerCase()
-            .includes(query) ||
-          (user.locations?.name ?? "")
-            .toLowerCase()
-            .includes(query);
+  /* ============================================================
+     البحث والفلاتر
+  ============================================================ */
 
-        const matchesStatus =
-          statusFilter === "all" ||
-          (statusFilter === "active" &&
-            user.is_active) ||
-          (statusFilter ===
-            "inactive" &&
-            !user.is_active);
+  const filteredUsers = useMemo(() => {
+    const query =
+      search.trim().toLowerCase();
 
-        const matchesRole =
-          roleFilter === "all" ||
-          user.role_id ===
-            roleFilter;
+    return users.filter((user) => {
+      const matchesSearch =
+        !query ||
+        user.full_name
+          .toLowerCase()
+          .includes(query) ||
+        user.email
+          .toLowerCase()
+          .includes(query) ||
+        (user.username ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        (user.phone ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        (user.roles?.name ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        (user.locations?.name ?? "")
+          .toLowerCase()
+          .includes(query);
 
-        return (
-          matchesSearch &&
-          matchesStatus &&
-          matchesRole
-        );
-      });
-    }, [
-      users,
-      search,
-      statusFilter,
-      roleFilter,
-    ]);
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" &&
+          user.is_active) ||
+        (statusFilter === "inactive" &&
+          !user.is_active);
+
+      const matchesRole =
+        roleFilter === "all" ||
+        user.role_id === roleFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesRole
+      );
+    });
+  }, [
+    users,
+    search,
+    statusFilter,
+    roleFilter,
+  ]);
+
+  /* ============================================================
+     الإحصائيات
+  ============================================================ */
 
   const activeUsers =
     users.filter(
-      (user) =>
-        user.is_active
+      (user) => user.is_active
     ).length;
 
   const inactiveUsers =
     users.filter(
-      (user) =>
-        !user.is_active
+      (user) => !user.is_active
     ).length;
 
   const rolesCount =
     new Set(
       users
         .map(
-          (user) =>
-            user.role_id
+          (user) => user.role_id
         )
         .filter(Boolean)
     ).size;
+
+  /* ============================================================
+     التاريخ
+  ============================================================ */
 
   function formatDate(
     value: string
@@ -175,6 +189,10 @@ export default function UsersTable({
     ).format(new Date(value));
   }
 
+  /* ============================================================
+     حذف المستخدم
+  ============================================================ */
+
   async function handleDelete(
     user: UserRow
   ) {
@@ -185,8 +203,7 @@ export default function UsersTable({
     }
 
     if (
-      user.id ===
-      currentUserId
+      user.id === currentUserId
     ) {
       window.alert(
         "لا يمكنك حذف حسابك الحالي."
@@ -292,6 +309,10 @@ export default function UsersTable({
       ====================================================== */}
 
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        {/* ===================================================
+            رأس الجدول
+        ==================================================== */}
+
         <div className="border-b border-slate-100 p-5 sm:p-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
@@ -306,6 +327,7 @@ export default function UsersTable({
 
             <div className="flex flex-col gap-3 sm:flex-row">
               {/* البحث */}
+
               <div className="relative sm:w-80">
                 <Search
                   size={18}
@@ -325,13 +347,10 @@ export default function UsersTable({
               </div>
 
               {/* الحالة */}
+
               <select
-                value={
-                  statusFilter
-                }
-                onChange={(
-                  event
-                ) =>
+                value={statusFilter}
+                onChange={(event) =>
                   setStatusFilter(
                     event.target.value
                   )
@@ -352,13 +371,10 @@ export default function UsersTable({
               </select>
 
               {/* الدور */}
+
               <select
-                value={
-                  roleFilter
-                }
-                onChange={(
-                  event
-                ) =>
+                value={roleFilter}
+                onChange={(event) =>
                   setRoleFilter(
                     event.target.value
                   )
@@ -369,27 +385,22 @@ export default function UsersTable({
                   جميع الأدوار
                 </option>
 
-                {roles.map(
-                  (role) => (
-                    <option
-                      key={role.id}
-                      value={
-                        role.id
-                      }
-                    >
-                      {role.name}
-                    </option>
-                  )
-                )}
+                {roles.map((role) => (
+                  <option
+                    key={role.id}
+                    value={role.id}
+                  >
+                    {role.name}
+                  </option>
+                ))}
               </select>
 
               {/* مستخدم جديد */}
+
               <button
                 type="button"
                 onClick={() =>
-                  setModalOpen(
-                    true
-                  )
+                  setModalOpen(true)
                 }
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100"
               >
@@ -403,9 +414,12 @@ export default function UsersTable({
           </div>
         </div>
 
-        {/* الجدول */}
+        {/* ===================================================
+            الجدول
+        ==================================================== */}
+
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1200px] text-right">
+          <table className="w-full min-w-[1350px] text-right">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/70">
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500">
@@ -481,6 +495,7 @@ export default function UsersTable({
                         className="transition hover:bg-slate-50/70"
                       >
                         {/* المستخدم */}
+
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
                             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -523,6 +538,7 @@ export default function UsersTable({
                         </td>
 
                         {/* الدور */}
+
                         <td className="px-6 py-5">
                           {user.roles ? (
                             <div>
@@ -534,8 +550,7 @@ export default function UsersTable({
                                 }
                               </p>
 
-                              {user
-                                .roles
+                              {user.roles
                                 .description && (
                                 <p className="mt-1 max-w-48 text-xs text-slate-400">
                                   {
@@ -554,6 +569,7 @@ export default function UsersTable({
                         </td>
 
                         {/* الموقع */}
+
                         <td className="px-6 py-5">
                           {user.locations ? (
                             <div className="flex items-center gap-2">
@@ -588,12 +604,14 @@ export default function UsersTable({
                         </td>
 
                         {/* الجوال */}
+
                         <td className="px-6 py-5 text-sm text-slate-500">
                           {user.phone ??
                             "—"}
                         </td>
 
                         {/* الحالة */}
+
                         <td className="px-6 py-5">
                           <span
                             className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${
@@ -609,50 +627,79 @@ export default function UsersTable({
                         </td>
 
                         {/* التاريخ */}
+
                         <td className="px-6 py-5 text-sm text-slate-500">
                           {formatDate(
                             user.created_at
                           )}
                         </td>
 
-                        {/* الإجراءات */}
+                        {/* =================================================
+                            الإجراءات
+                        ================================================== */}
+
                         <td className="px-6 py-5">
-                          {isCurrentUser ||
-                          isGeneralManager ? (
-                            <span className="text-xs text-slate-400">
-                              —
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleDelete(
-                                  user
-                                )
-                              }
-                              disabled={
-                                isDeleting ||
-                                deletingUserId !==
-                                  null
-                              }
-                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {isDeleting ? (
-                                <Loader2
-                                  size={15}
-                                  className="animate-spin"
-                                />
-                              ) : (
-                                <Trash2
-                                  size={15}
-                                />
+                          <div className="flex items-center gap-2">
+                            {/* الصلاحيات */}
+
+                            {!isCurrentUser &&
+                              !isGeneralManager && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setPermissionsUser(
+                                      user
+                                    )
+                                  }
+                                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 text-xs font-semibold text-blue-600 transition hover:bg-blue-50 hover:border-blue-300"
+                                >
+                                  <ShieldCheck
+                                    size={15}
+                                  />
+
+                                  الصلاحيات
+                                </button>
                               )}
 
-                              {isDeleting
-                                ? "جاري الحذف..."
-                                : "حذف"}
-                            </button>
-                          )}
+                            {/* الحذف */}
+
+                            {isCurrentUser ||
+                            isGeneralManager ? (
+                              <span className="text-xs text-slate-400">
+                                —
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDelete(
+                                    user
+                                  )
+                                }
+                                disabled={
+                                  isDeleting ||
+                                  deletingUserId !==
+                                    null
+                                }
+                                className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {isDeleting ? (
+                                  <Loader2
+                                    size={15}
+                                    className="animate-spin"
+                                  />
+                                ) : (
+                                  <Trash2
+                                    size={15}
+                                  />
+                                )}
+
+                                {isDeleting
+                                  ? "جاري الحذف..."
+                                  : "حذف"}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -677,9 +724,31 @@ export default function UsersTable({
           }
         />
       )}
+
+      {/* =====================================================
+          نافذة صلاحيات المستخدم
+      ====================================================== */}
+
+      {permissionsUser && (
+        <UserPermissionsModal
+          userId={
+            permissionsUser.id
+          }
+          userName={
+            permissionsUser.full_name
+          }
+          onClose={() =>
+            setPermissionsUser(null)
+          }
+        />
+      )}
     </>
   );
 }
+
+/* ============================================================
+   Stat Card
+============================================================ */
 
 function StatCard({
   icon,
@@ -691,7 +760,7 @@ function StatCard({
   value: number;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500">

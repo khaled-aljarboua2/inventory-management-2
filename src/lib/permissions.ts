@@ -51,6 +51,58 @@ export const PERMISSIONS = {
   SETTINGS_UPDATE: "settings.update",
 } as const;
 
+// ============================================================
+// المستخدم الحالي
+// ============================================================
+
+export async function getCurrentUserProfile() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return null;
+  }
+
+  const {
+    data: profile,
+    error,
+  } = await supabase
+    .from("users")
+    .select(`
+      id,
+      auth_user_id,
+      company_id,
+      role_id,
+      location_id,
+      full_name,
+      username,
+      email,
+      is_active,
+      roles (
+        id,
+        name,
+        description
+      )
+    `)
+    .eq("auth_user_id", user.id)
+    .eq("is_active", true)
+    .single();
+
+  if (error || !profile) {
+    return null;
+  }
+
+  return profile;
+}
+
+// ============================================================
+// الصلاحيات الحالية
+// ============================================================
+
 export async function getCurrentPermissions() {
   const supabase = await createClient();
 
@@ -83,5 +135,40 @@ export async function getCurrentPermissions() {
     results
       .filter((item) => item.allowed)
       .map((item) => item.code)
+  );
+}
+
+export async function hasPermission(
+  permissionCode: string
+): Promise<boolean> {
+  const permissions =
+    await getCurrentPermissions();
+
+  return permissions.includes(
+    permissionCode
+  );
+}
+
+export async function hasAnyPermission(
+  permissionCodes: string[]
+): Promise<boolean> {
+  const permissions =
+    await getCurrentPermissions();
+
+  return permissionCodes.some(
+    (permission) =>
+      permissions.includes(permission)
+  );
+}
+
+export async function hasAllPermissions(
+  permissionCodes: string[]
+): Promise<boolean> {
+  const permissions =
+    await getCurrentPermissions();
+
+  return permissionCodes.every(
+    (permission) =>
+      permissions.includes(permission)
   );
 }

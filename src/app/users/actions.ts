@@ -2,20 +2,44 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { revalidatePath } from "next/cache";
-
-type CreateUserInput = {
-  full_name: string;
-  email: string;
-  phone?: string;
-  username?: string;
-  password: string;
-  role_id: string;
-  location_id: string;
-};
 
 /* ============================================================
-   المستخدم الحالي
+   Admin Client
+============================================================ */
+
+function getAdminClient() {
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url) {
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_URL غير موجود."
+    );
+  }
+
+  if (!serviceRoleKey) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY غير موجود."
+    );
+  }
+
+  return createAdminClient(
+    url,
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
+
+/* ============================================================
+   التحقق من المستخدم الحالي
 ============================================================ */
 
 async function getCurrentUser() {
@@ -28,81 +52,76 @@ async function getCurrentUser() {
     await supabase.auth.getUser();
 
   if (!user) {
-    throw new Error(
-      "يجب تسجيل الدخول أولًا."
-    );
+    return null;
   }
 
   const {
-    data: dbUser,
+    data: currentUser,
     error,
-  } =
-    await supabase
-      .from("users")
-      .select(
-        "id, company_id, role_id, is_active"
-      )
-      .eq(
-        "auth_user_id",
-        user.id
-      )
-      .eq(
-        "is_active",
-        true
-      )
-      .single();
+  } = await supabase
+    .from("users")
+    .select(
+      `
+        id,
+        auth_user_id,
+        company_id,
+        role_id,
+        is_active,
+        roles (
+          id,
+          name
+        )
+      `
+    )
+    .eq(
+      "auth_user_id",
+      user.id
+    )
+    .eq(
+      "is_active",
+      true
+    )
+    .single();
 
-  if (
-    error ||
-    !dbUser
-  ) {
-    throw new Error(
-      "لم يتم العثور على المستخدم في النظام."
-    );
+  if (error || !currentUser) {
+    return null;
   }
 
-  return {
-    supabase,
-    user: dbUser,
-  };
+  return currentUser;
 }
 
 /* ============================================================
-   Admin Client
+   التحقق من صلاحية إدارة المستخدمين
 ============================================================ */
 
-function getAdminClient() {
-  const supabaseUrl =
-    process.env
-      .NEXT_PUBLIC_SUPABASE_URL;
+async function canManageUsers() {
+  const supabase =
+    await createClient();
 
-  const serviceRoleKey =
-    process.env
-      .SUPABASE_SERVICE_ROLE_KEY;
+  const {
+    data: { user },
+  } =
+    await supabase.auth.getUser();
 
-  if (!supabaseUrl) {
-    throw new Error(
-      "NEXT_PUBLIC_SUPABASE_URL غير موجود في .env.local"
-    );
+  if (!user) {
+    return false;
   }
 
-  if (!serviceRoleKey) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY غير موجود في .env.local"
+  const {
+    data,
+    error,
+  } =
+    await supabase.rpc(
+      "has_permission",
+      {
+        permission_code:
+          "users.manage_access",
+      }
     );
-  }
 
-  return createAdminClient(
-    supabaseUrl,
-    serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken:
-          false,
-        persistSession:
-          false,
-      },
-    }
+  return (
+    !error &&
+    data === true
   );
 }
 
@@ -110,441 +129,289 @@ function getAdminClient() {
    إنشاء مستخدم
 ============================================================ */
 
-export async function createUser(
-  input: CreateUserInput
-) {
-  let createdAuthUserId:
-    | string
-    | null = null;
+export async function createUser({
+  full_name,
+  email,
+  phone,
+  username,
+  password,
+  role_id,
+  location_id,
+}: {
+  full_name: string;
+  email: string;
+  phone?: string;
+  username?: string;
+  password: string;
+  role_id: string;
+  location_id: string;
+}) {
+  const currentUser =
+    await getCurrentUser();
 
-  try {
-    const {
-      supabase,
-      user: currentUser,
-    } =
-      await getCurrentUser();
-
-    const fullName =
-      input.full_name.trim();
-
-    const email =
-      input.email
-        .trim()
-        .toLowerCase();
-
-    const phone =
-      input.phone?.trim() ||
-      null;
-
-    const username =
-      input.username?.trim() ||
-      null;
-
-    if (!fullName) {
-      throw new Error(
-        "أدخل اسم المستخدم."
-      );
-    }
-
-    if (!email) {
-      throw new Error(
-        "أدخل البريد الإلكتروني."
-      );
-    }
-
-    if (
-      !input.password ||
-      input.password.length < 6
-    ) {
-      throw new Error(
-        "كلمة المرور يجب أن تكون 6 أحرف على الأقل."
-      );
-    }
-
-    if (!input.role_id) {
-      throw new Error(
-        "اختر الدور."
-      );
-    }
-
-    if (!input.location_id) {
-      throw new Error(
-        "اختر الموقع."
-      );
-    }
-
-    /* --------------------------------------------------------
-       صلاحية users.create
-    -------------------------------------------------------- */
-
-    const {
-      data: hasPermission,
+  if (!currentUser) {
+    return {
+      success: false,
       error:
-        permissionError,
-    } =
-      await supabase.rpc(
-        "has_permission",
-        {
-          permission_code:
-            "users.create",
-        }
-      );
+        "يجب تسجيل الدخول أولًا.",
+    };
+  }
 
-    if (permissionError) {
-      throw new Error(
-        permissionError.message
-      );
-    }
+  const supabase =
+    await createClient();
 
-    if (
-      hasPermission !== true
-    ) {
-      throw new Error(
-        "ليس لديك صلاحية إنشاء مستخدم."
-      );
-    }
-
-    /* --------------------------------------------------------
-       التحقق من الدور
-    -------------------------------------------------------- */
-
-    const {
-      data: role,
-      error: roleError,
-    } =
-      await supabase
-        .from("roles")
-        .select(
-          "id, name, description"
-        )
-        .eq(
-          "id",
-          input.role_id
-        )
-        .single();
-
-    if (
-      roleError ||
-      !role
-    ) {
-      throw new Error(
-        "الدور المحدد غير صالح."
-      );
-    }
-
-    /* --------------------------------------------------------
-       التحقق من الموقع
-    -------------------------------------------------------- */
-
-    const {
-      data: location,
-      error:
-        locationError,
-    } =
-      await supabase
-        .from("locations")
-        .select(
-          "id, company_id, name, code, type, is_active"
-        )
-        .eq(
-          "id",
-          input.location_id
-        )
-        .eq(
-          "company_id",
-          currentUser.company_id
-        )
-        .eq(
-          "is_active",
-          true
-        )
-        .single();
-
-    if (
-      locationError ||
-      !location
-    ) {
-      throw new Error(
-        "الموقع المحدد غير صالح أو لا يتبع لشركتك."
-      );
-    }
-
-    /* --------------------------------------------------------
-       التحقق من البريد داخل الشركة
-    -------------------------------------------------------- */
-
-    const {
-      data: existingEmail,
-      error:
-        existingEmailError,
-    } =
-      await supabase
-        .from("users")
-        .select("id")
-        .eq(
-          "company_id",
-          currentUser.company_id
-        )
-        .eq(
-          "email",
-          email
-        )
-        .maybeSingle();
-
-    if (
-      existingEmailError
-    ) {
-      throw new Error(
-        existingEmailError.message
-      );
-    }
-
-    if (existingEmail) {
-      throw new Error(
-        "يوجد مستخدم بهذا البريد الإلكتروني بالفعل."
-      );
-    }
-
-    /* --------------------------------------------------------
-       Admin Client
-    -------------------------------------------------------- */
-
-    const admin =
-      getAdminClient();
-
-    /* --------------------------------------------------------
-       إنشاء حساب Supabase Auth
-    -------------------------------------------------------- */
-
-    const {
-      data: authData,
-      error: authError,
-    } =
-      await admin.auth.admin.createUser(
-        {
-          email,
-          password:
-            input.password,
-
-          email_confirm:
-            true,
-
-          user_metadata: {
-            full_name:
-              fullName,
-
-            username,
-
-            phone,
-
-            company_id:
-              currentUser.company_id,
-
-            location_id:
-              input.location_id,
-
-            role_id:
-              input.role_id,
-          },
-        }
-      );
-
-    if (
-      authError ||
-      !authData.user
-    ) {
-      throw new Error(
-        authError?.message ??
-          "تعذر إنشاء حساب المستخدم."
-      );
-    }
-
-    createdAuthUserId =
-      authData.user.id;
-
-    /* --------------------------------------------------------
-       التحقق هل Trigger أنشأ profile تلقائيًا
-    -------------------------------------------------------- */
-
-    const {
-      data: existingProfile,
-      error:
-        existingProfileError,
-    } =
-      await admin
-        .from("users")
-        .select(
-          "id, auth_user_id, company_id"
-        )
-        .eq(
-          "auth_user_id",
-          createdAuthUserId
-        )
-        .maybeSingle();
-
-    if (
-      existingProfileError
-    ) {
-      throw new Error(
-        existingProfileError.message
-      );
-    }
-
-    /* --------------------------------------------------------
-       إذا كان موجودًا: نحدثه
-       إذا غير موجود: ننشئه
-    -------------------------------------------------------- */
-
-    if (
-      existingProfile
-    ) {
-      const {
-        error:
-          profileUpdateError,
-      } =
-        await admin
-          .from("users")
-          .update({
-            company_id:
-              currentUser.company_id,
-
-            role_id:
-              input.role_id,
-
-            location_id:
-              input.location_id,
-
-            full_name:
-              fullName,
-
-            username,
-
-            email,
-
-            phone,
-
-            is_active:
-              true,
-
-            updated_at:
-              new Date().toISOString(),
-          })
-          .eq(
-            "id",
-            existingProfile.id
-          );
-
-      if (
-        profileUpdateError
-      ) {
-        throw new Error(
-          profileUpdateError.message
-        );
+  const {
+    data: canCreate,
+    error: permissionError,
+  } =
+    await supabase.rpc(
+      "has_permission",
+      {
+        permission_code:
+          "users.create",
       }
-    } else {
-      const {
-        error:
-          profileInsertError,
-      } =
-        await admin
-          .from("users")
-          .insert({
-            id:
-              crypto.randomUUID(),
-
-            auth_user_id:
-              createdAuthUserId,
-
-            company_id:
-              currentUser.company_id,
-
-            role_id:
-              input.role_id,
-
-            location_id:
-              input.location_id,
-
-            full_name:
-              fullName,
-
-            username,
-
-            email,
-
-            phone,
-
-            is_active:
-              true,
-          });
-
-      if (
-        profileInsertError
-      ) {
-        throw new Error(
-          profileInsertError.message
-        );
-      }
-    }
-
-    revalidatePath(
-      "/users"
     );
 
+  if (
+    permissionError ||
+    canCreate !== true
+  ) {
     return {
-      success: true,
-      userId:
-        createdAuthUserId,
+      success: false,
+      error:
+        "ليس لديك صلاحية إنشاء المستخدمين.",
     };
-  } catch (error) {
-    /* --------------------------------------------------------
-       تنظيف Auth إذا فشل إنشاء profile
-    -------------------------------------------------------- */
+  }
 
-    if (
-      createdAuthUserId
-    ) {
-      try {
-        const admin =
-          getAdminClient();
+  const admin =
+    getAdminClient();
 
-        const {
-          data: profile,
-        } =
-          await admin
-            .from("users")
-            .select("id")
-            .eq(
-              "auth_user_id",
-              createdAuthUserId
-            )
-            .maybeSingle();
+  /* ==========================================================
+     التأكد من عدم تكرار اسم المستخدم
+  ========================================================== */
 
-        if (profile) {
-          await admin
-            .from("users")
-            .delete()
-            .eq(
-              "id",
-              profile.id
-            );
-        }
+  if (username?.trim()) {
+    const {
+      data: existingUsername,
+    } = await admin
+      .from("users")
+      .select("id")
+      .eq(
+        "username",
+        username.trim()
+      )
+      .maybeSingle();
 
-        await admin.auth.admin.deleteUser(
-          createdAuthUserId
-        );
-      } catch {
-        // لا نخفي الخطأ الأصلي
-      }
+    if (existingUsername) {
+      return {
+        success: false,
+        error:
+          "اسم المستخدم مستخدم بالفعل.",
+      };
     }
+  }
+
+  /* ==========================================================
+     التأكد من عدم تكرار البريد
+  ========================================================== */
+
+  const {
+    data: existingEmail,
+  } = await admin
+    .from("users")
+    .select("id")
+    .eq(
+      "email",
+      email.trim().toLowerCase()
+    )
+    .maybeSingle();
+
+  if (existingEmail) {
+    return {
+      success: false,
+      error:
+        "البريد الإلكتروني مستخدم بالفعل.",
+    };
+  }
+
+  /* ==========================================================
+     التحقق من الموقع
+  ========================================================== */
+
+  const {
+    data: location,
+    error: locationError,
+  } = await admin
+    .from("locations")
+    .select(
+      "id, company_id, is_active"
+    )
+    .eq(
+      "id",
+      location_id
+    )
+    .eq(
+      "company_id",
+      currentUser.company_id
+    )
+    .eq(
+      "is_active",
+      true
+    )
+    .single();
+
+  if (
+    locationError ||
+    !location
+  ) {
+    return {
+      success: false,
+      error:
+        "الموقع المحدد غير صالح.",
+    };
+  }
+
+  /* ==========================================================
+     التحقق من الدور
+  ========================================================== */
+
+  const {
+    data: role,
+    error: roleError,
+  } =
+    await admin
+      .from("roles")
+      .select(
+        "id, name"
+      )
+      .eq(
+        "id",
+        role_id
+      )
+      .single();
+
+  if (
+    roleError ||
+    !role
+  ) {
+    return {
+      success: false,
+      error:
+        "الدور المحدد غير صالح.",
+    };
+  }
+
+  /* ==========================================================
+     إنشاء حساب Auth
+  ========================================================== */
+
+  const {
+    data: authData,
+    error: authError,
+  } =
+    await admin.auth.admin.createUser(
+      {
+        email:
+          email
+            .trim()
+            .toLowerCase(),
+
+        password,
+
+        email_confirm:
+          true,
+
+        user_metadata: {
+          full_name:
+            full_name.trim(),
+
+          username:
+            username?.trim() ||
+            null,
+        },
+      }
+    );
+
+  if (
+    authError ||
+    !authData.user
+  ) {
+    return {
+      success: false,
+      error:
+        authError?.message ||
+        "تعذر إنشاء حساب تسجيل الدخول.",
+    };
+  }
+
+  /* ==========================================================
+     إنشاء سجل المستخدم
+  ========================================================== */
+
+  const {
+    data: createdUser,
+    error: userError,
+  } =
+    await admin
+      .from("users")
+      .insert({
+        auth_user_id:
+          authData.user.id,
+
+        company_id:
+          currentUser.company_id,
+
+        role_id,
+
+        location_id,
+
+        full_name:
+          full_name.trim(),
+
+        username:
+          username?.trim() ||
+          null,
+
+        email:
+          email
+            .trim()
+            .toLowerCase(),
+
+        phone:
+          phone?.trim() ||
+          null,
+
+        is_active: true,
+      })
+      .select("id")
+      .single();
+
+  if (
+    userError ||
+    !createdUser
+  ) {
+    /*
+     * إذا فشل إنشاء سجل المستخدم،
+     * نحذف حساب Auth حتى لا يبقى حساب معلق.
+     */
+
+    await admin.auth.admin.deleteUser(
+      authData.user.id
+    );
 
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.message
-          : "تعذر إنشاء المستخدم.",
+        userError?.message ||
+        "تعذر إنشاء المستخدم.",
     };
   }
+
+  return {
+    success: true,
+    userId:
+      createdUser.id,
+  };
 }
 
 /* ============================================================
@@ -552,197 +419,571 @@ export async function createUser(
 ============================================================ */
 
 export async function deleteUser(
-  targetUserId: string
+  userId: string
 ) {
-  try {
-    const {
-      supabase,
-      user: currentUser,
-    } =
-      await getCurrentUser();
+  const currentUser =
+    await getCurrentUser();
 
-    if (!targetUserId) {
-      throw new Error(
-        "معرف المستخدم غير صالح."
-      );
-    }
-
-    /* --------------------------------------------------------
-       صلاحية الحذف
-    -------------------------------------------------------- */
-
-    const {
-      data: hasPermission,
-      error:
-        permissionError,
-    } =
-      await supabase.rpc(
-        "has_permission",
-        {
-          permission_code:
-            "users.delete",
-        }
-      );
-
-    if (
-      permissionError
-    ) {
-      throw new Error(
-        permissionError.message
-      );
-    }
-
-    if (
-      hasPermission !== true
-    ) {
-      throw new Error(
-        "ليس لديك صلاحية حذف المستخدمين."
-      );
-    }
-
-    /* --------------------------------------------------------
-       جلب المستخدم المطلوب
-    -------------------------------------------------------- */
-
-    const admin =
-      getAdminClient();
-
-    const {
-      data: targetUser,
-      error:
-        targetUserError,
-    } =
-      await admin
-        .from("users")
-        .select(
-          `
-            id,
-            auth_user_id,
-            company_id,
-            role_id,
-            full_name,
-            email,
-            is_active,
-            roles (
-              id,
-              name
-            )
-          `
-        )
-        .eq(
-          "id",
-          targetUserId
-        )
-        .eq(
-          "company_id",
-          currentUser.company_id
-        )
-        .single();
-
-    if (
-      targetUserError ||
-      !targetUser
-    ) {
-      throw new Error(
-        "المستخدم غير موجود."
-      );
-    }
-
-    /* --------------------------------------------------------
-       منع حذف الحساب الحالي
-    -------------------------------------------------------- */
-
-    if (
-      targetUser.id ===
-      currentUser.id
-    ) {
-      throw new Error(
-        "لا يمكنك حذف حسابك الحالي."
-      );
-    }
-
-    /* --------------------------------------------------------
-       منع حذف General Manager
-       لتجنب حذف الحساب الإداري الرئيسي بالخطأ.
-    -------------------------------------------------------- */
-
-    const roleName =
-      Array.isArray(
-        targetUser.roles
-      )
-        ? targetUser.roles[0]?.name
-        : targetUser.roles?.name;
-
-    if (
-      roleName ===
-      "General Manager"
-    ) {
-      throw new Error(
-        "لا يمكن حذف حساب General Manager من هذه الصفحة."
-      );
-    }
-
-    /* --------------------------------------------------------
-       حذف سجل المستخدم أولًا
-       حتى لا نترك Auth بدون profile.
-    -------------------------------------------------------- */
-
-    const {
-      error: profileDeleteError,
-    } =
-      await admin
-        .from("users")
-        .delete()
-        .eq(
-          "id",
-          targetUser.id
-        );
-
-    if (
-      profileDeleteError
-    ) {
-      throw new Error(
-        "تعذر حذف المستخدم من النظام. قد تكون هناك سجلات مرتبطة بهذا الحساب تمنع الحذف. عطّل الحساب بدلًا من حذفه في هذه الحالة.\n\n" +
-          profileDeleteError.message
-      );
-    }
-
-    /* --------------------------------------------------------
-       حذف حساب Supabase Auth
-    -------------------------------------------------------- */
-
-    const {
-      error: authDeleteError,
-    } =
-      await admin.auth.admin.deleteUser(
-        targetUser.auth_user_id
-      );
-
-    if (
-      authDeleteError
-    ) {
-      throw new Error(
-        "تم حذف مستخدم النظام، لكن تعذر حذف حساب تسجيل الدخول: " +
-          authDeleteError.message
-      );
-    }
-
-    revalidatePath(
-      "/users"
-    );
-
-    return {
-      success: true,
-      userId:
-        targetUser.id,
-    };
-  } catch (error) {
+  if (!currentUser) {
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.message
-          : "تعذر حذف المستخدم.",
+        "يجب تسجيل الدخول أولًا.",
     };
   }
+
+  const supabase =
+    await createClient();
+
+  const {
+    data: canDelete,
+    error: permissionError,
+  } =
+    await supabase.rpc(
+      "has_permission",
+      {
+        permission_code:
+          "users.delete",
+      }
+    );
+
+  if (
+    permissionError ||
+    canDelete !== true
+  ) {
+    return {
+      success: false,
+      error:
+        "ليس لديك صلاحية حذف المستخدمين.",
+    };
+  }
+
+  if (
+    userId ===
+    currentUser.id
+  ) {
+    return {
+      success: false,
+      error:
+        "لا يمكنك حذف حسابك الحالي.",
+    };
+  }
+
+  const admin =
+    getAdminClient();
+
+  /* ==========================================================
+     جلب المستخدم المراد حذفه
+  ========================================================== */
+
+  const {
+    data: targetUser,
+    error: targetError,
+  } =
+    await admin
+      .from("users")
+      .select(
+        `
+          id,
+          auth_user_id,
+          role_id,
+          roles (
+            id,
+            name
+          )
+        `
+      )
+      .eq(
+        "id",
+        userId
+      )
+      .eq(
+        "company_id",
+        currentUser.company_id
+      )
+      .single();
+
+  if (
+    targetError ||
+    !targetUser
+  ) {
+    return {
+      success: false,
+      error:
+        "المستخدم غير موجود.",
+    };
+  }
+
+  /* ==========================================================
+     حماية General Manager
+  ========================================================== */
+
+  const targetRole =
+    Array.isArray(
+      targetUser.roles
+    )
+      ? targetUser.roles[0]
+      : targetUser.roles;
+
+  if (
+    targetRole?.name ===
+    "General Manager"
+  ) {
+    return {
+      success: false,
+      error:
+        "لا يمكن حذف حساب General Manager.",
+    };
+  }
+
+  /* ==========================================================
+     حذف صلاحيات المستخدم المباشرة
+  ========================================================== */
+
+  await admin
+    .from("user_permissions")
+    .delete()
+    .eq(
+      "user_id",
+      userId
+    );
+
+  /* ==========================================================
+     حذف سجل المستخدم
+  ========================================================== */
+
+  const {
+    error: userDeleteError,
+  } =
+    await admin
+      .from("users")
+      .delete()
+      .eq(
+        "id",
+        userId
+      )
+      .eq(
+        "company_id",
+        currentUser.company_id
+      );
+
+  if (userDeleteError) {
+    return {
+      success: false,
+      error:
+        userDeleteError.message,
+    };
+  }
+
+  /* ==========================================================
+     حذف حساب Auth
+  ========================================================== */
+
+  const {
+    error: authDeleteError,
+  } =
+    await admin.auth.admin.deleteUser(
+      targetUser.auth_user_id
+    );
+
+  if (authDeleteError) {
+    return {
+      success: false,
+      error:
+        "تم حذف المستخدم من النظام، لكن تعذر حذف حساب تسجيل الدخول.",
+    };
+  }
+
+  return {
+    success: true,
+  };
+}
+
+/* ============================================================
+   جلب صلاحيات مستخدم معين
+============================================================ */
+
+export async function getUserPermissions(
+  userId: string
+) {
+  const allowed =
+    await canManageUsers();
+
+  if (!allowed) {
+    return {
+      success: false,
+      error:
+        "ليس لديك صلاحية إدارة صلاحيات المستخدمين.",
+    };
+  }
+
+  const currentUser =
+    await getCurrentUser();
+
+  if (!currentUser) {
+    return {
+      success: false,
+      error:
+        "يجب تسجيل الدخول أولًا.",
+    };
+  }
+
+  const admin =
+    getAdminClient();
+
+  /* ==========================================================
+     التأكد أن المستخدم من نفس الشركة
+  ========================================================== */
+
+  const {
+    data: targetUser,
+    error: targetUserError,
+  } =
+    await admin
+      .from("users")
+      .select(
+        "id, company_id, role_id"
+      )
+      .eq(
+        "id",
+        userId
+      )
+      .single();
+
+  if (
+    targetUserError ||
+    !targetUser
+  ) {
+    return {
+      success: false,
+      error:
+        "المستخدم غير موجود.",
+    };
+  }
+
+  if (
+    targetUser.company_id !==
+    currentUser.company_id
+  ) {
+    return {
+      success: false,
+      error:
+        "لا يمكنك إدارة مستخدم خارج شركتك.",
+    };
+  }
+
+  /* ==========================================================
+     تحميل الصلاحيات
+  ========================================================== */
+
+  const [
+    permissionsResult,
+    rolePermissionsResult,
+    userPermissionsResult,
+  ] = await Promise.all([
+    admin
+      .from("permissions")
+      .select(
+        "id, name, code, description"
+      )
+      .order("code"),
+
+    admin
+      .from("role_permissions")
+      .select(
+        "permission_id"
+      )
+      .eq(
+        "role_id",
+        targetUser.role_id
+      ),
+
+    admin
+      .from("user_permissions")
+      .select(
+        "permission_id, allowed"
+      )
+      .eq(
+        "user_id",
+        userId
+      ),
+  ]);
+
+  if (
+    permissionsResult.error
+  ) {
+    return {
+      success: false,
+      error:
+        permissionsResult.error
+          .message,
+    };
+  }
+
+  if (
+    rolePermissionsResult.error
+  ) {
+    return {
+      success: false,
+      error:
+        rolePermissionsResult.error
+          .message,
+    };
+  }
+
+  if (
+    userPermissionsResult.error
+  ) {
+    return {
+      success: false,
+      error:
+        userPermissionsResult.error
+          .message,
+    };
+  }
+
+  return {
+    success: true,
+
+    permissions:
+      permissionsResult.data ??
+      [],
+
+    rolePermissionIds:
+      (
+        rolePermissionsResult.data ??
+        []
+      ).map(
+        (permission) =>
+          permission.permission_id
+      ),
+
+    userPermissions:
+      userPermissionsResult.data ??
+      [],
+  };
+}
+
+/* ============================================================
+   حفظ صلاحيات مستخدم معين
+============================================================ */
+
+export async function saveUserPermissions(
+  userId: string,
+  changes: {
+    permission_id: string;
+    mode:
+      | "role"
+      | "allow"
+      | "deny";
+  }[]
+) {
+  const allowed =
+    await canManageUsers();
+
+  if (!allowed) {
+    return {
+      success: false,
+      error:
+        "ليس لديك صلاحية إدارة صلاحيات المستخدمين.",
+    };
+  }
+
+  const currentUser =
+    await getCurrentUser();
+
+  if (!currentUser) {
+    return {
+      success: false,
+      error:
+        "يجب تسجيل الدخول أولًا.",
+    };
+  }
+
+  const admin =
+    getAdminClient();
+
+  /* ==========================================================
+     التأكد أن المستخدم من نفس الشركة
+  ========================================================== */
+
+  const {
+    data: targetUser,
+    error: targetError,
+  } =
+    await admin
+      .from("users")
+      .select(
+        "id, company_id"
+      )
+      .eq(
+        "id",
+        userId
+      )
+      .single();
+
+  if (
+    targetError ||
+    !targetUser
+  ) {
+    return {
+      success: false,
+      error:
+        "المستخدم غير موجود.",
+    };
+  }
+
+  if (
+    targetUser.company_id !==
+    currentUser.company_id
+  ) {
+    return {
+      success: false,
+      error:
+        "لا يمكنك تعديل صلاحيات مستخدم خارج شركتك.",
+    };
+  }
+
+  /* ==========================================================
+     التحقق من الصلاحيات المرسلة
+  ========================================================== */
+
+  const permissionIds =
+    changes.map(
+      (change) =>
+        change.permission_id
+    );
+
+  if (
+    permissionIds.length > 0
+  ) {
+    const {
+      data: validPermissions,
+      error:
+        permissionsError,
+    } =
+      await admin
+        .from("permissions")
+        .select("id")
+        .in(
+          "id",
+          permissionIds
+        );
+
+    if (
+      permissionsError
+    ) {
+      return {
+        success: false,
+        error:
+          permissionsError.message,
+      };
+    }
+
+    const validIds =
+      new Set(
+        (
+          validPermissions ??
+          []
+        ).map(
+          (permission) =>
+            permission.id
+        )
+      );
+
+    const invalid =
+      permissionIds.some(
+        (id) =>
+          !validIds.has(id)
+      );
+
+    if (invalid) {
+      return {
+        success: false,
+        error:
+          "توجد صلاحية غير صالحة.",
+      };
+    }
+  }
+
+  /* ==========================================================
+     حذف الاستثناءات القديمة
+  ========================================================== */
+
+  const {
+    error: deleteError,
+  } =
+    await admin
+      .from("user_permissions")
+      .delete()
+      .eq(
+        "user_id",
+        userId
+      );
+
+  if (deleteError) {
+    return {
+      success: false,
+      error:
+        deleteError.message,
+    };
+  }
+
+  /* ==========================================================
+     إنشاء الاستثناءات الجديدة فقط
+     
+     role  = لا يوجد override
+     allow = allowed = true
+     deny  = allowed = false
+  ========================================================== */
+
+  const overrides =
+    changes
+      .filter(
+        (change) =>
+          change.mode ===
+            "allow" ||
+          change.mode ===
+            "deny"
+      )
+      .map(
+        (change) => ({
+          user_id:
+            userId,
+
+          permission_id:
+            change.permission_id,
+
+          allowed:
+            change.mode ===
+            "allow",
+        })
+      );
+
+  if (
+    overrides.length > 0
+  ) {
+    const {
+      error: insertError,
+    } =
+      await admin
+        .from(
+          "user_permissions"
+        )
+        .insert(
+          overrides
+        );
+
+    if (insertError) {
+      return {
+        success: false,
+        error:
+          insertError.message,
+      };
+    }
+  }
+
+  return {
+    success: true,
+  };
 }

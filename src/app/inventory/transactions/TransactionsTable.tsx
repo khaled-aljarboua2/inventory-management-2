@@ -5,7 +5,10 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   ClipboardList,
+  RotateCcw,
   Search,
+  Warehouse,
+  X,
 } from "lucide-react";
 
 type Transaction = {
@@ -47,15 +50,28 @@ type Transaction = {
     | null;
 };
 
+type Location = {
+  id: string;
+  name: string;
+  code: string;
+};
+
 type Props = {
   transactions?: Transaction[];
+  locations?: Location[];
 };
 
 export default function TransactionsTable({
   transactions = [],
+  locations = [],
 }: Props) {
   const [search, setSearch] =
     useState("");
+
+  const [
+    locationFilter,
+    setLocationFilter,
+  ] = useState("all");
 
   const [
     transactionFilter,
@@ -66,6 +82,10 @@ export default function TransactionsTable({
     directionFilter,
     setDirectionFilter,
   ] = useState("all");
+
+  // ============================================================
+  // الفلاتر
+  // ============================================================
 
   const filteredTransactions =
     useMemo(() => {
@@ -105,9 +125,7 @@ export default function TransactionsTable({
 
           const matchesSearch =
             !query ||
-            productName.includes(
-              query
-            ) ||
+            productName.includes(query) ||
             sku.includes(query) ||
             locationName.includes(
               query
@@ -115,37 +133,36 @@ export default function TransactionsTable({
             locationCode.includes(
               query
             ) ||
-            userName.includes(
-              query
-            ) ||
+            userName.includes(query) ||
             type.includes(query) ||
             reference.includes(query);
 
-          const matchesType =
-            transactionFilter ===
-              "all" ||
-            transactionFilter ===
-              String(
-                transaction.transaction_type
-              ).toLowerCase();
+          const matchesLocation =
+            locationFilter === "all" ||
+            transaction.location_id ===
+              locationFilter;
 
-          const quantity =
-            Number(
-              transaction.quantity ?? 0
-            );
+          const matchesType =
+            transactionFilter === "all" ||
+            String(
+              transaction.transaction_type
+            ).toLowerCase() ===
+              transactionFilter;
+
+          const quantity = Number(
+            transaction.quantity ?? 0
+          );
 
           const matchesDirection =
-            directionFilter ===
-              "all" ||
-            (directionFilter ===
-              "in" &&
+            directionFilter === "all" ||
+            (directionFilter === "in" &&
               quantity > 0) ||
-            (directionFilter ===
-              "out" &&
+            (directionFilter === "out" &&
               quantity < 0);
 
           return (
             matchesSearch &&
+            matchesLocation &&
             matchesType &&
             matchesDirection
           );
@@ -154,9 +171,43 @@ export default function TransactionsTable({
     }, [
       transactions,
       search,
+      locationFilter,
       transactionFilter,
       directionFilter,
     ]);
+
+  // ============================================================
+  // الإحصائيات الخاصة بالنتائج الحالية
+  // ============================================================
+
+  const totalIncoming =
+    filteredTransactions.filter(
+      (transaction) =>
+        Number(transaction.quantity) > 0
+    ).length;
+
+  const totalOutgoing =
+    filteredTransactions.filter(
+      (transaction) =>
+        Number(transaction.quantity) < 0
+    ).length;
+
+  const hasFilters =
+    search.trim() !== "" ||
+    locationFilter !== "all" ||
+    transactionFilter !== "all" ||
+    directionFilter !== "all";
+
+  // ============================================================
+  // الأدوات
+  // ============================================================
+
+  function resetFilters() {
+    setSearch("");
+    setLocationFilter("all");
+    setTransactionFilter("all");
+    setDirectionFilter("all");
+  }
 
   function formatNumber(
     value: number
@@ -181,27 +232,114 @@ export default function TransactionsTable({
     ).format(new Date(value));
   }
 
+  const selectedLocation =
+    locationFilter === "all"
+      ? null
+      : locations.find(
+          (location) =>
+            location.id ===
+            locationFilter
+        );
+
   return (
     <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       {/* ======================================================
-          رأس الجدول
+          رأس القسم
       ======================================================= */}
 
-      <div className="border-b border-slate-100 p-5 sm:p-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              سجل الحركات
-            </h2>
+      <div className="border-b border-slate-100 bg-white p-5 sm:p-6">
+        <div className="flex flex-col gap-5">
+          {/* العنوان */}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <ClipboardList
+                    size={19}
+                  />
+                </div>
 
-            <p className="mt-1 text-sm text-slate-400">
-              {filteredTransactions.length} حركة
-            </p>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    سجل الحركات
+                  </h2>
+
+                  <p className="mt-0.5 text-sm text-slate-400">
+                    {filteredTransactions.length.toLocaleString(
+                      "ar-SA"
+                    )}{" "}
+                    حركة مطابقة للفلاتر الحالية
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* الموقع المحدد */}
+            {selectedLocation && (
+              <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3.5 py-2.5 text-sm font-medium text-blue-700">
+                <Warehouse size={16} />
+
+                <span>
+                  {selectedLocation.name}
+                </span>
+
+                <span className="font-mono text-xs text-blue-500">
+                  {selectedLocation.code}
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          {/* ==================================================
+              اختيار الموقع
+          =================================================== */}
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <Warehouse
+                size={16}
+                className="text-slate-500"
+              />
+
+              <label className="text-xs font-semibold text-slate-600">
+                الموقع / الفرع
+              </label>
+            </div>
+
+            <select
+              value={locationFilter}
+              onChange={(event) =>
+                setLocationFilter(
+                  event.target.value
+                )
+              }
+              className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+            >
+              <option value="all">
+                جميع المواقع
+              </option>
+
+              {locations.map(
+                (location) => (
+                  <option
+                    key={location.id}
+                    value={location.id}
+                  >
+                    {location.name} (
+                    {location.code})
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          {/* ==================================================
+              البحث والفلاتر
+          =================================================== */}
+
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_180px_auto]">
             {/* البحث */}
-            <div className="relative sm:w-80">
+            <div className="relative">
               <Search
                 size={18}
                 className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -215,9 +353,22 @@ export default function TransactionsTable({
                     event.target.value
                   )
                 }
-                placeholder="منتج، SKU، موقع، مستخدم..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                placeholder="ابحث عن منتج أو SKU أو مستخدم..."
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
               />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSearch("")
+                  }
+                  className="absolute left-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                  aria-label="مسح البحث"
+                >
+                  <X size={15} />
+                </button>
+              )}
             </div>
 
             {/* نوع الحركة */}
@@ -228,10 +379,10 @@ export default function TransactionsTable({
                   event.target.value
                 )
               }
-              className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+              className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
             >
               <option value="all">
-                جميع الحركات
+                جميع أنواع الحركات
               </option>
 
               <option value="purchase">
@@ -259,7 +410,7 @@ export default function TransactionsTable({
                   event.target.value
                 )
               }
-              className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+              className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
             >
               <option value="all">
                 كل الاتجاهات
@@ -273,6 +424,65 @@ export default function TransactionsTable({
                 خصم
               </option>
             </select>
+
+            {/* إعادة الضبط */}
+            {hasFilters ? (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+              >
+                <RotateCcw
+                  size={16}
+                />
+
+                إعادة ضبط
+              </button>
+            ) : (
+              <div className="hidden lg:block" />
+            )}
+          </div>
+
+          {/* ==================================================
+              ملخص النتائج
+          =================================================== */}
+
+          <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
+              <span>
+                النتائج:
+                <strong className="mr-1 text-slate-800">
+                  {filteredTransactions.length.toLocaleString(
+                    "ar-SA"
+                  )}
+                </strong>
+              </span>
+
+              <span>
+                إضافة:
+                <strong className="mr-1 text-emerald-600">
+                  {totalIncoming.toLocaleString(
+                    "ar-SA"
+                  )}
+                </strong>
+              </span>
+
+              <span>
+                خصم:
+                <strong className="mr-1 text-red-600">
+                  {totalOutgoing.toLocaleString(
+                    "ar-SA"
+                  )}
+                </strong>
+              </span>
+            </div>
+
+            {hasFilters && (
+              <span className="text-xs text-blue-600">
+                يتم عرض النتائج حسب الفلاتر
+                المحددة
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -345,8 +555,25 @@ export default function TransactionsTable({
                   </p>
 
                   <p className="mt-1 text-sm text-slate-400">
-                    جرّب تغيير البحث أو الفلاتر.
+                    جرّب تغيير البحث أو الفلاتر
+                    المحددة.
                   </p>
+
+                  {hasFilters && (
+                    <button
+                      type="button"
+                      onClick={
+                        resetFilters
+                      }
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    >
+                      <RotateCcw
+                        size={15}
+                      />
+
+                      إعادة ضبط الفلاتر
+                    </button>
+                  )}
                 </td>
               </tr>
             ) : (
@@ -492,8 +719,7 @@ export default function TransactionsTable({
                       <td className="px-5 py-5 text-sm text-slate-600">
                         {
                           transaction.users
-                            ?.full_name ??
-                          "—"
+                            ?.full_name ?? "—"
                         }
                       </td>
 
@@ -522,6 +748,10 @@ export default function TransactionsTable({
   );
 }
 
+// ============================================================
+// أسماء أنواع الحركات
+// ============================================================
+
 function transactionTypeLabel(
   type: string
 ) {
@@ -544,6 +774,10 @@ function transactionTypeLabel(
       return type || "حركة";
   }
 }
+
+// ============================================================
+// ألوان أنواع الحركات
+// ============================================================
 
 function transactionTypeClass(
   type: string
@@ -568,6 +802,10 @@ function transactionTypeClass(
   }
 }
 
+// ============================================================
+// أسماء المراجع
+// ============================================================
+
 function referenceLabel(
   referenceType:
     | string
@@ -588,7 +826,6 @@ function referenceLabel(
       return "تسوية مخزون";
 
     default:
-      return referenceType ||
-        "—";
+      return referenceType || "—";
   }
 }

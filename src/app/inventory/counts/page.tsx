@@ -29,6 +29,10 @@ type Location = {
 export default async function StockCountsPage() {
   const supabase = await createClient();
 
+  // ============================================================
+  // المستخدم الحالي
+  // ============================================================
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -45,6 +49,10 @@ export default async function StockCountsPage() {
       </DashboardLayout>
     );
   }
+
+  // ============================================================
+  // مستخدم النظام
+  // ============================================================
 
   const {
     data: dbUser,
@@ -70,6 +78,48 @@ export default async function StockCountsPage() {
       </DashboardLayout>
     );
   }
+
+  // ============================================================
+  // التحقق من صلاحية الجرد
+  // ============================================================
+
+  const {
+    data: hasCountPermission,
+    error: permissionError,
+  } = await supabase.rpc(
+    "has_permission",
+    {
+      permission_code: "stock.count",
+    }
+  );
+
+  if (
+    permissionError ||
+    !hasCountPermission
+  ) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="mx-auto w-full max-w-[1600px]"
+        >
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+            <h1 className="text-lg font-bold text-red-800">
+              ليس لديك صلاحية الوصول
+            </h1>
+
+            <p className="mt-2 text-sm text-red-600">
+              لا تملك الصلاحية اللازمة للوصول إلى صفحة جرد المخزون.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ============================================================
+  // تحميل بيانات الجرد والمواقع
+  // ============================================================
 
   const [
     {
@@ -115,6 +165,10 @@ export default async function StockCountsPage() {
       .order("name"),
   ]);
 
+  // ============================================================
+  // أخطاء تحميل البيانات
+  // ============================================================
+
   if (
     countsError ||
     locationsError
@@ -131,11 +185,19 @@ export default async function StockCountsPage() {
     );
   }
 
+  // ============================================================
+  // طلبات الجرد التابعة للشركة
+  // ============================================================
+
   const companyCounts: StockCount[] =
     (counts ?? []).filter(
       (count: any) =>
         count.locations
     );
+
+  // ============================================================
+  // الصفحة
+  // ============================================================
 
   return (
     <DashboardLayout>

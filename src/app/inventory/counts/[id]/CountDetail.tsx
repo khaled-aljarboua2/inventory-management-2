@@ -1,14 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
+  Boxes,
   CheckCircle2,
   ClipboardCheck,
+  Layers3,
+  Loader2,
   Package,
+  Plus,
   Save,
-  AlertTriangle,
+  Search,
+  Trash2,
+  X,
 } from "lucide-react";
 
 type CountItem = {
@@ -16,36 +28,33 @@ type CountItem = {
   product_id: string;
   system_quantity: number;
   counted_quantity: number | null;
-  difference_quantity: number | null;
   notes: string | null;
-
-  products:
-    | {
-        id: string;
-        name: string;
-        sku: string;
-      }
-    | null;
+  products: {
+    id: string;
+    name: string;
+    sku: string;
+  } | null;
 };
 
 type StockCount = {
   id: string;
-  location_id: string;
   status: string;
-  notes: string | null;
-  created_at: string;
-  completed_at: string | null;
-
-  locations:
-    | {
-        id: string;
-        name: string;
-        code: string;
-      }
-    | null;
-
+  locations: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
   items: CountItem[];
 };
+
+type Product = {
+  id: string;
+  name: string;
+  sku: string;
+  system_quantity: number;
+};
+
+type AddMode = "all" | "with_stock" | "selected";
 
 export default function CountDetail({
   countId,
@@ -70,13 +79,43 @@ export default function CountDetail({
   const [completing, setCompleting] =
     useState(false);
 
+  const [deletingItemId, setDeletingItemId] =
+    useState<string | null>(null);
+
   const [message, setMessage] =
     useState("");
 
   const [error, setError] =
     useState("");
 
-  async function loadCount() {
+  const [countSearch, setCountSearch] =
+    useState("");
+
+  const [showAddProducts, setShowAddProducts] =
+    useState(false);
+
+  const [addMode, setAddMode] =
+    useState<AddMode>("selected");
+
+  const [products, setProducts] =
+    useState<Product[]>([]);
+
+  const [productSearch, setProductSearch] =
+    useState("");
+
+  const [selectedProductIds, setSelectedProductIds] =
+    useState<string[]>([]);
+
+  const [loadingProducts, setLoadingProducts] =
+    useState(false);
+
+  const [addingProducts, setAddingProducts] =
+    useState(false);
+
+  const [addError, setAddError] =
+    useState("");
+
+  const loadCount = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -84,47 +123,38 @@ export default function CountDetail({
       const response = await fetch(
         `/api/inventory/counts/${countId}`,
         {
-          method: "GET",
           cache: "no-store",
         }
       );
 
-      const result =
-        await response.json();
+      const result = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !result.count) {
         throw new Error(
-          result.error ??
-            "تعذر تحميل الجرد."
+          result.error ?? "تعذر تحميل الجرد."
         );
       }
 
       setCount(result.count);
 
-      const quantityMap: Record<
+      const newQuantities: Record<
         string,
         string
       > = {};
 
-      const notesMap: Record<
-        string,
-        string
-      > = {};
+      const newNotes: Record<string, string> = {};
 
-      for (const item of result.count.items) {
-        quantityMap[item.id] =
+      for (const item of result.count.items ?? []) {
+        newQuantities[item.id] =
           item.counted_quantity === null
             ? ""
-            : String(
-                item.counted_quantity
-              );
+            : String(item.counted_quantity);
 
-        notesMap[item.id] =
-          item.notes ?? "";
+        newNotes[item.id] = item.notes ?? "";
       }
 
-      setQuantities(quantityMap);
-      setNotes(notesMap);
+      setQuantities(newQuantities);
+      setNotes(newNotes);
     } catch (err) {
       setError(
         err instanceof Error
@@ -134,63 +164,272 @@ export default function CountDetail({
     } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    loadCount();
   }, [countId]);
 
-  const filledCount =
-    useMemo(() => {
-      if (!count) return 0;
+  const loadProducts = useCallback(
+    async (
+      search = "",
+      withStock = false
+    ) => {
+      setLoadingProducts(true);
+      setAddError("");
 
-      return count.items.filter(
-        (item) => {
-          const value =
-            quantities[item.id];
+      try {
+        const params = new URLSearchParams();
 
-          return (
-            value !== undefined &&
-            value !== "" &&
-            Number.isFinite(
-              Number(value)
-            ) &&
-            Number(value) >= 0
+        if (search.trim()) {
+          params.set("search", search.trim());
+        }
+
+        if (withStock) {
+          params.set("withStock", "true");
+        }
+
+        const response = await fetch(
+          `/api/inventory/counts/${countId}/items?${params.toString()}`,
+          {
+            cache: "no-store",
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.error ??
+              "تعذر تحميل المنتجات."
           );
         }
-      ).length;
-    }, [count, quantities]);
+
+        setProducts(result.products ?? []);
+      } catch (err) {
+        setAddError(
+          err instanceof Error
+            ? err.message
+            : "تعذر تحميل المنتجات."
+        );
+      } finally {
+        setLoadingProducts(false);
+      }
+    },
+    [countId]
+  );
+
+  useEffect(() => {
+    void loadCount();
+  }, [loadCount]);
+
+  useEffect(() => {
+    if (!showAddProducts) return;
+
+    const timer = window.setTimeout(() => {
+      void loadProducts(
+        productSearch,
+        addMode === "with_stock"
+      );
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    showAddProducts,
+    addMode,
+    productSearch,
+    loadProducts,
+  ]);
 
   const totalItems =
     count?.items.length ?? 0;
 
+  const filledCount = useMemo(() => {
+    if (!count) return 0;
+
+    return count.items.filter((item) => {
+      const value = quantities[item.id];
+
+      return (
+        value !== undefined &&
+        value !== "" &&
+        Number.isFinite(Number(value)) &&
+        Number(value) >= 0
+      );
+    }).length;
+  }, [count, quantities]);
+
   const allCounted =
     totalItems > 0 &&
-    filledCount === totalItems;
+    totalItems === filledCount;
+
+  const filteredItems = useMemo(() => {
+    if (!count) return [];
+
+    const search = countSearch
+      .trim()
+      .toLowerCase();
+
+    if (!search) return count.items;
+
+    return count.items.filter((item) => {
+      const name =
+        item.products?.name.toLowerCase() ?? "";
+
+      const sku =
+        item.products?.sku.toLowerCase() ?? "";
+
+      return (
+        name.includes(search) ||
+        sku.includes(search)
+      );
+    });
+  }, [count, countSearch]);
+
+  const isCompleted =
+    count?.status === "completed";
+
+  function openAddProducts() {
+    setShowAddProducts(true);
+    setAddMode("selected");
+    setProductSearch("");
+    setSelectedProductIds([]);
+    setAddError("");
+  }
+
+  function toggleProduct(productId: string) {
+    setSelectedProductIds((current) =>
+      current.includes(productId)
+        ? current.filter((id) => id !== productId)
+        : [...current, productId]
+    );
+  }
+
+  async function addProducts() {
+    if (
+      addMode === "selected" &&
+      selectedProductIds.length === 0
+    ) {
+      setAddError(
+        "اختر منتجًا واحدًا على الأقل."
+      );
+      return;
+    }
+
+    setAddingProducts(true);
+    setAddError("");
+    setMessage("");
+    setError("");
+
+    try {
+      const body =
+        addMode === "selected"
+          ? {
+              mode: "selected",
+              productIds: selectedProductIds,
+            }
+          : {
+              mode: addMode,
+            };
+
+      const response = await fetch(
+        `/api/inventory/counts/${countId}/items`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ??
+            "تعذر إضافة المنتجات."
+        );
+      }
+
+      setShowAddProducts(false);
+
+      setMessage(
+        result.message ??
+          "تمت إضافة المنتجات بنجاح."
+      );
+
+      await loadCount();
+    } catch (err) {
+      setAddError(
+        err instanceof Error
+          ? err.message
+          : "تعذر إضافة المنتجات."
+      );
+    } finally {
+      setAddingProducts(false);
+    }
+  }
+
+  async function deleteItem(item: CountItem) {
+    const confirmed = window.confirm(
+      `هل تريد حذف "${item.products?.name ?? "هذا المنتج"}" من الجرد؟`
+    );
+
+    if (!confirmed) return;
+
+    setDeletingItemId(item.id);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/inventory/counts/${countId}/items`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            itemId: item.id,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ??
+            "تعذر حذف المنتج من الجرد."
+        );
+      }
+
+      setMessage(
+        result.message ??
+          "تم حذف المنتج من عملية الجرد."
+      );
+
+      await loadCount();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "تعذر حذف المنتج من الجرد."
+      );
+    } finally {
+      setDeletingItemId(null);
+    }
+  }
 
   async function saveItems() {
-    if (!count) return;
+    if (!count || totalItems === 0) return;
 
     setSaving(true);
     setMessage("");
     setError("");
 
     try {
-      const items = count.items.map(
-        (item) => ({
-          id: item.id,
-          counted_quantity:
-            quantities[item.id] === ""
-              ? null
-              : Number(
-                  quantities[item.id]
-                ),
-          notes:
-            notes[item.id]?.trim() ||
-            null,
-        })
-      );
-
       const response = await fetch(
         `/api/inventory/counts/${countId}`,
         {
@@ -200,13 +439,20 @@ export default function CountDetail({
               "application/json",
           },
           body: JSON.stringify({
-            items,
+            items: count.items.map((item) => ({
+              id: item.id,
+              counted_quantity:
+                quantities[item.id] === ""
+                  ? null
+                  : Number(quantities[item.id]),
+              notes:
+                notes[item.id]?.trim() || null,
+            })),
           }),
         }
       );
 
-      const result =
-        await response.json();
+      const result = await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -232,21 +478,18 @@ export default function CountDetail({
   }
 
   async function completeCount() {
-    if (!count) return;
-
-    if (!allCounted) {
+    if (!count || !allCounted) {
       setError(
         "يجب إدخال الكمية الفعلية لجميع الأصناف قبل إكمال الجرد."
       );
       return;
     }
 
-    const confirmed =
-      window.confirm(
-        "هل أنت متأكد من إكمال الجرد؟ سيتم تطبيق الفروقات على المخزون وتسجيل التسويات، ولا يمكن التراجع عن العملية."
-      );
-
-    if (!confirmed) {
+    if (
+      !window.confirm(
+        "هل أنت متأكد من إكمال الجرد؟ لا يمكن التراجع عن العملية."
+      )
+    ) {
       return;
     }
 
@@ -255,37 +498,26 @@ export default function CountDetail({
     setError("");
 
     try {
-      /*
-       * نحفظ آخر التعديلات أولًا.
-       */
-      const saveResponse =
-        await fetch(
-          `/api/inventory/counts/${countId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              items: count.items.map(
-                (item) => ({
-                  id: item.id,
-                  counted_quantity:
-                    Number(
-                      quantities[
-                        item.id
-                      ]
-                    ),
-                  notes:
-                    notes[
-                      item.id
-                    ]?.trim() || null,
-                })
-              ),
-            }),
-          }
-        );
+      const items = count.items.map((item) => ({
+        id: item.id,
+        counted_quantity: Number(
+          quantities[item.id]
+        ),
+        notes:
+          notes[item.id]?.trim() || null,
+      }));
+
+      const saveResponse = await fetch(
+        `/api/inventory/counts/${countId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({ items }),
+        }
+      );
 
       const saveResult =
         await saveResponse.json();
@@ -297,9 +529,6 @@ export default function CountDetail({
         );
       }
 
-      /*
-       * إكمال الجرد
-       */
       const response = await fetch(
         `/api/inventory/counts/${countId}/complete`,
         {
@@ -307,8 +536,7 @@ export default function CountDetail({
         }
       );
 
-      const result =
-        await response.json();
+      const result = await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -335,48 +563,27 @@ export default function CountDetail({
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-        <p className="text-sm text-slate-500">
-          جاري تحميل الجرد...
-        </p>
-      </div>
-    );
-  }
-
-  if (error && !count) {
-    return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-6">
-        <p className="font-semibold text-red-700">
-          {error}
-        </p>
+      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
+        جاري تحميل الجرد...
       </div>
     );
   }
 
   if (!count) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center">
-        <p className="font-semibold text-slate-700">
-          الجرد غير موجود.
-        </p>
+      <div className="rounded-3xl border border-red-200 bg-red-50 p-6 font-semibold text-red-700">
+        {error || "الجرد غير موجود."}
       </div>
     );
   }
 
-  const isCompleted =
-    count.status === "completed";
-
   return (
     <>
-      {/* ======================================================
-          رأس الصفحة
-      ======================================================= */}
-
       <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <Link
             href="/inventory/counts"
-            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-blue-600"
+            className="mb-4 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600"
           >
             <ArrowRight size={16} />
             العودة إلى الجرد
@@ -384,13 +591,11 @@ export default function CountDetail({
 
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-              <ClipboardCheck
-                size={24}
-              />
+              <ClipboardCheck size={24} />
             </div>
 
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-3xl font-bold text-slate-900">
                 جرد المخزون
               </h1>
 
@@ -403,220 +608,163 @@ export default function CountDetail({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span
-            className={`rounded-full px-4 py-2 text-xs font-semibold ${
-              isCompleted
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-orange-50 text-orange-700"
-            }`}
-          >
-            {isCompleted
-              ? "مكتمل"
-              : "قيد التنفيذ"}
-          </span>
+        {!isCompleted && (
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={openAddProducts}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white"
+            >
+              <Plus size={17} />
+              إضافة منتجات
+            </button>
 
-          {!isCompleted && (
-            <>
-              <button
-                type="button"
-                disabled={
-                  saving ||
-                  completing
-                }
-                onClick={saveItems}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >
-                <Save size={17} />
+            <button
+              type="button"
+              disabled={
+                saving ||
+                completing ||
+                totalItems === 0
+              }
+              onClick={saveItems}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            >
+              <Save size={17} />
+              {saving ? "جاري الحفظ..." : "حفظ"}
+            </button>
 
-                {saving
-                  ? "جاري الحفظ..."
-                  : "حفظ"}
-              </button>
-
-              <button
-                type="button"
-                disabled={
-                  saving ||
-                  completing ||
-                  !allCounted
-                }
-                onClick={
-                  completeCount
-                }
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <CheckCircle2
-                  size={17}
-                />
-
-                {completing
-                  ? "جاري الإكمال..."
-                  : "إكمال الجرد"}
-              </button>
-            </>
-          )}
-        </div>
+            <button
+              type="button"
+              disabled={
+                saving ||
+                completing ||
+                !allCounted
+              }
+              onClick={completeCount}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              <CheckCircle2 size={17} />
+              {completing
+                ? "جاري الإكمال..."
+                : "إكمال الجرد"}
+            </button>
+          </div>
+        )}
       </div>
-
-      {/* ======================================================
-          معلومات الجرد
-      ======================================================= */}
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <InfoCard
-          label="الموقع"
-          value={
-            count.locations
-              ?.name ?? "—"
-          }
-        />
-
-        <InfoCard
-          label="الأصناف"
-          value={`${totalItems}`}
-        />
-
-        <InfoCard
-          label="تم العد"
-          value={`${filledCount} / ${totalItems}`}
-        />
-      </div>
-
-      {/* ======================================================
-          التنبيهات
-      ======================================================= */}
 
       {message && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
+        <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
           {message}
         </div>
       )}
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+        <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      {!isCompleted &&
-        !allCounted && (
-          <div className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm text-orange-700">
-            <AlertTriangle
-              size={18}
-            />
+      {!isCompleted && totalItems === 0 && (
+        <div className="mt-5 flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-700">
+          <AlertTriangle size={18} />
+          لم تتم إضافة أي أصناف للجرد بعد.
+        </div>
+      )}
 
-            <span>
-              أدخل الكمية الفعلية لجميع الأصناف
-              قبل إكمال الجرد.
-            </span>
+      <section className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold">
+              أصناف الجرد
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-400">
+              تم العد: {filledCount} / {totalItems}
+            </p>
           </div>
-        )}
 
-      {/* ======================================================
-          جدول الجرد
-      ======================================================= */}
+          {totalItems > 0 && (
+            <div className="relative">
+              <Search
+                size={17}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
 
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-slate-900">
-            أصناف الجرد
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-400">
-            قارن رصيد النظام بالكمية الفعلية.
-          </p>
+              <input
+                value={countSearch}
+                onChange={(event) =>
+                  setCountSearch(event.target.value)
+                }
+                placeholder="ابحث بالاسم أو SKU..."
+                className="h-11 rounded-xl border border-slate-200 pr-10 pl-3 text-sm"
+              />
+            </div>
+          )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1050px] text-right">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/70">
-                <th className="px-6 py-4 text-xs text-slate-500">
-                  المنتج
-                </th>
+        {totalItems === 0 ? (
+          <div className="px-6 py-16 text-center">
+            <Package
+              size={32}
+              className="mx-auto text-slate-300"
+            />
 
-                <th className="px-6 py-4 text-xs text-slate-500">
-                  SKU
-                </th>
+            <p className="mt-4 font-semibold">
+              الجرد فارغ
+            </p>
 
-                <th className="px-6 py-4 text-xs text-slate-500">
-                  كمية النظام
-                </th>
+            <button
+              type="button"
+              onClick={openAddProducts}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white"
+            >
+              <Plus size={17} />
+              إضافة منتجات
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1150px] text-right">
+              <thead className="bg-slate-50 text-xs text-slate-500">
+                <tr>
+                  <th className="px-6 py-4">المنتج</th>
+                  <th className="px-6 py-4">SKU</th>
+                  <th className="px-6 py-4">كمية النظام</th>
+                  <th className="px-6 py-4">الكمية الفعلية</th>
+                  <th className="px-6 py-4">الفرق</th>
+                  <th className="px-6 py-4">ملاحظات</th>
+                  <th className="px-6 py-4">إجراء</th>
+                </tr>
+              </thead>
 
-                <th className="px-6 py-4 text-xs text-slate-500">
-                  الكمية الفعلية
-                </th>
+              <tbody className="divide-y divide-slate-100">
+                {filteredItems.map((item) => {
+                  const value =
+                    quantities[item.id] ?? "";
 
-                <th className="px-6 py-4 text-xs text-slate-500">
-                  الفرق
-                </th>
-
-                <th className="px-6 py-4 text-xs text-slate-500">
-                  ملاحظات
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-slate-100">
-              {count.items.map(
-                (item) => {
-                  const countedValue =
-                    quantities[item.id];
-
-                  const counted =
-                    countedValue ===
-                      undefined ||
-                    countedValue === ""
+                  const actual =
+                    value === ""
                       ? null
-                      : Number(
-                          countedValue
-                        );
-
-                  const system =
-                    Number(
-                      item.system_quantity ??
-                        0
-                    );
+                      : Number(value);
 
                   const difference =
-                    counted === null
+                    actual === null
                       ? null
-                      : counted - system;
+                      : actual -
+                        Number(item.system_quantity);
 
                   return (
-                    <tr
-                      key={item.id}
-                      className="transition hover:bg-slate-50/60"
-                    >
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                            <Package
-                              size={18}
-                            />
-                          </div>
-
-                          <p className="font-semibold text-slate-800">
-                            {
-                              item.products
-                                ?.name
-                            }
-                          </p>
-                        </div>
+                    <tr key={item.id}>
+                      <td className="px-6 py-5 font-semibold">
+                        {item.products?.name}
                       </td>
 
-                      <td className="px-6 py-5">
-                        <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-xs font-semibold text-slate-600">
-                          {
-                            item.products
-                              ?.sku
-                          }
-                        </span>
+                      <td className="px-6 py-5 font-mono text-xs">
+                        {item.products?.sku}
                       </td>
 
-                      <td className="px-6 py-5 text-lg font-bold text-slate-800">
-                        {system}
+                      <td className="px-6 py-5 font-bold">
+                        {item.system_quantity}
                       </td>
 
                       <td className="px-6 py-5">
@@ -624,103 +772,281 @@ export default function CountDetail({
                           type="number"
                           min="0"
                           step="any"
-                          disabled={
-                            isCompleted
-                          }
-                          value={
-                            countedValue ??
-                            ""
-                          }
+                          disabled={isCompleted}
+                          value={value}
                           onChange={(event) =>
-                            setQuantities(
-                              (current) => ({
-                                ...current,
-                                [item.id]:
-                                  event.target
-                                    .value,
-                              })
-                            )
+                            setQuantities((current) => ({
+                              ...current,
+                              [item.id]:
+                                event.target.value,
+                            }))
                           }
-                          className="h-11 w-32 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-100"
-                          placeholder="0"
+                          className="h-11 w-28 rounded-xl border border-slate-200 px-3"
                         />
                       </td>
 
-                      <td className="px-6 py-5">
-                        {difference ===
-                        null ? (
-                          <span className="text-sm text-slate-400">
-                            —
-                          </span>
-                        ) : difference ===
-                          0 ? (
-                          <span className="font-semibold text-emerald-600">
-                            0
-                          </span>
-                        ) : difference >
-                          0 ? (
-                          <span className="font-bold text-blue-600">
-                            +{difference}
-                          </span>
-                        ) : (
-                          <span className="font-bold text-red-600">
-                            {difference}
-                          </span>
-                        )}
+                      <td className="px-6 py-5 font-bold">
+                        {difference === null
+                          ? "—"
+                          : difference > 0
+                          ? `+${difference}`
+                          : difference}
                       </td>
 
                       <td className="px-6 py-5">
                         <input
-                          type="text"
-                          disabled={
-                            isCompleted
-                          }
-                          value={
-                            notes[item.id] ??
-                            ""
-                          }
+                          disabled={isCompleted}
+                          value={notes[item.id] ?? ""}
                           onChange={(event) =>
-                            setNotes(
-                              (current) => ({
-                                ...current,
-                                [item.id]:
-                                  event.target
-                                    .value,
-                              })
-                            )
+                            setNotes((current) => ({
+                              ...current,
+                              [item.id]:
+                                event.target.value,
+                            }))
                           }
-                          className="h-11 w-full min-w-64 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-100"
                           placeholder="ملاحظة..."
+                          className="h-11 min-w-56 rounded-xl border border-slate-200 px-3"
                         />
+                      </td>
+
+                      <td className="px-6 py-5">
+                        {!isCompleted && (
+                          <button
+                            type="button"
+                            disabled={
+                              deletingItemId === item.id
+                            }
+                            onClick={() =>
+                              void deleteItem(item)
+                            }
+                            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 disabled:opacity-50"
+                          >
+                            {deletingItemId === item.id ? (
+                              <Loader2
+                                size={16}
+                                className="animate-spin"
+                              />
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+
+                            حذف
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
-                }
-              )}
-            </tbody>
-          </table>
-        </div>
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
+
+      {showAddProducts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+          <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b p-6">
+              <div>
+                <h2 className="text-lg font-bold">
+                  إضافة منتجات للجرد
+                </h2>
+
+                <p className="mt-1 text-xs text-slate-400">
+                  اعرض المنتجات ثم أضفها.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  !addingProducts &&
+                  setShowAddProducts(false)
+                }
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="grid gap-3 border-b p-5 md:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => setAddMode("all")}
+                className={`rounded-2xl border p-4 text-right ${
+                  addMode === "all"
+                    ? "border-blue-300 bg-blue-50"
+                    : ""
+                }`}
+              >
+                <Layers3 size={20} />
+                <p className="mt-2 font-semibold">
+                  جرد شامل
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAddMode("with_stock")
+                }
+                className={`rounded-2xl border p-4 text-right ${
+                  addMode === "with_stock"
+                    ? "border-blue-300 bg-blue-50"
+                    : ""
+                }`}
+              >
+                <Boxes size={20} />
+                <p className="mt-2 font-semibold">
+                  ذات رصيد
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAddMode("selected")
+                }
+                className={`rounded-2xl border p-4 text-right ${
+                  addMode === "selected"
+                    ? "border-blue-300 bg-blue-50"
+                    : ""
+                }`}
+              >
+                <Search size={20} />
+                <p className="mt-2 font-semibold">
+                  اختيار يدوي
+                </p>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5">
+              {addError && (
+                <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
+                  {addError}
+                </div>
+              )}
+
+              <div className="relative mb-4">
+                <Search
+                  size={18}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+
+                <input
+                  value={productSearch}
+                  onChange={(event) =>
+                    setProductSearch(event.target.value)
+                  }
+                  placeholder="ابحث باسم المنتج أو SKU..."
+                  className="h-11 w-full rounded-xl border border-slate-200 pr-10 pl-4 text-sm"
+                />
+              </div>
+
+              {loadingProducts ? (
+                <div className="py-12 text-center">
+                  <Loader2
+                    className="mx-auto animate-spin text-slate-400"
+                  />
+                </div>
+              ) : (
+                <div className="max-h-96 space-y-2 overflow-y-auto">
+                  {products.map((product) => {
+                    const selected =
+                      selectedProductIds.includes(
+                        product.id
+                      );
+
+                    return (
+                      <button
+                        key={product.id}
+                        type="button"
+                        disabled={
+                          addMode !== "selected"
+                        }
+                        onClick={() =>
+                          toggleProduct(product.id)
+                        }
+                        className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-right ${
+                          selected
+                            ? "border-blue-300 bg-blue-50"
+                            : "border-slate-200"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {addMode === "selected" && (
+                            <span
+                              className={`flex h-5 w-5 items-center justify-center rounded border text-xs ${
+                                selected
+                                  ? "bg-blue-600 text-white"
+                                  : ""
+                              }`}
+                            >
+                              {selected && "✓"}
+                            </span>
+                          )}
+
+                          <div>
+                            <p className="font-semibold">
+                              {product.name}
+                            </p>
+
+                            <p className="font-mono text-xs text-slate-400">
+                              {product.sku}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-left">
+                          <p className="text-xs text-slate-400">
+                            رصيد النظام
+                          </p>
+
+                          <p className="font-bold">
+                            {product.system_quantity}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 border-t p-5">
+              <button
+                type="button"
+                onClick={() =>
+                  setShowAddProducts(false)
+                }
+                className="rounded-xl border px-5 py-2.5 text-sm"
+              >
+                إلغاء
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  addingProducts ||
+                  loadingProducts ||
+                  (addMode === "selected" &&
+                    selectedProductIds.length === 0)
+                }
+                onClick={() => void addProducts()}
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {addingProducts && (
+                  <Loader2
+                    size={16}
+                    className="animate-spin"
+                  />
+                )}
+
+                إضافة
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
-  );
-}
-
-function InfoCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-xs text-slate-400">
-        {label}
-      </p>
-
-      <p className="mt-2 text-xl font-bold text-slate-900">
-        {value}
-      </p>
-    </div>
   );
 }

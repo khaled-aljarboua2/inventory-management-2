@@ -144,3 +144,36 @@
   border-color: rgb(96 165 250);
   box-shadow: 0 0 0 4px rgb(239 246 255);
 }
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+* {
+  scrollbar-width: thin;
+}
+
+.dark body {
+  color-scheme: dark;
+}
+
+.dark .input {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42);
+  color: rgb(226 232 240);
+}
+
+.dark .input::placeholder {
+  color: rgb(100 116 139);
+}
+
+.dark .input:focus {
+  border-color: rgb(96 165 250);
+  box-shadow: 0 0 0 4px rgb(30 58 138 / 0.25);
+}

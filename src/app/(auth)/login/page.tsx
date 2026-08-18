@@ -2,31 +2,60 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { createClient } from "../../../lib/supabase/client";
+import {
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  UserRound,
+  Package,
+  ShieldCheck,
+  ArrowLeft,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
+import { loginWithUsernameOrEmail } from "./actions";
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createClient();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [identifier, setIdentifier] =
+    useState("");
 
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+  const [password, setPassword] =
+    useState("");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  async function handleLogin(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
+
+    if (loading) {
+      return;
+    }
 
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const result =
+      await loginWithUsernameOrEmail(
+        identifier,
+        password
+      );
 
-    if (error) {
-      setError("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+    if (!result.success) {
+      setError(
+        result.error ??
+          "تعذر تسجيل الدخول."
+      );
+
       setLoading(false);
       return;
     }
@@ -38,70 +67,278 @@ export default function LoginPage() {
   return (
     <main
       dir="rtl"
-      className="min-h-screen bg-slate-50 flex items-center justify-center p-6"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-5 py-10"
     >
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-slate-900">
-              نظام إدارة المخزون
-            </h1>
+      {/* =====================================================
+          الخلفية
+      ====================================================== */}
 
-            <p className="text-sm text-slate-500 mt-2">
-              تسجيل الدخول إلى حسابك
-            </p>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Glow أزرق */}
+        <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-blue-200/40 blur-3xl" />
+
+        {/* Glow بنفسجي */}
+        <div className="absolute -bottom-40 -left-32 h-[420px] w-[420px] rounded-full bg-indigo-200/30 blur-3xl" />
+
+        {/* Glow مركزي */}
+        <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-100/30 blur-3xl" />
+
+        {/* Grid خفيف */}
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#0f172a 1px, transparent 1px), linear-gradient(90deg, #0f172a 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
+      </div>
+
+      {/* =====================================================
+          المحتوى
+      ====================================================== */}
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* ===================================================
+            الشعار
+        ==================================================== */}
+
+        <div className="mb-7 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-200/70 transition-transform duration-500 hover:scale-105 hover:rotate-1">
+            <Package
+              size={31}
+              strokeWidth={1.8}
+            />
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                البريد الإلكتروني
-              </label>
+          <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900">
+            نظام إدارة المخزون
+          </h1>
 
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@company.com"
-                required
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                كلمة المرور
-              </label>
-
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-slate-900 text-white py-3 font-medium transition hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
-            </button>
-          </form>
+          <p className="mt-2 text-sm text-slate-500">
+            إدارة المخزون والفروع والمستودعات بسهولة
+          </p>
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-6">
-          نظام إدارة المخزون متعدد الفروع
-        </p>
+        {/* ===================================================
+            بطاقة الدخول
+        ==================================================== */}
+
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-xl shadow-slate-900/[0.06] backdrop-blur-xl sm:p-8">
+          {/* الخط العلوي */}
+
+          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500" />
+
+          {/* Glow داخلي */}
+
+          <div className="pointer-events-none absolute -left-20 -top-20 h-40 w-40 rounded-full bg-blue-100/40 blur-3xl" />
+
+          <div className="relative">
+            {/* =================================================
+                العنوان
+            ================================================== */}
+
+            <div className="mb-7">
+              <div className="mb-2 flex items-center gap-2">
+                <ShieldCheck
+                  size={18}
+                  className="text-blue-600"
+                />
+
+                <span className="text-xs font-semibold text-blue-600">
+                  دخول آمن
+                </span>
+              </div>
+
+              <h2 className="text-xl font-bold text-slate-900">
+                تسجيل الدخول
+              </h2>
+
+              <p className="mt-1.5 text-sm text-slate-400">
+                استخدم اسم المستخدم أو البريد الإلكتروني.
+              </p>
+            </div>
+
+            {/* =================================================
+                النموذج
+            ================================================== */}
+
+            <form
+              onSubmit={handleLogin}
+              className="space-y-5"
+            >
+              {/* =================================================
+                  اسم المستخدم / البريد
+              ================================================== */}
+
+              <div>
+                <label
+                  htmlFor="identifier"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
+                  اسم المستخدم أو البريد الإلكتروني
+                </label>
+
+                <div className="group relative">
+                  <UserRound
+                    size={18}
+                    strokeWidth={1.8}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600"
+                  />
+
+                  <input
+                    id="identifier"
+                    type="text"
+                    value={identifier}
+                    onChange={(event) =>
+                      setIdentifier(
+                        event.target.value
+                      )
+                    }
+                    placeholder="اسم المستخدم أو البريد الإلكتروني"
+                    autoComplete="username"
+                    required
+                    disabled={loading}
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/70 pr-11 pl-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </div>
+              </div>
+
+              {/* =================================================
+                  كلمة المرور
+              ================================================== */}
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
+                  كلمة المرور
+                </label>
+
+                <div className="group relative">
+                  <LockKeyhole
+                    size={18}
+                    strokeWidth={1.8}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600"
+                  />
+
+                  <input
+                    id="password"
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
+                    value={password}
+                    onChange={(event) =>
+                      setPassword(
+                        event.target.value
+                      )
+                    }
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                    disabled={loading}
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/70 pr-11 pl-12 text-sm tracking-wider text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowPassword(
+                        !showPassword
+                      )
+                    }
+                    disabled={loading}
+                    className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={
+                      showPassword
+                        ? "إخفاء كلمة المرور"
+                        : "إظهار كلمة المرور"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff size={17} />
+                    ) : (
+                      <Eye size={17} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* =================================================
+                  رسالة الخطأ
+              ================================================== */}
+
+              {error && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                >
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-xs font-bold">
+                    !
+                  </span>
+
+                  <span>
+                    {error}
+                  </span>
+                </div>
+              )}
+
+              {/* =================================================
+                  زر الدخول
+              ================================================== */}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="group relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold text-white shadow-lg shadow-blue-200/60 transition-all duration-300 hover:-translate-y-0.5 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl hover:shadow-blue-200/70 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60"
+              >
+                {/* تأثير الحركة */}
+
+                <span className="absolute inset-0 -translate-x-full bg-white/10 transition-transform duration-700 group-hover:translate-x-full" />
+
+                <span className="relative flex items-center gap-2">
+                  {loading ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+
+                      <span>
+                        جاري تسجيل الدخول...
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        تسجيل الدخول
+                      </span>
+
+                      <ArrowLeft
+                        size={17}
+                        className="transition-transform duration-300 group-hover:-translate-x-1"
+                      />
+                    </>
+                  )}
+                </span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* ===================================================
+            Footer
+        ==================================================== */}
+
+        <div className="mt-6 text-center">
+          <p className="text-xs text-slate-400">
+            نظام إدارة المخزون متعدد الفروع
+          </p>
+
+          <p className="mt-1 text-[10px] text-slate-300">
+            الإصدار 1.0
+          </p>
+        </div>
       </div>
     </main>
   );

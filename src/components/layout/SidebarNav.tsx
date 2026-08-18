@@ -13,6 +13,10 @@ import {
   ClipboardCheck,
   ChevronDown,
   Boxes,
+  Ruler,
+  Building2,
+  Warehouse,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -36,7 +40,7 @@ export default function SidebarNav({
     useState(true);
 
   // ============================================================
-  // الأقسام تظهر فقط إذا كان لدى المستخدم صلاحية فعلية
+  // الأقسام
   // ============================================================
 
   const hasInventory =
@@ -59,6 +63,7 @@ export default function SidebarNav({
 
   const hasManagement =
     allowed("users.view") ||
+    allowed("users.manage_access") ||
     allowed("settings.view");
 
   return (
@@ -76,9 +81,7 @@ export default function SidebarNav({
           <NavLink
             href="/dashboard"
             icon={
-              <LayoutDashboard
-                size={19}
-              />
+              <LayoutDashboard size={19} />
             }
             label="لوحة التحكم"
           />
@@ -98,9 +101,7 @@ export default function SidebarNav({
           <MenuButton
             open={inventoryOpen}
             onClick={() =>
-              setInventoryOpen(
-                !inventoryOpen
-              )
+              setInventoryOpen(!inventoryOpen)
             }
             icon={
               <Boxes size={19} />
@@ -108,10 +109,7 @@ export default function SidebarNav({
             label="المخزون"
           />
 
-          <SubMenu
-            open={inventoryOpen}
-          >
-            {/* أرصدة المخزون */}
+          <SubMenu open={inventoryOpen}>
             {allowed("stock.view") && (
               <NavLink
                 href="/inventory"
@@ -123,35 +121,28 @@ export default function SidebarNav({
               />
             )}
 
-            {/* الجرد */}
             {allowed("stock.count") && (
               <NavLink
                 href="/inventory/counts"
                 icon={
-                  <ClipboardCheck
-                    size={17}
-                  />
+                  <ClipboardCheck size={17} />
                 }
                 label="الجرد"
                 sub
               />
             )}
 
-            {/* حركة المخزون */}
             {allowed("stock.view") && (
               <NavLink
                 href="/inventory/transactions"
                 icon={
-                  <ClipboardList
-                    size={17}
-                  />
+                  <ClipboardList size={17} />
                 }
                 label="حركة المخزون"
                 sub
               />
             )}
 
-            {/* طلبات النقل */}
             {(
               allowed("transfers.view") ||
               allowed("transfers.create") ||
@@ -161,9 +152,7 @@ export default function SidebarNav({
               <NavLink
                 href="/transfers"
                 icon={
-                  <ArrowRightLeft
-                    size={17}
-                  />
+                  <ArrowRightLeft size={17} />
                 }
                 label="طلبات النقل"
                 sub
@@ -186,39 +175,27 @@ export default function SidebarNav({
           <MenuButton
             open={purchasesOpen}
             onClick={() =>
-              setPurchasesOpen(
-                !purchasesOpen
-              )
+              setPurchasesOpen(!purchasesOpen)
             }
             icon={
-              <ShoppingCart
-                size={19}
-              />
+              <ShoppingCart size={19} />
             }
             label="المشتريات"
           />
 
-          <SubMenu
-            open={purchasesOpen}
-          >
-            {allowed(
-              "purchases.view"
-            ) && (
+          <SubMenu open={purchasesOpen}>
+            {allowed("purchases.view") && (
               <NavLink
                 href="/purchases"
                 icon={
-                  <ShoppingCart
-                    size={17}
-                  />
+                  <ShoppingCart size={17} />
                 }
                 label="أوامر الشراء"
                 sub
               />
             )}
 
-            {allowed(
-              "suppliers.view"
-            ) && (
+            {allowed("suppliers.view") && (
               <NavLink
                 href="/suppliers"
                 icon={
@@ -245,9 +222,7 @@ export default function SidebarNav({
           <MenuButton
             open={masterOpen}
             onClick={() =>
-              setMasterOpen(
-                !masterOpen
-              )
+              setMasterOpen(!masterOpen)
             }
             icon={
               <Package size={19} />
@@ -255,13 +230,10 @@ export default function SidebarNav({
             label="البيانات الأساسية"
           />
 
-          <SubMenu
-            open={masterOpen}
-          >
+          <SubMenu open={masterOpen}>
             {/* المنتجات */}
-            {allowed(
-              "products.view"
-            ) && (
+
+            {allowed("products.view") && (
               <NavLink
                 href="/products"
                 icon={
@@ -272,16 +244,41 @@ export default function SidebarNav({
               />
             )}
 
-            {/* المواقع */}
-            {allowed(
-              "locations.view"
-            ) && (
+            {/* الوحدات */}
+
+            {allowed("products.view") && (
+              <NavLink
+                href="/units"
+                icon={
+                  <Ruler size={17} />
+                }
+                label="الوحدات"
+                sub
+              />
+            )}
+
+            {/* الفروع */}
+
+            {allowed("locations.view") && (
+              <NavLink
+                href="/branches"
+                icon={
+                  <Building2 size={17} />
+                }
+                label="الفروع"
+                sub
+              />
+            )}
+
+            {/* المستودعات */}
+
+            {allowed("locations.view") && (
               <NavLink
                 href="/warehouses"
                 icon={
-                  <Package size={17} />
+                  <Warehouse size={17} />
                 }
-                label="المواقع"
+                label="المستودعات"
                 sub
               />
             )}
@@ -299,6 +296,8 @@ export default function SidebarNav({
             الإدارة
           </SectionTitle>
 
+          {/* المستخدمون */}
+
           {allowed("users.view") && (
             <NavLink
               href="/users"
@@ -309,15 +308,27 @@ export default function SidebarNav({
             />
           )}
 
-          {allowed(
-            "settings.view"
-          ) && (
+          {/* الأدوار والصلاحيات */}
+
+          {allowed("users.manage_access") && (
+            <NavLink
+              href="/roles"
+              icon={
+                <ShieldCheck size={19} />
+              }
+              label="الأدوار والصلاحيات"
+            />
+          )}
+
+          {/* الإعدادات العامة */}
+
+          {allowed("settings.view") && (
             <NavLink
               href="/settings"
               icon={
                 <Settings size={19} />
               }
-              label="الإعدادات"
+              label="الإعدادات العامة"
             />
           )}
         </>
@@ -378,9 +389,7 @@ function MenuButton({
       <ChevronDown
         size={17}
         className={`text-slate-400 transition-transform ${
-          open
-            ? "rotate-180"
-            : ""
+          open ? "rotate-180" : ""
         }`}
       />
     </button>

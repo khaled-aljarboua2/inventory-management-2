@@ -66,7 +66,7 @@ export async function POST(
     }
 
     // ============================================================
-    // 3) التحقق من صلاحية الجرد
+    // 3) صلاحية الجرد
     // ============================================================
 
     const {
@@ -95,11 +95,6 @@ export async function POST(
     if (
       permissionError
     ) {
-      console.error(
-        "Permission check error:",
-        permissionError
-      );
-
       return NextResponse.json(
         {
           error:
@@ -120,7 +115,7 @@ export async function POST(
     }
 
     // ============================================================
-    // 4) البيانات القادمة من الواجهة
+    // 4) بيانات الطلب
     // ============================================================
 
     const body =
@@ -147,7 +142,7 @@ export async function POST(
     }
 
     // ============================================================
-    // 5) تحديد دور المستخدم
+    // 5) الدور
     // ============================================================
 
     const {
@@ -182,8 +177,7 @@ export async function POST(
       "General Manager";
 
     // ============================================================
-    // 6) المستخدم غير المدير العام:
-    // لا يستطيع جرد إلا موقعه
+    // 6) الفرع لا يجرد إلا موقعه
     // ============================================================
 
     if (
@@ -215,6 +209,7 @@ export async function POST(
         company_id,
         name,
         code,
+        type,
         is_active
       `)
       .eq(
@@ -245,7 +240,7 @@ export async function POST(
     }
 
     // ============================================================
-    // 8) منع وجود جرد مفتوح للموقع نفسه
+    // 8) منع وجود جرد مفتوح للموقع
     // ============================================================
 
     const {
@@ -271,7 +266,13 @@ export async function POST(
     if (
       existingError
     ) {
-      throw existingError;
+      return NextResponse.json(
+        {
+          error:
+            existingError.message,
+        },
+        { status: 500 }
+      );
     }
 
     if (existingCount) {
@@ -285,7 +286,11 @@ export async function POST(
     }
 
     // ============================================================
-    // 9) إنشاء الجرد
+    // 9) إنشاء الجرد فقط
+    //
+    // مهم:
+    // لا نضيف أي منتجات هنا.
+    // الجرد يبدأ فارغًا.
     // ============================================================
 
     const {
@@ -321,188 +326,25 @@ export async function POST(
       createError ||
       !stockCount
     ) {
-      throw (
-        createError ??
-        new Error(
-          "تعذر إنشاء الجرد."
-        )
+      return NextResponse.json(
+        {
+          error:
+            createError?.message ||
+            "تعذر إنشاء الجرد.",
+        },
+        { status: 500 }
       );
     }
 
     // ============================================================
-    // 10) جلب جميع المنتجات النشطة في الشركة
-    //
-    // مهم:
-    // لا نعتمد على stock_balances هنا.
-    // حتى المنتج الذي ليس له رصيد بعد يظهر في الجرد.
-    // ============================================================
-
-    const {
-      data: products,
-      error:
-        productsError,
-    } = await supabase
-      .from("products")
-      .select(`
-        id,
-        is_active,
-        company_id
-      `)
-      .eq(
-        "company_id",
-        dbUser.company_id
-      )
-      .eq(
-        "is_active",
-        true
-      )
-      .order("name");
-
-    if (
-      productsError
-    ) {
-      await supabase
-        .from("stock_counts")
-        .delete()
-        .eq(
-          "id",
-          stockCount.id
-        );
-
-      throw productsError;
-    }
-
-    // ============================================================
-    // 11) جلب أرصدة الموقع
-    // ============================================================
-
-    const {
-      data: balances,
-      error:
-        balancesError,
-    } = await supabase
-      .from("stock_balances")
-      .select(`
-        product_id,
-        available_quantity
-      `)
-      .eq(
-        "location_id",
-        locationId
-      );
-
-    if (
-      balancesError
-    ) {
-      await supabase
-        .from("stock_counts")
-        .delete()
-        .eq(
-          "id",
-          stockCount.id
-        );
-
-      throw balancesError;
-    }
-
-    // ============================================================
-    // 12) تحويل الأرصدة إلى Map
-    // ============================================================
-
-    const balanceMap =
-      new Map(
-        (balances ?? []).map(
-          (balance) => [
-            balance.product_id,
-            Number(
-              balance.available_quantity ??
-                0
-            ),
-          ]
-        )
-      );
-
-    // ============================================================
-    // 13) إنشاء بند جرد لكل منتج نشط
-    //
-    // إذا ما له رصيد:
-    // system_quantity = 0
-    // ============================================================
-
-    const items =
-      (products ?? []).map(
-        (product) => ({
-          id:
-            crypto.randomUUID(),
-
-          stock_count_id:
-            stockCount.id,
-
-          product_id:
-            product.id,
-
-          system_quantity:
-            balanceMap.get(
-              product.id
-            ) ?? 0,
-
-          counted_quantity:
-            null,
-
-          difference_quantity:
-            null,
-
-          notes:
-            null,
-        })
-      );
-
-    // ============================================================
-    // 14) إدخال البنود
-    // ============================================================
-
-    if (
-      items.length > 0
-    ) {
-      const {
-        error:
-          itemsError,
-      } = await supabase
-        .from(
-          "stock_count_items"
-        )
-        .insert(items);
-
-      if (
-        itemsError
-      ) {
-        await supabase
-          .from(
-            "stock_counts"
-          )
-          .delete()
-          .eq(
-            "id",
-            stockCount.id
-          );
-
-        throw itemsError;
-      }
-    }
-
-    // ============================================================
-    // 15) النتيجة
+    // 10) النجاح
     // ============================================================
 
     return NextResponse.json(
       {
         success: true,
-
-        count:
-          stockCount,
-
-        itemsCount:
-          items.length,
+        count: stockCount,
+        itemsCount: 0,
       },
       {
         status: 201,
@@ -521,9 +363,7 @@ export async function POST(
             ? error.message
             : "تعذر إنشاء الجرد.",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
