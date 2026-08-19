@@ -1,7 +1,5 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
-import MobileSidebar from "./MobileSidebar";
-
 import { getCurrentUserProfile } from "@/lib/permissions";
 
 type Props = {
@@ -17,8 +15,6 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-slate-100 dark:bg-slate-950">
       <Sidebar />
-
-      <MobileSidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar profile={profile} />
