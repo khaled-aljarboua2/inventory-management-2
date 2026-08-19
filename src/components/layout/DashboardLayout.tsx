@@ -13,7 +13,13 @@ export default async function DashboardLayout({
     await getCurrentUserProfile();
 
   return (
-    <div className="flex min-h-screen bg-slate-100 dark:bg-slate-950">
+    <div className="relative flex min-h-screen bg-slate-100 dark:bg-slate-950">
+      <input
+        id="mobile-sidebar-toggle"
+        type="checkbox"
+        className="peer sr-only"
+      />
+
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
