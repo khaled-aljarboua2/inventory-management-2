@@ -16,6 +16,7 @@ import {
 
 import { getCurrentPermissions } from "@/lib/permissions";
 import SidebarNav from "./SidebarNav";
+import LogoutButton from "./LogoutButton";
 
 export default async function Sidebar() {
   const permissions =
@@ -53,8 +54,8 @@ export default async function Sidebar() {
         )}
       />
 
-      <div className="border-t border-slate-100 p-4">
-        <div className="rounded-xl bg-slate-50 px-4 py-3">
+      <div className="mt-auto border-t border-slate-100 p-4">
+        <div className="mb-3 rounded-xl bg-slate-50 px-4 py-3">
           <p className="text-xs font-medium text-slate-500">
             نظام إدارة المخزون
           </p>
@@ -63,6 +64,8 @@ export default async function Sidebar() {
             الإصدار 1.0
           </p>
         </div>
+
+        <LogoutButton />
       </div>
     </aside>
   );
