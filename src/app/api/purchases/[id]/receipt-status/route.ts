@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 type RouteContext = {
   params: Promise<{
@@ -25,9 +25,7 @@ export async function GET(
 
     // التحقق من المستخدم
     const {
-      data: {
-        user,
-      },
+      data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
@@ -38,7 +36,7 @@ export async function GET(
       );
     }
 
-    // جلب أمر الشراء للتأكد من وجوده
+    // التحقق من وجود أمر الشراء
     const { data: purchaseOrder, error: orderError } =
       await supabase
         .from("purchase_orders")
@@ -72,7 +70,7 @@ export async function GET(
       );
     }
 
-    // لا توجد أصناف
+    // إذا لم توجد أصناف
     if (!orderItems || orderItems.length === 0) {
       return NextResponse.json({
         received: {},
@@ -102,6 +100,7 @@ export async function GET(
       (receipt) => receipt.id
     );
 
+    // تخزين الكمية المستلمة لكل سطر
     const received: Record<string, number> = {};
 
     // تهيئة جميع الأصناف بصفر
@@ -109,50 +108,52 @@ export async function GET(
       received[item.id] = 0;
     }
 
-    if (receiptIds.length > 0) {
-      /*
-       * goods_receipt_items في قاعدة بياناتك الحالية
-       * لا تحتوي purchase_order_item_id.
-       *
-       * لذلك نستخدم product_id لمطابقة الاستلام
-       * مع صنف أمر الشراء.
-       */
-      const { data: receiptItems, error: receiptItemsError } =
-        await supabase
-          .from("goods_receipt_items")
-          .select(
-            "goods_receipt_id, product_id, quantity"
-          )
-          .in("goods_receipt_id", receiptIds);
+    // لا توجد سندات استلام
+    if (receiptIds.length === 0) {
+      return NextResponse.json({
+        received,
+      });
+    }
 
-      if (receiptItemsError) {
-        console.error(
-          "receipt-status goods_receipt_items:",
-          receiptItemsError
-        );
+    // جلب تفاصيل سندات الاستلام
+    const { data: receiptItems, error: receiptItemsError } =
+      await supabase
+        .from("goods_receipt_items")
+        .select(
+          "goods_receipt_id, product_id, quantity"
+        )
+        .in("goods_receipt_id", receiptIds);
 
-        return NextResponse.json(
-          { error: "تعذر جلب تفاصيل الاستلام." },
-          { status: 500 }
-        );
+    if (receiptItemsError) {
+      console.error(
+        "receipt-status goods_receipt_items:",
+        receiptItemsError
+      );
+
+      return NextResponse.json(
+        { error: "تعذر جلب تفاصيل الاستلام." },
+        { status: 500 }
+      );
+    }
+
+    /*
+     * قاعدة البيانات الحالية تربط
+     * goods_receipt_items بالمنتج مباشرة،
+     * لذلك تتم المطابقة باستخدام product_id.
+     */
+    for (const receiptItem of receiptItems ?? []) {
+      const matchingOrderItem = orderItems.find(
+        (item) =>
+          item.product_id === receiptItem.product_id
+      );
+
+      if (!matchingOrderItem) {
+        continue;
       }
 
-      for (const receiptItem of receiptItems ?? []) {
-        const matchingOrderItem =
-          orderItems.find(
-            (item) =>
-              item.product_id ===
-              receiptItem.product_id
-          );
-
-        if (!matchingOrderItem) {
-          continue;
-        }
-
-        received[matchingOrderItem.id] =
-          (received[matchingOrderItem.id] ?? 0) +
-          Number(receiptItem.quantity ?? 0);
-      }
+      received[matchingOrderItem.id] =
+        (received[matchingOrderItem.id] ?? 0) +
+        Number(receiptItem.quantity ?? 0);
     }
 
     return NextResponse.json({
