@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Sans_Arabic } from "next/font/google";
+
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+
+const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-arabic",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "نظام إدارة المخزون",
@@ -44,6 +53,7 @@ export default function RootLayout({
       lang="ar"
       dir="rtl"
       suppressHydrationWarning
+      className={ibmPlexSansArabic.variable}
     >
       <body>
         <ThemeProvider>
