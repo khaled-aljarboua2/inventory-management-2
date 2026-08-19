@@ -11,6 +11,7 @@ import {
   LogOut,
   Sun,
   Moon,
+  Menu,
 } from "lucide-react";
 
 import { useTheme } from "@/components/theme/ThemeProvider";
@@ -33,13 +34,16 @@ export default function Topbar({
   const router = useRouter();
   const supabase = createClient();
 
-  const searchRef = useRef<HTMLInputElement>(null);
+  const searchRef =
+    useRef<HTMLInputElement>(null);
 
   const [profileOpen, setProfileOpen] =
     useState(false);
 
-  const [notificationsOpen, setNotificationsOpen] =
-    useState(false);
+  const [
+    notificationsOpen,
+    setNotificationsOpen,
+  ] = useState(false);
 
   const [loggingOut, setLoggingOut] =
     useState(false);
@@ -47,7 +51,8 @@ export default function Topbar({
   const [searchQuery, setSearchQuery] =
     useState("");
 
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } =
+    useTheme();
 
   const displayName =
     profile?.full_name?.trim() ||
@@ -109,14 +114,6 @@ export default function Topbar({
       return;
     }
 
-    /*
-     * البحث العام سيتم ربطه لاحقًا
-     * ببيانات Supabase.
-     *
-     * حاليًا لا نرسل أي بيانات غير معروفة
-     * ولا نخمن أسماء الجداول أو الأعمدة.
-     */
-
     router.push(
       `/search?q=${encodeURIComponent(query)}`
     );
@@ -156,24 +153,67 @@ export default function Topbar({
       className="
         sticky top-0 z-40
         flex h-[72px]
-        items-center justify-between
+        items-center
+        justify-between
+        gap-2
         border-b border-slate-200/80
         bg-white/95
-        px-6
+        px-3
         backdrop-blur-xl
         transition-colors duration-200
+
+        sm:px-6
 
         dark:border-slate-700/60
         dark:bg-slate-950/90
       "
     >
       {/* =====================================================
-          البحث
+          زر القائمة - الجوال
+      ====================================================== */}
+
+      <label
+        htmlFor="mobile-sidebar-toggle"
+        className="
+          flex h-11 w-11
+          shrink-0
+          cursor-pointer
+          items-center justify-center
+          rounded-xl
+          text-slate-600
+          transition-all duration-200
+
+          hover:bg-slate-50
+          hover:text-slate-900
+
+          md:hidden
+
+          dark:text-slate-300
+          dark:hover:bg-slate-800
+          dark:hover:text-white
+        "
+        aria-label="فتح القائمة"
+        title="القائمة"
+      >
+        <Menu
+          size={22}
+          strokeWidth={1.9}
+        />
+      </label>
+
+      {/* =====================================================
+          البحث - الكمبيوتر
       ====================================================== */}
 
       <form
         onSubmit={handleSearchSubmit}
-        className="relative w-full max-w-xl"
+        className="
+          relative
+          hidden
+          w-full
+          max-w-xl
+          md:block
+        "
       >
         <Search
           size={20}
@@ -262,7 +302,61 @@ export default function Topbar({
           الجانب الآخر
       ====================================================== */}
 
-      <div className="mr-6 flex items-center gap-2">
+      <div
+        className="
+          mr-0
+          flex
+          items-center
+          gap-1
+
+          sm:mr-6
+          sm:gap-2
+        "
+      >
+        {/* ===================================================
+            البحث - الجوال
+        ==================================================== */}
+
+        <button
+          type="button"
+          onClick={() => {
+            const query =
+              searchQuery.trim();
+
+            if (query) {
+              router.push(
+                `/search?q=${encodeURIComponent(
+                  query
+                )}`
+              );
+            } else {
+              searchRef.current?.focus();
+            }
+          }}
+          className="
+            flex h-11 w-11
+            items-center justify-center
+            rounded-xl
+            text-slate-500
+            transition-all duration-200
+
+            hover:bg-slate-50
+            hover:text-slate-900
+
+            md:hidden
+
+            dark:text-slate-400
+            dark:hover:bg-slate-800
+            dark:hover:text-white
+          "
+          aria-label="البحث"
+          title="البحث"
+        >
+          <Search
+            size={20}
+            strokeWidth={1.9}
+          />
+        </button>
 
         {/* ===================================================
             الوضع الليلي
@@ -273,6 +367,7 @@ export default function Topbar({
           onClick={toggleTheme}
           className="
             flex h-11 w-11
+            shrink-0
             items-center justify-center
             rounded-xl
             text-slate-500
@@ -370,7 +465,7 @@ export default function Topbar({
             <div
               className="
                 absolute left-0 top-14
-                w-80
+                w-[min(320px,calc(100vw-24px))]
                 overflow-hidden
                 rounded-2xl
                 border border-slate-200
@@ -387,7 +482,6 @@ export default function Topbar({
                 className="
                   border-b border-slate-100
                   px-5 py-4
-
                   dark:border-slate-800
                 "
               >
@@ -395,7 +489,6 @@ export default function Topbar({
                   className="
                     font-semibold
                     text-slate-900
-
                     dark:text-slate-100
                   "
                 >
@@ -419,7 +512,6 @@ export default function Topbar({
                   className="
                     mx-auto mb-3
                     text-slate-300
-
                     dark:text-slate-600
                   "
                 />
@@ -428,7 +520,6 @@ export default function Topbar({
                   className="
                     text-sm
                     text-slate-500
-
                     dark:text-slate-400
                   "
                 >
@@ -446,8 +537,10 @@ export default function Topbar({
         <div
           className="
             mx-1
+            hidden
             h-8 w-px
             bg-slate-200
+            sm:block
 
             dark:bg-slate-700
           "
@@ -466,9 +559,12 @@ export default function Topbar({
               )
             }
             className="
-              flex items-center gap-3
+              flex
+              items-center
+              gap-2
               rounded-xl
-              px-2 py-1.5
+              px-1.5
+              py-1.5
               transition-all duration-200
 
               hover:bg-slate-50
@@ -479,6 +575,7 @@ export default function Topbar({
             <div
               className="
                 flex h-10 w-10
+                shrink-0
                 items-center justify-center
                 rounded-xl
                 bg-gradient-to-br
@@ -498,10 +595,11 @@ export default function Topbar({
             <div className="hidden text-right sm:block">
               <p
                 className="
+                  max-w-32
+                  truncate
                   text-sm
                   font-semibold
                   text-slate-800
-
                   dark:text-slate-100
                 "
               >
@@ -544,7 +642,7 @@ export default function Topbar({
             <div
               className="
                 absolute left-0 top-14
-                w-56
+                w-[min(224px,calc(100vw-24px))]
                 overflow-hidden
                 rounded-2xl
                 border border-slate-200
@@ -562,16 +660,15 @@ export default function Topbar({
                 className="
                   border-b border-slate-100
                   px-3 py-3
-
                   dark:border-slate-800
                 "
               >
                 <p
                   className="
+                    truncate
                     text-sm
                     font-semibold
                     text-slate-900
-
                     dark:text-slate-100
                   "
                 >
@@ -581,6 +678,7 @@ export default function Topbar({
                 <p
                   className="
                     mt-1
+                    truncate
                     text-xs
                     text-slate-400
                   "
