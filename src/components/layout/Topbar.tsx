@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import {
   Bell,
   Search,
@@ -64,7 +65,7 @@ export default function Topbar({
     profile?.roles?.name ?? "مستخدم";
 
   // ==========================================================
-  // البحث باستخدام Ctrl + K
+  // اختصار البحث
   // ==========================================================
 
   useEffect(() => {
@@ -76,12 +77,15 @@ export default function Topbar({
         event.key.toLowerCase() === "k"
       ) {
         event.preventDefault();
+
         searchRef.current?.focus();
       }
 
       if (event.key === "Escape") {
         searchRef.current?.blur();
         setSearchQuery("");
+        setProfileOpen(false);
+        setNotificationsOpen(false);
       }
     }
 
@@ -117,6 +121,23 @@ export default function Topbar({
     router.push(
       `/search?q=${encodeURIComponent(query)}`
     );
+  }
+
+  // ==========================================================
+  // فتح القائمة في الجوال
+  // ==========================================================
+
+  function openMobileSidebar() {
+    const checkbox =
+      document.getElementById(
+        "mobile-sidebar-toggle"
+      ) as HTMLInputElement | null;
+
+    if (!checkbox) {
+      return;
+    }
+
+    checkbox.checked = true;
   }
 
   // ==========================================================
@@ -172,12 +193,13 @@ export default function Topbar({
           زر القائمة - الجوال
       ====================================================== */}
 
-      <label
-        htmlFor="mobile-sidebar-toggle"
+      <button
+        type="button"
+        onClick={openMobileSidebar}
         className="
+          relative z-[60]
           flex h-11 w-11
           shrink-0
-          cursor-pointer
           items-center justify-center
           rounded-xl
           text-slate-600
@@ -193,13 +215,12 @@ export default function Topbar({
           dark:hover:text-white
         "
         aria-label="فتح القائمة"
-        title="القائمة"
       >
         <Menu
           size={22}
           strokeWidth={1.9}
         />
-      </label>
+      </button>
 
       {/* =====================================================
           البحث - الكمبيوتر
@@ -313,26 +334,13 @@ export default function Topbar({
           sm:gap-2
         "
       >
-        {/* ===================================================
-            البحث - الجوال
-        ==================================================== */}
+        {/* بحث الجوال */}
 
         <button
           type="button"
-          onClick={() => {
-            const query =
-              searchQuery.trim();
-
-            if (query) {
-              router.push(
-                `/search?q=${encodeURIComponent(
-                  query
-                )}`
-              );
-            } else {
-              searchRef.current?.focus();
-            }
-          }}
+          onClick={() =>
+            searchRef.current?.focus()
+          }
           className="
             flex h-11 w-11
             items-center justify-center
@@ -350,7 +358,6 @@ export default function Topbar({
             dark:hover:text-white
           "
           aria-label="البحث"
-          title="البحث"
         >
           <Search
             size={20}
@@ -358,9 +365,7 @@ export default function Topbar({
           />
         </button>
 
-        {/* ===================================================
-            الوضع الليلي
-        ==================================================== */}
+        {/* الوضع الليلي */}
 
         <button
           type="button"
@@ -385,11 +390,6 @@ export default function Topbar({
               ? "تفعيل الوضع الفاتح"
               : "تفعيل الوضع الليلي"
           }
-          title={
-            theme === "dark"
-              ? "الوضع الفاتح"
-              : "الوضع الليلي"
-          }
         >
           {theme === "dark" ? (
             <Sun
@@ -404,9 +404,7 @@ export default function Topbar({
           )}
         </button>
 
-        {/* ===================================================
-            الإشعارات
-        ==================================================== */}
+        {/* الإشعارات */}
 
         <div className="relative">
           <button
@@ -485,23 +483,11 @@ export default function Topbar({
                   dark:border-slate-800
                 "
               >
-                <h3
-                  className="
-                    font-semibold
-                    text-slate-900
-                    dark:text-slate-100
-                  "
-                >
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100">
                   الإشعارات
                 </h3>
 
-                <p
-                  className="
-                    mt-1
-                    text-xs
-                    text-slate-400
-                  "
-                >
+                <p className="mt-1 text-xs text-slate-400">
                   آخر التنبيهات والتحديثات
                 </p>
               </div>
@@ -516,13 +502,7 @@ export default function Topbar({
                   "
                 />
 
-                <p
-                  className="
-                    text-sm
-                    text-slate-500
-                    dark:text-slate-400
-                  "
-                >
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   لا توجد إشعارات جديدة
                 </p>
               </div>
@@ -530,9 +510,7 @@ export default function Topbar({
           )}
         </div>
 
-        {/* ===================================================
-            فاصل
-        ==================================================== */}
+        {/* الفاصل */}
 
         <div
           className="
@@ -541,14 +519,11 @@ export default function Topbar({
             h-8 w-px
             bg-slate-200
             sm:block
-
             dark:bg-slate-700
           "
         />
 
-        {/* ===================================================
-            المستخدم
-        ==================================================== */}
+        {/* المستخدم */}
 
         <div className="relative">
           <button
@@ -559,12 +534,9 @@ export default function Topbar({
               )
             }
             className="
-              flex
-              items-center
-              gap-2
+              flex items-center gap-2
               rounded-xl
-              px-1.5
-              py-1.5
+              px-1.5 py-1.5
               transition-all duration-200
 
               hover:bg-slate-50
@@ -583,7 +555,6 @@ export default function Topbar({
                 to-indigo-600
                 text-white
                 shadow-sm
-                shadow-blue-200
               "
             >
               <UserCircle2
@@ -593,25 +564,11 @@ export default function Topbar({
             </div>
 
             <div className="hidden text-right sm:block">
-              <p
-                className="
-                  max-w-32
-                  truncate
-                  text-sm
-                  font-semibold
-                  text-slate-800
-                  dark:text-slate-100
-                "
-              >
+              <p className="max-w-32 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {displayName}
               </p>
 
-              <p
-                className="
-                  text-[11px]
-                  text-slate-400
-                "
-              >
+              <p className="text-[11px] text-slate-400">
                 {roleName}
               </p>
             </div>
@@ -634,9 +591,7 @@ export default function Topbar({
             />
           </button>
 
-          {/* =================================================
-              قائمة الحساب
-          ================================================== */}
+          {/* قائمة الحساب */}
 
           {profileOpen && (
             <div
@@ -663,26 +618,11 @@ export default function Topbar({
                   dark:border-slate-800
                 "
               >
-                <p
-                  className="
-                    truncate
-                    text-sm
-                    font-semibold
-                    text-slate-900
-                    dark:text-slate-100
-                  "
-                >
+                <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                   {displayName}
                 </p>
 
-                <p
-                  className="
-                    mt-1
-                    truncate
-                    text-xs
-                    text-slate-400
-                  "
-                >
+                <p className="mt-1 truncate text-xs text-slate-400">
                   {roleName}
                 </p>
               </div>
