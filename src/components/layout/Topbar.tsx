@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
 
 import {
@@ -65,7 +70,7 @@ export default function Topbar({
     profile?.roles?.name ?? "مستخدم";
 
   // ==========================================================
-  // اختصار البحث
+  // Keyboard shortcuts
   // ==========================================================
 
   useEffect(() => {
@@ -83,6 +88,7 @@ export default function Topbar({
 
       if (event.key === "Escape") {
         searchRef.current?.blur();
+
         setSearchQuery("");
         setProfileOpen(false);
         setNotificationsOpen(false);
@@ -103,7 +109,7 @@ export default function Topbar({
   }, []);
 
   // ==========================================================
-  // البحث
+  // Search
   // ==========================================================
 
   function handleSearchSubmit(
@@ -124,24 +130,7 @@ export default function Topbar({
   }
 
   // ==========================================================
-  // فتح القائمة في الجوال
-  // ==========================================================
-
-  function openMobileSidebar() {
-    const checkbox =
-      document.getElementById(
-        "mobile-sidebar-toggle"
-      ) as HTMLInputElement | null;
-
-    if (!checkbox) {
-      return;
-    }
-
-    checkbox.checked = true;
-  }
-
-  // ==========================================================
-  // تسجيل الخروج
+  // Logout
   // ==========================================================
 
   async function handleLogout() {
@@ -177,7 +166,8 @@ export default function Topbar({
         items-center
         justify-between
         gap-2
-        border-b border-slate-200/80
+        border-b
+        border-slate-200/80
         bg-white/95
         px-3
         backdrop-blur-xl
@@ -190,17 +180,17 @@ export default function Topbar({
       "
     >
       {/* =====================================================
-          زر القائمة - الجوال
+          Mobile Menu
       ====================================================== */}
 
-      <button
-        type="button"
-        onClick={openMobileSidebar}
+      <label
+        htmlFor="mobile-sidebar-toggle"
         className="
-          relative z-[60]
           flex h-11 w-11
           shrink-0
-          items-center justify-center
+          cursor-pointer
+          items-center
+          justify-center
           rounded-xl
           text-slate-600
           transition-all duration-200
@@ -215,15 +205,16 @@ export default function Topbar({
           dark:hover:text-white
         "
         aria-label="فتح القائمة"
+        title="القائمة"
       >
         <Menu
           size={22}
           strokeWidth={1.9}
         />
-      </button>
+      </label>
 
       {/* =====================================================
-          البحث - الكمبيوتر
+          Desktop Search
       ====================================================== */}
 
       <form
@@ -241,7 +232,8 @@ export default function Topbar({
           strokeWidth={1.8}
           className="
             pointer-events-none
-            absolute right-4 top-1/2
+            absolute
+            right-4 top-1/2
             -translate-y-1/2
             text-slate-400
             dark:text-slate-500
@@ -262,10 +254,12 @@ export default function Topbar({
           className="
             h-11 w-full
             rounded-xl
-            border border-slate-200
+            border
+            border-slate-200
             bg-slate-50/70
             pr-11 pl-20
-            text-sm text-slate-700
+            text-sm
+            text-slate-700
             outline-none
             transition-all duration-200
 
@@ -284,7 +278,6 @@ export default function Topbar({
             dark:text-slate-200
 
             dark:hover:border-slate-600
-            dark:hover:bg-slate-900
 
             dark:focus:border-blue-500
             dark:focus:bg-slate-900
@@ -295,12 +288,15 @@ export default function Topbar({
         <div
           className="
             pointer-events-none
-            absolute left-3 top-1/2
+            absolute
+            left-3 top-1/2
             hidden
             -translate-y-1/2
-            items-center gap-1
+            items-center
+            gap-1
             rounded-md
-            border border-slate-200
+            border
+            border-slate-200
             bg-white
             px-2 py-1
             text-[10px]
@@ -320,7 +316,7 @@ export default function Topbar({
       </form>
 
       {/* =====================================================
-          الجانب الآخر
+          Actions
       ====================================================== */}
 
       <div
@@ -334,7 +330,7 @@ export default function Topbar({
           sm:gap-2
         "
       >
-        {/* بحث الجوال */}
+        {/* Mobile Search */}
 
         <button
           type="button"
@@ -343,7 +339,8 @@ export default function Topbar({
           }
           className="
             flex h-11 w-11
-            items-center justify-center
+            items-center
+            justify-center
             rounded-xl
             text-slate-500
             transition-all duration-200
@@ -365,7 +362,7 @@ export default function Topbar({
           />
         </button>
 
-        {/* الوضع الليلي */}
+        {/* Theme */}
 
         <button
           type="button"
@@ -373,7 +370,8 @@ export default function Topbar({
           className="
             flex h-11 w-11
             shrink-0
-            items-center justify-center
+            items-center
+            justify-center
             rounded-xl
             text-slate-500
             transition-all duration-200
@@ -404,7 +402,7 @@ export default function Topbar({
           )}
         </button>
 
-        {/* الإشعارات */}
+        {/* Notifications */}
 
         <div className="relative">
           <button
@@ -417,7 +415,8 @@ export default function Topbar({
             className={`
               relative
               flex h-11 w-11
-              items-center justify-center
+              items-center
+              justify-center
               rounded-xl
               transition-all duration-200
 
@@ -448,12 +447,12 @@ export default function Topbar({
 
             <span
               className="
-                absolute right-2.5 top-2
+                absolute
+                right-2.5 top-2
                 h-2 w-2
                 rounded-full
                 bg-blue-600
                 ring-2 ring-white
-
                 dark:ring-slate-950
               "
             />
@@ -462,11 +461,13 @@ export default function Topbar({
           {notificationsOpen && (
             <div
               className="
-                absolute left-0 top-14
+                absolute
+                left-0 top-14
                 w-[min(320px,calc(100vw-24px))]
                 overflow-hidden
                 rounded-2xl
-                border border-slate-200
+                border
+                border-slate-200
                 bg-white
                 shadow-xl
                 shadow-slate-900/10
@@ -478,16 +479,29 @@ export default function Topbar({
             >
               <div
                 className="
-                  border-b border-slate-100
+                  border-b
+                  border-slate-100
                   px-5 py-4
                   dark:border-slate-800
                 "
               >
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                <h3
+                  className="
+                    font-semibold
+                    text-slate-900
+                    dark:text-slate-100
+                  "
+                >
                   الإشعارات
                 </h3>
 
-                <p className="mt-1 text-xs text-slate-400">
+                <p
+                  className="
+                    mt-1
+                    text-xs
+                    text-slate-400
+                  "
+                >
                   آخر التنبيهات والتحديثات
                 </p>
               </div>
@@ -502,7 +516,13 @@ export default function Topbar({
                   "
                 />
 
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p
+                  className="
+                    text-sm
+                    text-slate-500
+                    dark:text-slate-400
+                  "
+                >
                   لا توجد إشعارات جديدة
                 </p>
               </div>
@@ -510,7 +530,7 @@ export default function Topbar({
           )}
         </div>
 
-        {/* الفاصل */}
+        {/* Divider */}
 
         <div
           className="
@@ -523,7 +543,7 @@ export default function Topbar({
           "
         />
 
-        {/* المستخدم */}
+        {/* Profile */}
 
         <div className="relative">
           <button
@@ -534,7 +554,9 @@ export default function Topbar({
               )
             }
             className="
-              flex items-center gap-2
+              flex
+              items-center
+              gap-2
               rounded-xl
               px-1.5 py-1.5
               transition-all duration-200
@@ -548,7 +570,8 @@ export default function Topbar({
               className="
                 flex h-10 w-10
                 shrink-0
-                items-center justify-center
+                items-center
+                justify-center
                 rounded-xl
                 bg-gradient-to-br
                 from-blue-600
@@ -564,11 +587,25 @@ export default function Topbar({
             </div>
 
             <div className="hidden text-right sm:block">
-              <p className="max-w-32 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+              <p
+                className="
+                  max-w-32
+                  truncate
+                  text-sm
+                  font-semibold
+                  text-slate-800
+                  dark:text-slate-100
+                "
+              >
                 {displayName}
               </p>
 
-              <p className="text-[11px] text-slate-400">
+              <p
+                className="
+                  text-[11px]
+                  text-slate-400
+                "
+              >
                 {roleName}
               </p>
             </div>
@@ -591,16 +628,18 @@ export default function Topbar({
             />
           </button>
 
-          {/* قائمة الحساب */}
+          {/* Profile Menu */}
 
           {profileOpen && (
             <div
               className="
-                absolute left-0 top-14
+                absolute
+                left-0 top-14
                 w-[min(224px,calc(100vw-24px))]
                 overflow-hidden
                 rounded-2xl
-                border border-slate-200
+                border
+                border-slate-200
                 bg-white
                 p-2
                 shadow-xl
@@ -613,28 +652,45 @@ export default function Topbar({
             >
               <div
                 className="
-                  border-b border-slate-100
+                  border-b
+                  border-slate-100
                   px-3 py-3
                   dark:border-slate-800
                 "
               >
-                <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                <p
+                  className="
+                    truncate
+                    text-sm
+                    font-semibold
+                    text-slate-900
+                    dark:text-slate-100
+                  "
+                >
                   {displayName}
                 </p>
 
-                <p className="mt-1 truncate text-xs text-slate-400">
+                <p
+                  className="
+                    mt-1
+                    truncate
+                    text-xs
+                    text-slate-400
+                  "
+                >
                   {roleName}
                 </p>
               </div>
 
-              {/* إعدادات الحساب */}
+              {/* Account Settings */}
 
               <button
                 type="button"
                 className="
                   mt-2
                   flex w-full
-                  items-center gap-3
+                  items-center
+                  gap-3
                   rounded-xl
                   px-3 py-2.5
                   text-sm
@@ -656,7 +712,7 @@ export default function Topbar({
                 </span>
               </button>
 
-              {/* تسجيل الخروج */}
+              {/* Logout */}
 
               <button
                 type="button"
@@ -664,7 +720,8 @@ export default function Topbar({
                 disabled={loggingOut}
                 className="
                   flex w-full
-                  items-center gap-3
+                  items-center
+                  gap-3
                   rounded-xl
                   px-3 py-2.5
                   text-sm
