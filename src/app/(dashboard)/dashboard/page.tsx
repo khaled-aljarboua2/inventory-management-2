@@ -4,43 +4,106 @@ import StatsGrid from "@/components/dashboard/StatsGrid";
 export default function DashboardPage() {
   return (
     <DashboardLayout>
-      <div
+      <main
         dir="rtl"
-        className="mx-auto w-full max-w-[1600px] space-y-8"
+        className="
+          mx-auto
+          w-full
+          max-w-[1600px]
+          space-y-6
+          px-1
+          sm:space-y-7
+        "
       >
         {/* =====================================================
             Header
         ====================================================== */}
 
-        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-          {/* Glow */}
-          <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-blue-100/50 blur-3xl" />
+        <section
+          className="
+            rounded-3xl
+            border
+            border-slate-200
+            bg-white
+            px-5
+            py-5
+            shadow-sm
+            sm:px-7
+            sm:py-6
+          "
+        >
+          <div className="flex items-center justify-between gap-6">
+            <div className="min-w-0">
+              <div
+                className="
+                  mb-3
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-full
+                  bg-blue-50
+                  px-3
+                  py-1.5
+                  text-xs
+                  font-semibold
+                  text-blue-600
+                "
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                نظام إدارة المخزون
+              </div>
 
-          <div className="pointer-events-none absolute -bottom-20 right-1/3 h-40 w-40 rounded-full bg-indigo-100/40 blur-3xl" />
+              <h1
+                className="
+                  text-2xl
+                  font-bold
+                  tracking-tight
+                  text-slate-950
+                  sm:text-3xl
+                "
+              >
+                لوحة التحكم
+              </h1>
 
-          <div className="relative">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
-              نظام إدارة المخزون
+              <p
+                className="
+                  mt-2
+                  max-w-2xl
+                  text-sm
+                  leading-6
+                  text-slate-500
+                "
+              >
+                مرحبًا بك، هذه نظرة سريعة على المخزون
+                وعمليات النقل والفروع.
+              </p>
             </div>
 
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              لوحة التحكم
-            </h1>
-
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-              نظرة سريعة على المنتجات والفروع والمستودعات
-              وحالة المخزون في النظام.
-            </p>
+            <div
+              className="
+                hidden
+                h-14
+                w-14
+                shrink-0
+                items-center
+                justify-center
+                rounded-2xl
+                bg-slate-50
+                text-slate-500
+                lg:flex
+              "
+            >
+              <span className="text-2xl">◉</span>
+            </div>
           </div>
-        </div>
+        </section>
 
         {/* =====================================================
-            Statistics
+            Dashboard
         ====================================================== */}
 
         <StatsGrid />
-      </div>
+      </main>
     </DashboardLayout>
   );
 }
