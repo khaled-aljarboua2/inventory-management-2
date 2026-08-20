@@ -1,6 +1,6 @@
 import {
   Boxes,
-  Warehouse,
+  ArrowLeftRight,
   Building2,
   PackageCheck,
 } from "lucide-react";
@@ -109,21 +109,22 @@ export default async function StatsGrid() {
     .eq("is_active", true);
 
   // ============================================================
-  // المستودعات
+  // طلبات النقل
   // ============================================================
 
-  const warehousesPromise = supabase
-    .from("locations")
-    .select("id", {
-      count: "exact",
-      head: true,
-    })
+  const transfersPromise = supabase
+    .from("transfer_requests")
+    .select(`
+      id,
+      status,
+      from_location:locations!transfer_requests_from_location_id_fkey!inner (
+        company_id
+      )
+    `)
     .eq(
-      "company_id",
+      "from_location.company_id",
       currentUser.company_id
-    )
-    .eq("type", "warehouse")
-    .eq("is_active", true);
+    );
 
   // ============================================================
   // تنفيذ الاستعلامات
@@ -132,11 +133,11 @@ export default async function StatsGrid() {
   const [
     productsResult,
     branchesResult,
-    warehousesResult,
+    transfersResult,
   ] = await Promise.all([
     productsPromise,
     branchesPromise,
-    warehousesPromise,
+    transfersPromise,
   ]);
 
   // ============================================================
@@ -149,8 +150,31 @@ export default async function StatsGrid() {
   let totalBranches =
     branchesResult.count ?? 0;
 
-  let totalWarehouses =
-    warehousesResult.count ?? 0;
+  const transfers =
+    transfersResult.data ?? [];
+
+  // ============================================================
+  // طلبات النقل
+  // ============================================================
+
+  const totalTransfers =
+    transfers.length;
+
+  const preparingTransfers =
+    transfers.filter(
+      (transfer) =>
+        transfer.status === "preparing"
+    ).length;
+
+  const activeTransfers =
+    transfers.filter((transfer) =>
+      [
+        "pending",
+        "approved",
+        "preparing",
+        "shipped",
+      ].includes(transfer.status)
+    ).length;
 
   // ============================================================
   // مستخدم الفرع
@@ -159,9 +183,16 @@ export default async function StatsGrid() {
   if (isBranchUser) {
     totalBranches =
       currentUser.location_id ? 1 : 0;
-
-    totalWarehouses = 0;
   }
+
+  // ============================================================
+  // وصف طلبات النقل
+  // ============================================================
+
+  const transfersDescription =
+    totalTransfers === 0
+      ? "لا توجد طلبات نقل"
+      : `${preparingTransfers} قيد التجهيز • ${activeTransfers} قيد التنفيذ`;
 
   // ============================================================
   // قيمة المخزون
@@ -197,17 +228,15 @@ export default async function StatsGrid() {
       />
 
       {/* ======================================================
-          المستودعات
+          طلبات النقل
       ======================================================= */}
 
       <StatCard
-        title="المستودعات"
-        value={totalWarehouses.toLocaleString(
-          "ar-SA"
-        )}
-        description="المستودعات النشطة"
+        title="طلبات النقل"
+        value={totalTransfers.toLocaleString("ar-SA")}
+        description={transfersDescription}
         icon={
-          <Warehouse
+          <ArrowLeftRight
             size={24}
             strokeWidth={1.8}
           />
@@ -221,9 +250,7 @@ export default async function StatsGrid() {
 
       <StatCard
         title="الفروع"
-        value={totalBranches.toLocaleString(
-          "ar-SA"
-        )}
+        value={totalBranches.toLocaleString("ar-SA")}
         description="الفروع النشطة"
         icon={
           <Building2
