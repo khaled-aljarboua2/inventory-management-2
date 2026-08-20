@@ -52,9 +52,47 @@ export const PERMISSIONS = {
   SETTINGS_UPDATE: "settings.update",
 } as const;
 
-// ============================================================
-// المستخدم الحالي
-// ============================================================
+/* ============================================================
+   حالة المستخدم الحالي
+============================================================ */
+
+export async function getCurrentUserStatus(): Promise<
+  "unauthenticated" | "inactive" | "active" | "missing"
+> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return "unauthenticated";
+  }
+
+  const {
+    data: profile,
+    error,
+  } = await supabase
+    .from("users")
+    .select("id, is_active")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  if (error || !profile) {
+    return "missing";
+  }
+
+  if (!profile.is_active) {
+    return "inactive";
+  }
+
+  return "active";
+}
+
+/* ============================================================
+   المستخدم الحالي
+============================================================ */
 
 export async function getCurrentUserProfile() {
   const supabase = await createClient();
@@ -103,9 +141,9 @@ export async function getCurrentUserProfile() {
   };
 }
 
-// ============================================================
-// الصلاحيات الحالية
-// ============================================================
+/* ============================================================
+   الصلاحيات الحالية
+============================================================ */
 
 export async function getCurrentPermissions() {
   const supabase = await createClient();
@@ -142,6 +180,10 @@ export async function getCurrentPermissions() {
   );
 }
 
+/* ============================================================
+   صلاحية واحدة
+============================================================ */
+
 export async function hasPermission(
   permissionCode: string
 ): Promise<boolean> {
@@ -152,6 +194,10 @@ export async function hasPermission(
     permissionCode
   );
 }
+
+/* ============================================================
+   أي صلاحية
+============================================================ */
 
 export async function hasAnyPermission(
   permissionCodes: string[]
@@ -164,6 +210,10 @@ export async function hasAnyPermission(
       permissions.has(permission)
   );
 }
+
+/* ============================================================
+   جميع الصلاحيات
+============================================================ */
 
 export async function hasAllPermissions(
   permissionCodes: string[]
