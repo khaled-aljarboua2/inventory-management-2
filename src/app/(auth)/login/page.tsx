@@ -11,11 +11,12 @@ import {
   ShieldCheck,
   ArrowLeft,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { loginWithUsernameOrEmail } from "./actions";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [identifier, setIdentifier] =
     useState("");
@@ -30,7 +31,19 @@ export default function LoginPage() {
     useState(false);
 
   const [error, setError] =
-    useState("");
+    useState(() => {
+      const errorCode =
+        searchParams.get("error");
+
+      if (
+        errorCode ===
+        "account_disabled"
+      ) {
+        return "حسابك غير نشط، يرجى التواصل مع مسؤول النظام.";
+      }
+
+      return "";
+    });
 
   async function handleLogin(
     event: FormEvent<HTMLFormElement>
@@ -44,24 +57,34 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const result =
-      await loginWithUsernameOrEmail(
-        identifier,
-        password
-      );
+    try {
+      const result =
+        await loginWithUsernameOrEmail(
+          identifier,
+          password
+        );
 
-    if (!result.success) {
+      if (!result.success) {
+        setError(
+          result.error ??
+            "تعذر تسجيل الدخول."
+        );
+
+        setLoading(false);
+        return;
+      }
+
+      router.replace("/dashboard");
+      router.refresh();
+    } catch (error) {
       setError(
-        result.error ??
-          "تعذر تسجيل الدخول."
+        error instanceof Error
+          ? error.message
+          : "حدث خطأ غير متوقع."
       );
 
       setLoading(false);
-      return;
     }
-
-    router.replace("/dashboard");
-    router.refresh();
   }
 
   return (
@@ -74,16 +97,12 @@ export default function LoginPage() {
       ====================================================== */}
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Glow أزرق */}
         <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-blue-200/40 blur-3xl" />
 
-        {/* Glow بنفسجي */}
         <div className="absolute -bottom-40 -left-32 h-[420px] w-[420px] rounded-full bg-indigo-200/30 blur-3xl" />
 
-        {/* Glow مركزي */}
         <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-100/30 blur-3xl" />
 
-        {/* Grid خفيف */}
         <div
           className="absolute inset-0 opacity-[0.025]"
           style={{
@@ -125,11 +144,7 @@ export default function LoginPage() {
         ==================================================== */}
 
         <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-xl shadow-slate-900/[0.06] backdrop-blur-xl sm:p-8">
-          {/* الخط العلوي */}
-
           <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500" />
-
-          {/* Glow داخلي */}
 
           <div className="pointer-events-none absolute -left-20 -top-20 h-40 w-40 rounded-full bg-blue-100/40 blur-3xl" />
 
@@ -167,9 +182,7 @@ export default function LoginPage() {
               onSubmit={handleLogin}
               className="space-y-5"
             >
-              {/* =================================================
-                  اسم المستخدم / البريد
-              ================================================== */}
+              {/* اسم المستخدم / البريد */}
 
               <div>
                 <label
@@ -204,9 +217,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* =================================================
-                  كلمة المرور
-              ================================================== */}
+              {/* كلمة المرور */}
 
               <div>
                 <label
@@ -295,8 +306,6 @@ export default function LoginPage() {
                 disabled={loading}
                 className="group relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold text-white shadow-lg shadow-blue-200/60 transition-all duration-300 hover:-translate-y-0.5 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl hover:shadow-blue-200/70 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60"
               >
-                {/* تأثير الحركة */}
-
                 <span className="absolute inset-0 -translate-x-full bg-white/10 transition-transform duration-700 group-hover:translate-x-full" />
 
                 <span className="relative flex items-center gap-2">
