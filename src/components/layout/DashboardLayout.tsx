@@ -1,6 +1,10 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
-import { getCurrentUserProfile } from "@/lib/permissions";
+import {
+  getCurrentUserProfile,
+  getCurrentUserStatus,
+} from "@/lib/permissions";
+import { redirect } from "next/navigation";
 
 type Props = {
   children: React.ReactNode;
@@ -9,8 +13,30 @@ type Props = {
 export default async function DashboardLayout({
   children,
 }: Props) {
+  const status =
+    await getCurrentUserStatus();
+
+  /* ==========================================================
+     حماية الحساب
+  ========================================================== */
+
+  if (status === "inactive") {
+    redirect("/login?error=account_disabled");
+  }
+
+  if (
+    status === "unauthenticated" ||
+    status === "missing"
+  ) {
+    redirect("/login");
+  }
+
   const profile =
     await getCurrentUserProfile();
+
+  if (!profile) {
+    redirect("/login");
+  }
 
   return (
     <div className="relative flex min-h-screen bg-slate-100 dark:bg-slate-950">
