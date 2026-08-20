@@ -13,6 +13,7 @@ import {
   Boxes,
   CheckCircle2,
   ClipboardCheck,
+  Layers3,
   Loader2,
   Package,
   Plus,
@@ -53,7 +54,10 @@ type Product = {
   system_quantity: number;
 };
 
-type AddMode = "with_stock";
+type AddMode =
+  | "all"
+  | "with_stock"
+  | "selected";
 
 export default function CountDetail({
   countId,
@@ -93,11 +97,7 @@ export default function CountDetail({
   const [showAddProducts, setShowAddProducts] =
     useState(false);
 
-  // ============================================================
-  // الجرد يعتمد دائمًا على المنتجات ذات الرصيد
-  // ============================================================
-
-  const [addMode] =
+  const [addMode, setAddMode] =
     useState<AddMode>("with_stock");
 
   const [products, setProducts] =
@@ -186,71 +186,75 @@ export default function CountDetail({
   }, [countId]);
 
   // ============================================================
-  // تحميل المنتجات ذات الرصيد فقط
+  // تحميل المنتجات
+  //
+  // with_stock = true
+  // يعني عرض المنتجات ذات الرصيد فقط.
   // ============================================================
 
-  const loadProducts =
-    useCallback(
-      async (search = "") => {
-        setLoadingProducts(true);
-        setAddError("");
+  const loadProducts = useCallback(
+    async (
+      search = "",
+      withStock = false
+    ) => {
+      setLoadingProducts(true);
+      setAddError("");
 
-        try {
-          const params =
-            new URLSearchParams();
+      try {
+        const params =
+          new URLSearchParams();
 
-          if (search.trim()) {
-            params.set(
-              "search",
-              search.trim()
-            );
-          }
+        if (search.trim()) {
+          params.set(
+            "search",
+            search.trim()
+          );
+        }
 
-          // دائمًا ذات رصيد
+        if (withStock) {
           params.set(
             "withStock",
             "true"
           );
+        }
 
-          const response =
-            await fetch(
-              `/api/inventory/counts/${countId}/items?${params.toString()}`,
-              {
-                cache:
-                  "no-store",
-              }
-            );
-
-          const result =
-            await response.json();
-
-          if (!response.ok) {
-            throw new Error(
-              result.error ??
-                "تعذر تحميل المنتجات."
-            );
+        const response = await fetch(
+          `/api/inventory/counts/${countId}/items?${params.toString()}`,
+          {
+            cache: "no-store",
           }
+        );
 
-          setProducts(
-            result.products ?? []
-          );
-        } catch (err) {
-          setAddError(
-            err instanceof Error
-              ? err.message
-              : "تعذر تحميل المنتجات."
-          );
-        } finally {
-          setLoadingProducts(
-            false
+        const result =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.error ??
+              "تعذر تحميل المنتجات."
           );
         }
-      },
-      [countId]
-    );
+
+        setProducts(
+          result.products ?? []
+        );
+      } catch (err) {
+        setAddError(
+          err instanceof Error
+            ? err.message
+            : "تعذر تحميل المنتجات."
+        );
+      } finally {
+        setLoadingProducts(
+          false
+        );
+      }
+    },
+    [countId]
+  );
 
   // ============================================================
-  // تحميل الجرد عند فتح الصفحة
+  // تحميل الجرد
   // ============================================================
 
   useEffect(() => {
@@ -258,7 +262,7 @@ export default function CountDetail({
   }, [loadCount]);
 
   // ============================================================
-  // تحميل المنتجات ذات الرصيد عند فتح نافذة الإضافة
+  // تحميل المنتجات حسب نوع الإضافة
   // ============================================================
 
   useEffect(() => {
@@ -269,7 +273,8 @@ export default function CountDetail({
     const timer =
       window.setTimeout(() => {
         void loadProducts(
-          productSearch
+          productSearch,
+          addMode === "with_stock"
         );
       }, 250);
 
@@ -280,6 +285,7 @@ export default function CountDetail({
     };
   }, [
     showAddProducts,
+    addMode,
     productSearch,
     loadProducts,
   ]);
@@ -359,11 +365,14 @@ export default function CountDetail({
     "completed";
 
   // ============================================================
-  // فتح نافذة إضافة المنتجات
+  // فتح نافذة الإضافة
+  // الافتراضي: ذات رصيد
   // ============================================================
 
   function openAddProducts() {
     setShowAddProducts(true);
+
+    setAddMode("with_stock");
 
     setProductSearch("");
 
@@ -371,12 +380,14 @@ export default function CountDetail({
 
     setAddError("");
 
-    // تحميل المنتجات ذات الرصيد مباشرة
-    void loadProducts("");
+    void loadProducts(
+      "",
+      true
+    );
   }
 
   // ============================================================
-  // تحديد المنتج
+  // تحديد / إلغاء تحديد منتج
   // ============================================================
 
   function toggleProduct(
@@ -400,16 +411,33 @@ export default function CountDetail({
   }
 
   // ============================================================
-  // إضافة المنتجات المختارة
+  // إضافة المنتجات
+  //
+  // مهم:
+  // with_stock = فلتر فقط.
+  // الإضافة الفعلية تكون للمنتجات المحددة.
   // ============================================================
 
   async function addProducts() {
     if (
+      addMode === "selected" &&
       selectedProductIds.length ===
-      0
+        0
     ) {
       setAddError(
         "اختر منتجًا واحدًا على الأقل."
+      );
+
+      return;
+    }
+
+    if (
+      addMode === "with_stock" &&
+      selectedProductIds.length ===
+        0
+    ) {
+      setAddError(
+        "اختر منتجًا واحدًا على الأقل من المنتجات ذات الرصيد."
       );
 
       return;
@@ -421,6 +449,42 @@ export default function CountDetail({
     setError("");
 
     try {
+      let body:
+        | {
+            mode: "all";
+          }
+        | {
+            mode: "selected";
+            productIds: string[];
+          };
+
+      // ========================================================
+      // ذات رصيد:
+      // نرسل المحدد فقط
+      // ========================================================
+
+      if (
+        addMode ===
+          "with_stock" ||
+        addMode ===
+          "selected"
+      ) {
+        body = {
+          mode: "selected",
+          productIds:
+            selectedProductIds,
+        };
+      } else {
+        // ======================================================
+        // جرد شامل:
+        // يبقى كما كان
+        // ======================================================
+
+        body = {
+          mode: "all",
+        };
+      }
+
       const response =
         await fetch(
           `/api/inventory/counts/${countId}/items`,
@@ -432,13 +496,9 @@ export default function CountDetail({
                 "application/json",
             },
 
-            body: JSON.stringify({
-              mode:
-                "selected",
-
-              productIds:
-                selectedProductIds,
-            }),
+            body: JSON.stringify(
+              body
+            ),
           }
         );
 
@@ -480,7 +540,7 @@ export default function CountDetail({
   }
 
   // ============================================================
-  // حذف صنف
+  // حذف منتج من الجرد
   // ============================================================
 
   async function deleteItem(
@@ -491,7 +551,9 @@ export default function CountDetail({
         `هل تريد حذف "${item.products?.name ?? "هذا المنتج"}" من الجرد؟`
       );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     setDeletingItemId(
       item.id
@@ -816,7 +878,7 @@ export default function CountDetail({
                 size={17}
               />
 
-              إضافة منتجات ذات رصيد
+              إضافة منتجات
             </button>
 
             <button
@@ -884,7 +946,6 @@ export default function CountDetail({
             />
 
             لم تتم إضافة أي أصناف للجرد بعد.
-            يمكنك اختيار المنتجات ذات الرصيد فقط.
           </div>
         )}
 
@@ -950,7 +1011,7 @@ export default function CountDetail({
                 size={17}
               />
 
-              إضافة منتجات ذات رصيد
+              إضافة منتجات
             </button>
           </div>
         ) : (
@@ -1157,7 +1218,7 @@ export default function CountDetail({
       </section>
 
       {/* ========================================================
-          نافذة إضافة المنتجات ذات الرصيد فقط
+          نافذة إضافة المنتجات
       ========================================================= */}
 
       {showAddProducts && (
@@ -1168,11 +1229,11 @@ export default function CountDetail({
             <div className="flex items-center justify-between border-b p-6">
               <div>
                 <h2 className="text-lg font-bold">
-                  إضافة منتجات ذات رصيد
+                  إضافة منتجات للجرد
                 </h2>
 
                 <p className="mt-1 text-xs text-slate-400">
-                  تظهر هنا المنتجات التي لديها رصيد في موقع الجرد فقط.
+                  اختر طريقة عرض المنتجات ثم حدد المنتجات التي تريد إضافتها.
                 </p>
               </div>
 
@@ -1184,7 +1245,6 @@ export default function CountDetail({
                     false
                   )
                 }
-                className="rounded-xl p-2 hover:bg-slate-100"
               >
                 <X
                   size={20}
@@ -1192,9 +1252,127 @@ export default function CountDetail({
               </button>
             </div>
 
-            {/* Search */}
-            <div className="border-b p-5">
-              <div className="relative">
+            {/* ==================================================
+                خيارات الإضافة
+                ================================================== */}
+
+            <div className="grid gap-3 border-b p-5 md:grid-cols-3">
+
+              {/* جرد شامل */}
+              <button
+                type="button"
+                onClick={() => {
+                  setAddMode("all");
+                  setSelectedProductIds([]);
+                  setProductSearch("");
+                }}
+                className={`rounded-2xl border p-4 text-right ${
+                  addMode === "all"
+                    ? "border-blue-300 bg-blue-50"
+                    : ""
+                }`}
+              >
+                <Layers3
+                  size={20}
+                />
+
+                <p className="mt-2 font-semibold">
+                  جرد شامل
+                </p>
+
+                <p className="mt-1 text-xs text-slate-400">
+                  جميع المنتجات
+                </p>
+              </button>
+
+              {/* ذات رصيد */}
+              <button
+                type="button"
+                onClick={() => {
+                  setAddMode(
+                    "with_stock"
+                  );
+
+                  setSelectedProductIds(
+                    []
+                  );
+
+                  setProductSearch(
+                    ""
+                  );
+                }}
+                className={`rounded-2xl border p-4 text-right ${
+                  addMode ===
+                  "with_stock"
+                    ? "border-blue-300 bg-blue-50"
+                    : ""
+                }`}
+              >
+                <Boxes
+                  size={20}
+                />
+
+                <p className="mt-2 font-semibold">
+                  ذات رصيد
+                </p>
+
+                <p className="mt-1 text-xs text-slate-400">
+                  اعرض المنتجات ذات الرصيد واختر منها
+                </p>
+              </button>
+
+              {/* اختيار يدوي */}
+              <button
+                type="button"
+                onClick={() => {
+                  setAddMode(
+                    "selected"
+                  );
+
+                  setSelectedProductIds(
+                    []
+                  );
+
+                  setProductSearch(
+                    ""
+                  );
+                }}
+                className={`rounded-2xl border p-4 text-right ${
+                  addMode ===
+                  "selected"
+                    ? "border-blue-300 bg-blue-50"
+                    : ""
+                }`}
+              >
+                <Search
+                  size={20}
+                />
+
+                <p className="mt-2 font-semibold">
+                  اختيار يدوي
+                </p>
+
+                <p className="mt-1 text-xs text-slate-400">
+                  البحث في جميع المنتجات
+                </p>
+              </button>
+            </div>
+
+            {/* ==================================================
+                المنتجات
+                ================================================== */}
+
+            <div className="flex-1 overflow-y-auto p-5">
+
+              {addError && (
+                <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
+                  {
+                    addError
+                  }
+                </div>
+              )}
+
+              <div className="relative mb-4">
                 <Search
                   size={18}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1217,24 +1395,18 @@ export default function CountDetail({
                 />
               </div>
 
-              <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
-                <Boxes
-                  size={15}
-                />
+              {addMode ===
+                "with_stock" && (
+                <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                  <div className="flex items-center gap-2">
+                    <Boxes
+                      size={17}
+                    />
 
-                <span>
-                  يتم عرض المنتجات التي رصيدها أكبر من صفر فقط.
-                </span>
-              </div>
-            </div>
-
-            {/* Products */}
-            <div className="flex-1 overflow-y-auto p-5">
-              {addError && (
-                <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
-                  {
-                    addError
-                  }
+                    <span>
+                      يتم عرض المنتجات ذات الرصيد في موقع الجرد فقط. حدد المنتجات التي تريد جردها.
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -1243,101 +1415,111 @@ export default function CountDetail({
                   <Loader2
                     className="mx-auto animate-spin text-slate-400"
                   />
-
-                  <p className="mt-3 text-sm text-slate-400">
-                    جاري تحميل المنتجات ذات الرصيد...
-                  </p>
-                </div>
-              ) : products.length ===
-                0 ? (
-                <div className="py-12 text-center">
-                  <Boxes
-                    size={36}
-                    className="mx-auto text-slate-300"
-                  />
-
-                  <p className="mt-4 font-semibold text-slate-600">
-                    لا توجد منتجات ذات رصيد
-                  </p>
-
-                  <p className="mt-1 text-sm text-slate-400">
-                    لا يوجد رصيد متاح في هذا الموقع حاليًا.
-                  </p>
                 </div>
               ) : (
                 <div className="max-h-96 space-y-2 overflow-y-auto">
-                  {products.map(
-                    (product) => {
-                      const selected =
-                        selectedProductIds.includes(
-                          product.id
-                        );
 
-                      return (
-                        <button
-                          key={
+                  {products.length ===
+                  0 ? (
+                    <div className="py-12 text-center">
+                      <Package
+                        size={32}
+                        className="mx-auto text-slate-300"
+                      />
+
+                      <p className="mt-4 font-semibold text-slate-600">
+                        لا توجد منتجات
+                      </p>
+
+                      {addMode ===
+                        "with_stock" && (
+                        <p className="mt-1 text-sm text-slate-400">
+                          لا توجد منتجات ذات رصيد في هذا الموقع.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    products.map(
+                      (
+                        product
+                      ) => {
+                        const selected =
+                          selectedProductIds.includes(
                             product.id
-                          }
-                          type="button"
-                          onClick={() =>
-                            toggleProduct(
-                              product.id
-                            )
-                          }
-                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-right transition ${
-                            selected
-                              ? "border-blue-300 bg-blue-50"
-                              : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={`flex h-5 w-5 items-center justify-center rounded border text-xs ${
-                                selected
-                                  ? "border-blue-600 bg-blue-600 text-white"
-                                  : "border-slate-300"
-                              }`}
-                            >
-                              {selected &&
-                                "✓"}
-                            </span>
+                          );
 
-                            <div>
-                              <p className="font-semibold">
-                                {
-                                  product.name
-                                }
+                        return (
+                          <button
+                            key={
+                              product.id
+                            }
+                            type="button"
+                            onClick={() =>
+                              toggleProduct(
+                                product.id
+                              )
+                            }
+                            className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-right ${
+                              selected
+                                ? "border-blue-300 bg-blue-50"
+                                : "border-slate-200 hover:bg-slate-50"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+
+                              {/* Checkbox */}
+                              <span
+                                className={`flex h-5 w-5 items-center justify-center rounded border text-xs ${
+                                  selected
+                                    ? "border-blue-600 bg-blue-600 text-white"
+                                    : "border-slate-300 bg-white"
+                                }`}
+                              >
+                                {selected &&
+                                  "✓"}
+                              </span>
+
+                              <div>
+                                <p className="font-semibold">
+                                  {
+                                    product.name
+                                  }
+                                </p>
+
+                                <p className="font-mono text-xs text-slate-400">
+                                  {
+                                    product.sku
+                                  }
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="text-left">
+                              <p className="text-xs text-slate-400">
+                                رصيد النظام
                               </p>
 
-                              <p className="font-mono text-xs text-slate-400">
+                              <p className="font-bold">
                                 {
-                                  product.sku
+                                  product.system_quantity
                                 }
                               </p>
                             </div>
-                          </div>
-
-                          <div className="text-left">
-                            <p className="text-xs text-slate-400">
-                              رصيد النظام
-                            </p>
-
-                            <p className="font-bold text-blue-600">
-                              {
-                                product.system_quantity
-                              }
-                            </p>
-                          </div>
-                        </button>
-                      );
-                    }
+                          </button>
+                        );
+                      }
+                    )
                   )}
                 </div>
               )}
             </div>
 
-            {/* Footer */}
+            {/* ==================================================
+                Footer
+                ================================================== */}
+
             <div className="flex items-center justify-between border-t p-5">
+
               <div className="text-sm text-slate-500">
                 {selectedProductIds.length >
                 0
@@ -1346,6 +1528,7 @@ export default function CountDetail({
               </div>
 
               <div className="flex gap-3">
+
                 <button
                   type="button"
                   onClick={() =>
@@ -1363,13 +1546,17 @@ export default function CountDetail({
                   disabled={
                     addingProducts ||
                     loadingProducts ||
-                    selectedProductIds.length ===
-                      0
+                    (
+                      addMode !==
+                        "all" &&
+                      selectedProductIds.length ===
+                        0
+                    )
                   }
                   onClick={() =>
                     void addProducts()
                   }
-                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {addingProducts && (
                     <Loader2
@@ -1378,7 +1565,10 @@ export default function CountDetail({
                     />
                   )}
 
-                  إضافة المحدد
+                  {addMode ===
+                  "all"
+                    ? "إضافة جميع المنتجات"
+                    : "إضافة المحدد"}
                 </button>
               </div>
             </div>
