@@ -11,9 +11,11 @@ import {
   UserPlus,
   Trash2,
   Loader2,
+  Pencil,
 } from "lucide-react";
 
 import UserModal from "./UserModal";
+import EditUserModal from "./EditUserModal";
 import UserPermissionsModal from "./UserPermissionsModal";
 import { deleteUser } from "./actions";
 
@@ -75,8 +77,7 @@ export default function UsersTable({
   locations,
   currentUserId,
 }: Props) {
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
   const [statusFilter, setStatusFilter] =
     useState("all");
@@ -86,6 +87,11 @@ export default function UsersTable({
 
   const [modalOpen, setModalOpen] =
     useState(false);
+
+  const [
+    editUser,
+    setEditUser,
+  ] = useState<UserRow | null>(null);
 
   const [
     permissionsUser,
@@ -309,12 +315,14 @@ export default function UsersTable({
       ====================================================== */}
 
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+
         {/* ===================================================
             رأس الجدول
         ==================================================== */}
 
         <div className="border-b border-slate-100 p-5 sm:p-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+
             <div>
               <h2 className="text-lg font-bold text-slate-900">
                 قائمة المستخدمين
@@ -326,6 +334,7 @@ export default function UsersTable({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
+
               {/* البحث */}
 
               <div className="relative sm:w-80">
@@ -419,9 +428,11 @@ export default function UsersTable({
         ==================================================== */}
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1350px] text-right">
+          <table className="w-full min-w-[1450px] text-right">
+
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/70">
+
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500">
                   المستخدم
                 </th>
@@ -449,12 +460,14 @@ export default function UsersTable({
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500">
                   الإجراءات
                 </th>
+
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100">
-              {filteredUsers.length ===
-              0 ? (
+
+              {filteredUsers.length === 0 ? (
+
                 <tr>
                   <td
                     colSpan={7}
@@ -474,9 +487,12 @@ export default function UsersTable({
                     </p>
                   </td>
                 </tr>
+
               ) : (
+
                 filteredUsers.map(
                   (user) => {
+
                     const isCurrentUser =
                       user.id ===
                       currentUserId;
@@ -494,10 +510,12 @@ export default function UsersTable({
                         key={user.id}
                         className="transition hover:bg-slate-50/70"
                       >
+
                         {/* المستخدم */}
 
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
+
                             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                               <Users
                                 size={19}
@@ -505,7 +523,9 @@ export default function UsersTable({
                             </div>
 
                             <div>
+
                               <div className="flex items-center gap-2">
+
                                 <p className="font-semibold text-slate-800">
                                   {
                                     user.full_name
@@ -517,6 +537,7 @@ export default function UsersTable({
                                     أنت
                                   </span>
                                 )}
+
                               </div>
 
                               <p className="mt-1 text-xs text-slate-400">
@@ -533,6 +554,7 @@ export default function UsersTable({
                                   }
                                 </p>
                               )}
+
                             </div>
                           </div>
                         </td>
@@ -540,8 +562,11 @@ export default function UsersTable({
                         {/* الدور */}
 
                         <td className="px-6 py-5">
+
                           {user.roles ? (
+
                             <div>
+
                               <p className="font-medium text-slate-800">
                                 {
                                   user
@@ -560,25 +585,34 @@ export default function UsersTable({
                                   }
                                 </p>
                               )}
+
                             </div>
+
                           ) : (
+
                             <span className="text-sm text-slate-400">
                               بدون دور
                             </span>
+
                           )}
+
                         </td>
 
                         {/* الموقع */}
 
                         <td className="px-6 py-5">
+
                           {user.locations ? (
+
                             <div className="flex items-center gap-2">
+
                               <MapPin
                                 size={16}
                                 className="text-slate-400"
                               />
 
                               <div>
+
                                 <p className="font-medium text-slate-700">
                                   {
                                     user
@@ -594,13 +628,19 @@ export default function UsersTable({
                                       .code
                                   }
                                 </p>
+
                               </div>
+
                             </div>
+
                           ) : (
+
                             <span className="text-sm text-slate-400">
                               غير محدد
                             </span>
+
                           )}
+
                         </td>
 
                         {/* الجوال */}
@@ -613,6 +653,7 @@ export default function UsersTable({
                         {/* الحالة */}
 
                         <td className="px-6 py-5">
+
                           <span
                             className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${
                               user.is_active
@@ -624,6 +665,7 @@ export default function UsersTable({
                               ? "نشط"
                               : "غير نشط"}
                           </span>
+
                         </td>
 
                         {/* التاريخ */}
@@ -634,12 +676,32 @@ export default function UsersTable({
                           )}
                         </td>
 
-                        {/* =================================================
-                            الإجراءات
-                        ================================================== */}
+                        {/* الإجراءات */}
 
                         <td className="px-6 py-5">
+
                           <div className="flex items-center gap-2">
+
+                            {/* تعديل */}
+
+                            {!isGeneralManager && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEditUser(
+                                    user
+                                  )
+                                }
+                                className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                              >
+                                <Pencil
+                                  size={15}
+                                />
+
+                                تعديل
+                              </button>
+                            )}
+
                             {/* الصلاحيات */}
 
                             {!isCurrentUser &&
@@ -665,10 +727,13 @@ export default function UsersTable({
 
                             {isCurrentUser ||
                             isGeneralManager ? (
+
                               <span className="text-xs text-slate-400">
                                 —
                               </span>
+
                             ) : (
+
                               <button
                                 type="button"
                                 onClick={() =>
@@ -683,29 +748,40 @@ export default function UsersTable({
                                 }
                                 className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                               >
+
                                 {isDeleting ? (
+
                                   <Loader2
                                     size={15}
                                     className="animate-spin"
                                   />
+
                                 ) : (
+
                                   <Trash2
                                     size={15}
                                   />
+
                                 )}
 
                                 {isDeleting
                                   ? "جاري الحذف..."
                                   : "حذف"}
+
                               </button>
+
                             )}
+
                           </div>
+
                         </td>
+
                       </tr>
                     );
                   }
                 )
               )}
+
             </tbody>
           </table>
         </div>
@@ -721,6 +797,21 @@ export default function UsersTable({
           locations={locations}
           onClose={() =>
             setModalOpen(false)
+          }
+        />
+      )}
+
+      {/* =====================================================
+          نافذة تعديل المستخدم
+      ====================================================== */}
+
+      {editUser && (
+        <EditUserModal
+          user={editUser}
+          roles={roles}
+          locations={locations}
+          onClose={() =>
+            setEditUser(null)
           }
         />
       )}
@@ -761,8 +852,11 @@ function StatCard({
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+
       <div className="flex items-start justify-between">
+
         <div>
+
           <p className="text-sm font-medium text-slate-500">
             {label}
           </p>
@@ -770,12 +864,15 @@ function StatCard({
           <p className="mt-2 text-2xl font-bold text-slate-900">
             {value}
           </p>
+
         </div>
 
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
           {icon}
         </div>
+
       </div>
+
     </div>
   );
 }
