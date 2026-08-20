@@ -145,7 +145,8 @@ async function validateCountAccess(
 
   if (
     !location ||
-    location.company_id !== dbUser.company_id ||
+    location.company_id !==
+      dbUser.company_id ||
     !location.is_active
   ) {
     return {
@@ -224,17 +225,57 @@ async function validateCountAccess(
   };
 }
 
+// ============================================================
+// جلب أرصدة موقع الجرد
+//
+// مهم:
+// لا نقرأ stock_balances مباشرة من العميل بسبب RLS.
+// نستخدم RPC تتحقق من الشركة والصلاحية ثم ترجع
+// رصيد الموقع المحدد فقط.
+// ============================================================
+
+async function getCountBalances(
+  supabase: any,
+  locationId: string
+) {
+  const {
+    data,
+    error,
+  } = await supabase.rpc(
+    "get_stock_count_balances",
+    {
+      target_location_id:
+        locationId,
+    }
+  );
+
+  if (error) {
+    return {
+      data: null,
+      error,
+    };
+  }
+
+  return {
+    data: data ?? [],
+    error: null,
+  };
+}
+
 export async function GET(
   request: Request,
   { params }: RouteParams
 ) {
   try {
-    const { id: countId } = await params;
+    const { id: countId } =
+      await params;
 
     const auth =
       await getAuthenticatedUser();
 
-    if (auth.response) return auth.response;
+    if (auth.response) {
+      return auth.response;
+    }
 
     const access =
       await validateCountAccess(
@@ -245,8 +286,14 @@ export async function GET(
 
     if (access.error) {
       return NextResponse.json(
-        { error: access.error },
-        { status: access.status }
+        {
+          error:
+            access.error,
+        },
+        {
+          status:
+            access.status,
+        }
       );
     }
 
@@ -262,6 +309,10 @@ export async function GET(
       url.searchParams.get(
         "withStock"
       ) === "true";
+
+    // ==========================================================
+    // المنتجات الموجودة مسبقًا في الجرد
+    // ==========================================================
 
     const {
       data: existingItems,
@@ -280,7 +331,9 @@ export async function GET(
           error:
             existingError.message,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
@@ -291,6 +344,10 @@ export async function GET(
             item.product_id
         )
       );
+
+    // ==========================================================
+    // المنتجات
+    // ==========================================================
 
     let productsQuery =
       auth.supabase
@@ -329,36 +386,48 @@ export async function GET(
           error:
             productsError.message,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
+
+    // ==========================================================
+    // أرصدة الفرع الخاص بالجرد
+    // ==========================================================
 
     const {
       data: balances,
       error: balancesError,
-    } = await auth.supabase
-      .from("stock_balances")
-      .select(`
-        product_id,
-        available_quantity
-      `)
-      .eq(
-        "location_id",
-        access.stockCount.location_id
+    } =
+      await getCountBalances(
+        auth.supabase,
+        access.stockCount
+          .location_id
       );
 
     if (balancesError) {
       return NextResponse.json(
         {
           error:
-            balancesError.message,
+            balancesError.message ||
+            "تعذر تحميل أرصدة الموقع.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
+    // ==========================================================
+    // تحويل الأرصدة إلى Map
+    // ==========================================================
+
     const balanceMap =
-      new Map(
+      new Map<
+        string,
+        number
+      >(
         (balances ?? []).map(
           (balance: any) => [
             balance.product_id,
@@ -369,6 +438,10 @@ export async function GET(
           ]
         )
       );
+
+    // ==========================================================
+    // بناء قائمة المنتجات
+    // ==========================================================
 
     let result =
       (products ?? [])
@@ -381,8 +454,14 @@ export async function GET(
         .map(
           (product: any) => ({
             id: product.id,
-            name: product.name,
-            sku: product.sku,
+
+            name:
+              product.name,
+
+            sku:
+              product.sku,
+
+            // كمية النظام من نفس موقع الجرد
             system_quantity:
               balanceMap.get(
                 product.id
@@ -390,12 +469,17 @@ export async function GET(
           })
         );
 
+    // ==========================================================
+    // ذات رصيد
+    // ==========================================================
+
     if (withStock) {
       result =
         result.filter(
           (product: any) =>
-            product.system_quantity >
-            0
+            Number(
+              product.system_quantity
+            ) > 0
         );
     }
 
@@ -404,6 +488,11 @@ export async function GET(
       products: result,
     });
   } catch (error) {
+    console.error(
+      "GET /api/inventory/counts/[id]/items:",
+      error
+    );
+
     return NextResponse.json(
       {
         error:
@@ -411,7 +500,9 @@ export async function GET(
             ? error.message
             : "تعذر تحميل المنتجات.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
@@ -427,7 +518,9 @@ export async function POST(
     const auth =
       await getAuthenticatedUser();
 
-    if (auth.response) return auth.response;
+    if (auth.response) {
+      return auth.response;
+    }
 
     const access =
       await validateCountAccess(
@@ -438,13 +531,23 @@ export async function POST(
 
     if (access.error) {
       return NextResponse.json(
-        { error: access.error },
-        { status: access.status }
+        {
+          error:
+            access.error,
+        },
+        {
+          status:
+            access.status,
+        }
       );
     }
 
     const body =
       (await request.json()) as AddItemsBody;
+
+    // ==========================================================
+    // التحقق من طريقة الإضافة
+    // ==========================================================
 
     if (
       body.mode !== "all" &&
@@ -456,7 +559,9 @@ export async function POST(
           error:
             "طريقة إضافة المنتجات غير صالحة.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -473,9 +578,15 @@ export async function POST(
           error:
             "اختر منتجًا واحدًا على الأقل.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
+
+    // ==========================================================
+    // المنتجات الموجودة مسبقًا
+    // ==========================================================
 
     const {
       data: existingItems,
@@ -494,7 +605,9 @@ export async function POST(
           error:
             existingError.message,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
@@ -505,6 +618,10 @@ export async function POST(
             item.product_id
         )
       );
+
+    // ==========================================================
+    // المنتجات
+    // ==========================================================
 
     let productsQuery =
       auth.supabase
@@ -544,36 +661,48 @@ export async function POST(
           error:
             productsError.message,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
+
+    // ==========================================================
+    // أرصدة نفس موقع الجرد
+    // ==========================================================
 
     const {
       data: balances,
       error: balancesError,
-    } = await auth.supabase
-      .from("stock_balances")
-      .select(`
-        product_id,
-        available_quantity
-      `)
-      .eq(
-        "location_id",
-        access.stockCount.location_id
+    } =
+      await getCountBalances(
+        auth.supabase,
+        access.stockCount
+          .location_id
       );
 
     if (balancesError) {
       return NextResponse.json(
         {
           error:
-            balancesError.message,
+            balancesError.message ||
+            "تعذر تحميل أرصدة الموقع.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
+    // ==========================================================
+    // Map للأرصدة
+    // ==========================================================
+
     const balanceMap =
-      new Map(
+      new Map<
+        string,
+        number
+      >(
         (balances ?? []).map(
           (balance: any) => [
             balance.product_id,
@@ -584,6 +713,10 @@ export async function POST(
           ]
         )
       );
+
+    // ==========================================================
+    // المنتجات المرشحة
+    // ==========================================================
 
     let candidates =
       products ?? [];
@@ -601,6 +734,10 @@ export async function POST(
             ) > 0
         );
     }
+
+    // ==========================================================
+    // إنشاء بنود الجرد
+    // ==========================================================
 
     const items =
       candidates
@@ -621,6 +758,10 @@ export async function POST(
             product_id:
               product.id,
 
+            // ==================================================
+            // كمية النظام الصحيحة من الفرع المحدد للجرد
+            // ==================================================
+
             system_quantity:
               balanceMap.get(
                 product.id
@@ -637,14 +778,24 @@ export async function POST(
           })
         );
 
+    // ==========================================================
+    // لا توجد منتجات
+    // ==========================================================
+
     if (!items.length) {
       return NextResponse.json({
         success: true,
+
         addedCount: 0,
+
         message:
           "لا توجد منتجات جديدة لإضافتها إلى الجرد.",
       });
     }
+
+    // ==========================================================
+    // إدخال بنود الجرد
+    // ==========================================================
 
     const {
       error: insertError,
@@ -660,21 +811,32 @@ export async function POST(
           error:
             insertError.message,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
     return NextResponse.json(
       {
         success: true,
+
         addedCount:
           items.length,
+
         message:
           `تمت إضافة ${items.length} منتج إلى الجرد.`,
       },
-      { status: 201 }
+      {
+        status: 201,
+      }
     );
   } catch (error) {
+    console.error(
+      "POST /api/inventory/counts/[id]/items:",
+      error
+    );
+
     return NextResponse.json(
       {
         error:
@@ -682,7 +844,9 @@ export async function POST(
             ? error.message
             : "تعذر إضافة المنتجات إلى الجرد.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
@@ -698,7 +862,9 @@ export async function DELETE(
     const auth =
       await getAuthenticatedUser();
 
-    if (auth.response) return auth.response;
+    if (auth.response) {
+      return auth.response;
+    }
 
     const access =
       await validateCountAccess(
@@ -709,8 +875,14 @@ export async function DELETE(
 
     if (access.error) {
       return NextResponse.json(
-        { error: access.error },
-        { status: access.status }
+        {
+          error:
+            access.error,
+        },
+        {
+          status:
+            access.status,
+        }
       );
     }
 
@@ -729,7 +901,9 @@ export async function DELETE(
           error:
             "معرّف بند الجرد مطلوب.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -754,7 +928,9 @@ export async function DELETE(
           error:
             itemError.message,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
@@ -764,7 +940,9 @@ export async function DELETE(
           error:
             "المنتج غير موجود في عملية الجرد.",
         },
-        { status: 404 }
+        {
+          status: 404,
+        }
       );
     }
 
@@ -787,16 +965,24 @@ export async function DELETE(
           error:
             deleteError.message,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
     return NextResponse.json({
       success: true,
+
       message:
         "تم حذف المنتج من عملية الجرد.",
     });
   } catch (error) {
+    console.error(
+      "DELETE /api/inventory/counts/[id]/items:",
+      error
+    );
+
     return NextResponse.json(
       {
         error:
@@ -804,7 +990,9 @@ export async function DELETE(
             ? error.message
             : "تعذر حذف المنتج من الجرد.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
