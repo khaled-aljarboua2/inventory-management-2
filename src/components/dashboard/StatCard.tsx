@@ -1,165 +1,86 @@
-import { ReactNode } from "react";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import StatsGrid from "@/components/dashboard/StatsGrid";
 
-type Props = {
-  title: string;
-  value: string | number;
-  description?: string;
-  icon: ReactNode;
-  color?: string;
-};
-
-export default function StatCard({
-  title,
-  value,
-  description = "محدث حاليًا",
-  icon,
-  color = "blue",
-}: Props) {
-  const themes: Record<
-    string,
-    {
-      icon: string;
-      accent: string;
-      dot: string;
-    }
-  > = {
-    blue: {
-      icon: "bg-blue-50 text-blue-600",
-      accent: "bg-blue-600",
-      dot: "bg-blue-500",
-    },
-
-    green: {
-      icon: "bg-emerald-50 text-emerald-600",
-      accent: "bg-emerald-600",
-      dot: "bg-emerald-500",
-    },
-
-    orange: {
-      icon: "bg-amber-50 text-amber-600",
-      accent: "bg-amber-500",
-      dot: "bg-amber-500",
-    },
-
-    purple: {
-      icon: "bg-violet-50 text-violet-600",
-      accent: "bg-violet-600",
-      dot: "bg-violet-500",
-    },
-  };
-
-  const theme =
-    themes[color] ?? themes.blue;
-
+export default function DashboardPage() {
   return (
-    <div
-      className="
-        group
-        relative
-        min-w-0
-        overflow-hidden
-        rounded-2xl
-        border
-        border-slate-200
-        bg-white
-        px-5
-        py-5
-        shadow-sm
-        transition-all
-        duration-200
-        hover:-translate-y-0.5
-        hover:border-slate-300
-        hover:shadow-md
-      "
-    >
-      {/* ======================================================
-          الخط الجانبي
-      ======================================================= */}
+    <DashboardLayout>
+      <main
+        dir="rtl"
+        className="
+          mx-auto
+          w-full
+          max-w-[1600px]
+          space-y-6
+          px-1
+          sm:space-y-7
+        "
+      >
+        {/* =====================================================
+            Header
+        ====================================================== */}
 
-      <div
-        className={`
-          absolute
-          right-0
-          top-0
-          h-full
-          w-1
-          ${theme.accent}
-        `}
-      />
-
-      {/* ======================================================
-          الرأس
-      ======================================================= */}
-
-      <div className="relative flex items-center justify-between gap-4">
-        {/* العنوان */}
-
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-slate-500">
-            {title}
-          </p>
-        </div>
-
-        {/* الأيقونة */}
-
-        <div
-          className={`
-            flex
-            h-11
-            w-11
-            shrink-0
-            items-center
-            justify-center
-            rounded-xl
-            ${theme.icon}
-            transition-transform
-            duration-200
-            group-hover:scale-105
-          `}
-        >
-          {icon}
-        </div>
-      </div>
-
-      {/* ======================================================
-          الرقم
-      ======================================================= */}
-
-      <div className="relative mt-5">
-        <h2
+        <section
           className="
-            truncate
-            text-3xl
-            font-bold
-            leading-none
-            tracking-tight
-            text-slate-900
-            sm:text-4xl
+            rounded-2xl
+            border
+            border-slate-200
+            bg-white
+            px-5
+            py-5
+            shadow-sm
+            sm:px-7
+            sm:py-6
           "
         >
-          {value}
-        </h2>
-      </div>
+          <div className="flex items-center justify-between gap-5">
+            <div className="min-w-0">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-blue-600" />
 
-      {/* ======================================================
-          الوصف
-      ======================================================= */}
+                <span className="text-xs font-semibold text-blue-600">
+                  نظام إدارة المخزون
+                </span>
+              </div>
 
-      <div className="relative mt-3 flex min-w-0 items-center gap-2">
-        <span
-          className={`
-            h-1.5
-            w-1.5
-            shrink-0
-            rounded-full
-            ${theme.dot}
-          `}
-        />
+              <h1
+                className="
+                  text-2xl
+                  font-bold
+                  tracking-tight
+                  text-slate-950
+                  sm:text-3xl
+                "
+              >
+                لوحة التحكم
+              </h1>
 
-        <span className="truncate text-xs text-slate-400">
-          {description}
-        </span>
-      </div>
-    </div>
+              <p className="mt-1.5 text-sm text-slate-500">
+                نظرة سريعة على المخزون والعمليات في النظام.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* =====================================================
+            Statistics
+        ====================================================== */}
+
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">
+                ملخص النظام
+              </h2>
+
+              <p className="mt-1 text-xs text-slate-400">
+                أهم مؤشرات المخزون الحالية
+              </p>
+            </div>
+          </div>
+
+          <StatsGrid />
+        </section>
+      </main>
+    </DashboardLayout>
   );
 }
