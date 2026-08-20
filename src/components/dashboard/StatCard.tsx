@@ -58,78 +58,53 @@ export default function StatCard({
     },
   };
 
-  const theme =
-    themes[color] ?? themes.blue;
+  const theme = themes[color] ?? themes.blue;
 
   return (
     <div
       className={`
         group
         relative
+        min-w-0
         overflow-hidden
         rounded-2xl
         border
         border-slate-200
         bg-white
-        p-6
+        px-5
+        py-5
         shadow-sm
         transition-all
-        duration-500
+        duration-300
         ease-out
-        hover:-translate-y-1
-        hover:shadow-xl
-        hover:shadow-slate-200/60
+        hover:-translate-y-0.5
+        hover:shadow-lg
+        hover:shadow-slate-200/50
         ${theme.hover}
       `}
     >
-      {/* ======================================================
-          Glow
-      ======================================================= */}
+      {/* Glow */}
 
       <div
         className={`
           pointer-events-none
           absolute
-          -right-16
-          -top-16
-          h-40
-          w-40
-          rounded-full
-          blur-3xl
-          opacity-0
-          transition-all
-          duration-700
-          group-hover:opacity-70
-          group-hover:scale-110
-          ${theme.glow}
-        `}
-      />
-
-      {/* ======================================================
-          Glow إضافي
-      ======================================================= */}
-
-      <div
-        className={`
-          pointer-events-none
-          absolute
-          -bottom-20
-          -left-20
+          -right-12
+          -top-12
           h-32
           w-32
           rounded-full
           blur-3xl
           opacity-0
-          transition-opacity
-          duration-700
-          group-hover:opacity-40
+          transition-all
+          duration-500
+          group-hover:scale-110
+          group-hover:opacity-70
           ${theme.glow}
         `}
       />
 
-      {/* ======================================================
-          الخط العلوي
-      ======================================================= */}
+      {/* Top line */}
 
       <div
         className={`
@@ -141,20 +116,18 @@ export default function StatCard({
           ${theme.line}
           opacity-0
           transition-opacity
-          duration-500
+          duration-300
           group-hover:opacity-100
         `}
       />
 
-      {/* ======================================================
-          المحتوى
-      ======================================================= */}
+      {/* Content */}
 
-      <div className="relative flex items-center justify-between gap-5">
-        {/* البيانات */}
+      <div className="relative flex items-start justify-between gap-4">
+        {/* Information */}
 
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-500">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-semibold text-slate-500 sm:text-sm">
             {title}
           </p>
 
@@ -162,66 +135,60 @@ export default function StatCard({
             className="
               mt-2
               truncate
-              text-3xl
+              text-2xl
               font-bold
               tracking-tight
               text-slate-900
-              transition-all
-              duration-300
-              group-hover:-translate-x-0.5
+              sm:text-3xl
             "
           >
             {value}
           </h2>
 
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-2.5 flex min-w-0 items-center gap-2">
             <span
               className={`
                 h-1.5
                 w-1.5
+                shrink-0
                 rounded-full
                 ${theme.dot}
               `}
             />
 
-            <span className="truncate text-xs text-slate-400">
+            <span className="truncate text-[11px] text-slate-400 sm:text-xs">
               {description}
             </span>
           </div>
         </div>
 
-        {/* الأيقونة */}
+        {/* Icon */}
 
         <div
           className={`
             relative
             flex
-            h-14
-            w-14
+            h-11
+            w-11
             shrink-0
             items-center
             justify-center
-            rounded-2xl
+            rounded-xl
             ${theme.icon}
-            shadow-sm
-            transition-all
-            duration-500
-            ease-out
-            group-hover:scale-110
-            group-hover:rotate-2
+            transition-transform
+            duration-300
+            group-hover:scale-105
           `}
         >
-          {/* توهج الأيقونة */}
-
           <div
             className={`
               absolute
               inset-0
-              rounded-2xl
+              rounded-xl
               opacity-0
-              blur-xl
+              blur-lg
               transition-opacity
-              duration-500
+              duration-300
               group-hover:opacity-60
               ${theme.glow}
             `}
