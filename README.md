@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Inventory Management System
 
-## Getting Started
+نظام احترافي لإدارة المخزون متعدد الفروع والمستودعات، يهدف إلى تنظيم المنتجات والمخزون وطلبات النقل والصلاحيات في نظام مركزي سهل الاستخدام.
 
-First, run the development server:
+## 🚀 التقنيات المستخدمة
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Next.js 16
+- TypeScript
+- Tailwind CSS
+- Supabase
+- PostgreSQL
+- React
+- Lucide React
+- GitHub
+- Vercel
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📦 المزايا
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- إدارة المنتجات
+- إدارة الفروع
+- إدارة المستودعات
+- إدارة المخزون
+- طلبات نقل المخزون بين المواقع
+- تتبع حالة طلبات النقل
+- إدارة المستخدمين والصلاحيات
+- نظام أدوار متعدد المستويات
+- دعم تعدد الفروع والمواقع
+- واجهة متجاوبة للجوال والكمبيوتر
+- لوحة تحكم إحصائية
+- نظام مصادقة وتسجيل دخول
+- حماية البيانات باستخدام Supabase RLS
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔄 حالات طلبات النقل
 
-## Learn More
+يدعم النظام دورة طلب النقل من الإنشاء وحتى الاستلام، ومن الحالات:
 
-To learn more about Next.js, take a look at the following resources:
+- Pending
+- Approved
+- Preparing
+- Shipped
+- Received
+- Cancelled
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🏢 الهيكل العام
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+Inventory Management System
+│
+├── Products
+│   └── إدارة المنتجات
+│
+├── Inventory
+│   └── إدارة المخزون
+│
+├── Locations
+│   ├── Branches
+│   └── Warehouses
+│
+├── Transfer Requests
+│   └── نقل المخزون بين المواقع
+│
+├── Users
+│   └── المستخدمون والصلاحيات
+│
+└── Dashboard
+    └── الإحصائيات والعمليات الأخيرة
