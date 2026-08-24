@@ -135,7 +135,7 @@ export default function UnitsTable({ units }: Props) {
             className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 ${
               editingUnit
                 ? "bg-amber-50 text-amber-600"
-                : "bg-blue-50 text-blue-600"
+                : "bg-teal-50 text-teal-600"
             }`}
           >
             {editingUnit ? (
@@ -188,7 +188,7 @@ export default function UnitsTable({ units }: Props) {
               }
               disabled={loading}
               required
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
 
@@ -206,7 +206,7 @@ export default function UnitsTable({ units }: Props) {
                 setSymbol(e.target.value)
               }
               disabled={loading}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
 
@@ -215,7 +215,7 @@ export default function UnitsTable({ units }: Props) {
             <button
               type="submit"
               disabled={loading}
-              className="group inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="group inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white shadow-sm shadow-teal-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-md hover:shadow-teal-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -337,7 +337,7 @@ export default function UnitsTable({ units }: Props) {
                               behavior: "smooth",
                             })
                         }
-                        className="mt-4 text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+                        className="mt-4 text-sm font-semibold text-teal-600 transition hover:text-teal-700"
                       >
                         إضافة وحدة
                       </button>
@@ -353,7 +353,7 @@ export default function UnitsTable({ units }: Props) {
                     {/* الوحدة */}
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-blue-100">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-all duration-200 group-hover:scale-105 group-hover:bg-teal-100">
                           <Ruler
                             size={19}
                             strokeWidth={1.8}
@@ -402,7 +402,7 @@ export default function UnitsTable({ units }: Props) {
                             startEdit(unit)
                           }
                           disabled={loading}
-                          className="group/edit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
+                          className="group/edit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-600 disabled:opacity-50"
                         >
                           <Edit3
                             size={14}
