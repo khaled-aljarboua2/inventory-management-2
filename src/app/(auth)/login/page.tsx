@@ -195,7 +195,7 @@ function LoginContent() {
         ==================================================== */}
 
      {/* Logo */}
-<div className="mb-4 flex justify-center">
+<div className="mb-8 flex justify-center">
   <img
     src="/warevance-logo.PNG"
     alt="WAREVANCE - Inventory & Branch Management"
