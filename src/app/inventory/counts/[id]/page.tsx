@@ -1,13 +1,15 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import CountDetail from "./CountDetail";
 
-export default async function StockCountDetailPage({
-  params,
-}: {
+type Props = {
   params: Promise<{
     id: string;
   }>;
-}) {
+};
+
+export default async function StockCountDetailPage({
+  params,
+}: Props) {
   const { id } = await params;
 
   return (
