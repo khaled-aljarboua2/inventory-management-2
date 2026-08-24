@@ -34,12 +34,9 @@ export default async function ProductsPage() {
   const {
     data: canViewProducts,
     error: permissionError,
-  } = await supabase.rpc(
-    "has_permission",
-    {
-      permission_code: "products.view",
-    }
-  );
+  } = await supabase.rpc("has_permission", {
+    permission_code: "products.view",
+  });
 
   if (
     permissionError ||
@@ -51,14 +48,22 @@ export default async function ProductsPage() {
           dir="rtl"
           className="mx-auto w-full max-w-[1600px]"
         >
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-            <h1 className="text-lg font-bold text-amber-800">
-              ليس لديك صلاحية الوصول
-            </h1>
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                !
+              </div>
 
-            <p className="mt-2 text-sm text-amber-700">
-              لا تملك الصلاحية اللازمة لعرض المنتجات.
-            </p>
+              <div>
+                <h1 className="text-lg font-bold text-amber-800">
+                  ليس لديك صلاحية الوصول
+                </h1>
+
+                <p className="mt-2 text-sm leading-6 text-amber-700">
+                  لا تملك الصلاحية اللازمة لعرض المنتجات.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </DashboardLayout>
@@ -111,26 +116,42 @@ export default async function ProductsPage() {
             Header
         ====================================================== */}
 
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
-              <span>إدارة المخزون</span>
-              <span>/</span>
-              <span className="text-slate-500">
+        <section
+          className="
+            rounded-3xl
+            border
+            border-slate-200
+            bg-white
+            px-5
+            py-5
+            shadow-sm
+            sm:px-7
+            sm:py-6
+          "
+        >
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="mb-3 flex items-center gap-2 text-sm text-slate-400">
+                <span>إدارة المخزون</span>
+
+                <span>/</span>
+
+                <span className="text-slate-500">
+                  المنتجات
+                </span>
+              </div>
+
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
                 المنتجات
-              </span>
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                إدارة منتجات الشركة والوحدات والباركود
+                والتصنيفات والعلامات التجارية.
+              </p>
             </div>
-
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              المنتجات
-            </h1>
-
-            <p className="mt-2 text-sm text-slate-500">
-              إدارة منتجات الشركة والوحدات والباركود
-              والتصنيفات والعلامات التجارية.
-            </p>
           </div>
-        </div>
+        </section>
 
         {/* =====================================================
             Errors
