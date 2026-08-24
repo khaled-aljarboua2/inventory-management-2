@@ -52,20 +52,6 @@ export const PERMISSIONS = {
   SETTINGS_UPDATE: "settings.update",
 } as const;
 
-/* ============================================================
-   Cache داخل طلب السيرفر الحالي
-============================================================ */
-
-let permissionsPromise: Promise<Set<string>> | null = null;
-
-let profilePromise: Promise<ReturnType<
-  typeof getCurrentUserProfile
->> | null = null;
-
-/* ============================================================
-   المستخدم الحالي
-============================================================ */
-
 export async function getCurrentUserProfile() {
   const supabase = await createClient();
 
@@ -112,67 +98,39 @@ export async function getCurrentUserProfile() {
   };
 }
 
-/* ============================================================
-   المستخدم الحالي مع Cache
-============================================================ */
-
-export async function getCachedCurrentUserProfile() {
-  if (!profilePromise) {
-    profilePromise = getCurrentUserProfile();
-  }
-
-  return profilePromise;
-}
-
-/* ============================================================
-   الصلاحيات الحالية
-============================================================ */
-
 export async function getCurrentPermissions() {
-  if (permissionsPromise) {
-    return permissionsPromise;
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Set<string>();
   }
 
-  permissionsPromise = (async () => {
-    const supabase = await createClient();
+  const codes = Object.values(PERMISSIONS);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const results = await Promise.all(
+    codes.map(async (code) => {
+      const { data, error } =
+        await supabase.rpc("has_permission", {
+          permission_code: code,
+        });
 
-    if (!user) {
-      return new Set<string>();
-    }
+      return {
+        code,
+        allowed: !error && data === true,
+      };
+    })
+  );
 
-    const codes = Object.values(PERMISSIONS);
-
-    const results = await Promise.all(
-      codes.map(async (code) => {
-        const { data, error } =
-          await supabase.rpc("has_permission", {
-            permission_code: code,
-          });
-
-        return {
-          code,
-          allowed: !error && data === true,
-        };
-      })
-    );
-
-    return new Set(
-      results
-        .filter((item) => item.allowed)
-        .map((item) => item.code)
-    );
-  })();
-
-  return permissionsPromise;
+  return new Set(
+    results
+      .filter((item) => item.allowed)
+      .map((item) => item.code)
+  );
 }
-
-/* ============================================================
-   صلاحية واحدة
-============================================================ */
 
 export async function hasPermission(
   permissionCode: string
@@ -182,10 +140,6 @@ export async function hasPermission(
 
   return permissions.has(permissionCode);
 }
-
-/* ============================================================
-   أي صلاحية
-============================================================ */
 
 export async function hasAnyPermission(
   permissionCodes: string[]
@@ -197,10 +151,6 @@ export async function hasAnyPermission(
     permissions.has(permission)
   );
 }
-
-/* ============================================================
-   جميع الصلاحيات
-============================================================ */
 
 export async function hasAllPermissions(
   permissionCodes: string[]
