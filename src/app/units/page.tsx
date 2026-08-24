@@ -148,7 +148,7 @@ export default async function UnitsPage() {
           {canCreateUnits && (
             <a
               href="#units-table"
-              className="group inline-flex items-center justify-center gap-2 self-start rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200"
+              className="group inline-flex items-center justify-center gap-2 self-start rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-md hover:shadow-teal-200"
             >
               <Plus
                 size={18}
@@ -184,7 +184,7 @@ export default async function UnitsPage() {
           {/* إجمالي الوحدات */}
 
           <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
-            <div className="absolute -left-8 -top-8 h-24 w-24 rounded-full bg-blue-100/60 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="absolute -left-8 -top-8 h-24 w-24 rounded-full bg-teal-100/60 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
 
             <div className="relative flex items-center justify-between">
               <div>
@@ -201,7 +201,7 @@ export default async function UnitsPage() {
                 </p>
               </div>
 
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-all duration-300 group-hover:scale-110 group-hover:rotate-2">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-all duration-300 group-hover:scale-110 group-hover:rotate-2">
                 <Ruler
                   size={23}
                   strokeWidth={1.9}
