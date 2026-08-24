@@ -104,7 +104,9 @@ export default async function ProductDetailsPage({
         )
       `)
       .eq("product_id", id)
-      .order("is_default", { ascending: false }),
+      .order("is_default", {
+        ascending: false,
+      }),
   ]);
 
   return (
@@ -116,6 +118,7 @@ export default async function ProductDetailsPage({
         {/* =====================================================
             Breadcrumb
         ====================================================== */}
+
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Link
             href="/products"
@@ -137,14 +140,16 @@ export default async function ProductDetailsPage({
         {/* =====================================================
             رأس المنتج
         ====================================================== */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
-          {/* تأثير خلفي */}
+
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
           <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-blue-100/60 blur-3xl" />
 
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-4">
+
               {/* أيقونة المنتج */}
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-200/60 transition-transform duration-300 hover:scale-105">
+
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200/60 transition-transform duration-300 hover:scale-105">
                 <Package
                   size={29}
                   strokeWidth={1.8}
@@ -186,6 +191,7 @@ export default async function ProductDetailsPage({
             </div>
 
             {/* الأزرار */}
+
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/products"
@@ -217,8 +223,11 @@ export default async function ProductDetailsPage({
         {/* =====================================================
             معلومات سريعة
         ====================================================== */}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
           {/* التصنيف */}
+
           <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
             <div className="flex items-center justify-between">
               <div>
@@ -227,7 +236,8 @@ export default async function ProductDetailsPage({
                 </p>
 
                 <p className="mt-2 font-semibold text-slate-800">
-                  {category?.name ?? "بدون تصنيف"}
+                  {category?.name ??
+                    "بدون تصنيف"}
                 </p>
               </div>
 
@@ -238,6 +248,7 @@ export default async function ProductDetailsPage({
           </div>
 
           {/* العلامة التجارية */}
+
           <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
             <div className="flex items-center justify-between">
               <div>
@@ -246,17 +257,19 @@ export default async function ProductDetailsPage({
                 </p>
 
                 <p className="mt-2 font-semibold text-slate-800">
-                  {brand?.name ?? "بدون علامة تجارية"}
+                  {brand?.name ??
+                    "بدون علامة تجارية"}
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600 transition-transform duration-300 group-hover:scale-110">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-300 group-hover:scale-110">
                 <Factory size={21} />
               </div>
             </div>
           </div>
 
           {/* الحد الأدنى */}
+
           <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
             <div className="flex items-center justify-between">
               <div>
@@ -265,17 +278,19 @@ export default async function ProductDetailsPage({
                 </p>
 
                 <p className="mt-2 text-xl font-bold text-slate-800">
-                  {product.minimum_quantity ?? 0}
+                  {product.minimum_quantity ??
+                    0}
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition-transform duration-300 group-hover:scale-110">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-300 group-hover:scale-110">
                 <Boxes size={21} />
               </div>
             </div>
           </div>
 
           {/* الحالة */}
+
           <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
             <div className="flex items-center justify-between">
               <div>
@@ -310,10 +325,11 @@ export default async function ProductDetailsPage({
         {/* =====================================================
             بيانات المنتج
         ====================================================== */}
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 <Package size={19} />
               </div>
 
@@ -356,7 +372,8 @@ export default async function ProductDetailsPage({
               </p>
 
               <p className="mt-2 font-semibold text-slate-800">
-                {category?.name ?? "بدون تصنيف"}
+                {category?.name ??
+                  "بدون تصنيف"}
               </p>
             </div>
 
@@ -366,7 +383,8 @@ export default async function ProductDetailsPage({
               </p>
 
               <p className="mt-2 font-semibold text-slate-800">
-                {brand?.name ?? "بدون علامة تجارية"}
+                {brand?.name ??
+                  "بدون علامة تجارية"}
               </p>
             </div>
           </div>
@@ -387,9 +405,10 @@ export default async function ProductDetailsPage({
         {/* =====================================================
             الوحدات والباركود
         ====================================================== */}
+
         <section>
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
               <Building2 size={19} />
             </div>
 
@@ -411,7 +430,9 @@ export default async function ProductDetailsPage({
             productUnits={
               (productUnits ?? []) as any
             }
-            barcodes={(barcodes ?? []) as any}
+            barcodes={
+              (barcodes ?? []) as any
+            }
           />
         </section>
       </div>
