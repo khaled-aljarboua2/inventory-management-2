@@ -8,7 +8,7 @@ export default async function Sidebar() {
 
   return (
     <>
-      {/* Overlay - Mobile */}
+      {/* Mobile Overlay */}
       <label
         htmlFor="mobile-sidebar-toggle"
         className="
@@ -31,15 +31,12 @@ export default async function Sidebar() {
           w-[min(320px,85vw)]
           translate-x-full
           flex-col
-          overflow-hidden
-          border-l border-teal-800/20
-          bg-teal-700
+          bg-white
           shadow-2xl
           transition-transform duration-300
           peer-checked:translate-x-0
 
           md:static
-          md:flex
           md:h-screen
           md:w-64
           md:translate-x-0
@@ -52,18 +49,18 @@ export default async function Sidebar() {
         <div
           className="
             shrink-0
-            border-b
-            border-teal-600/30
+            border-b border-slate-100
+            bg-white
             px-4
-            py-4
+            py-5
           "
         >
           <div className="flex justify-center">
             <Image
               src="/warevance-logo.PNG"
               alt="WAREVANCE - Inventory & Branch Management"
-              width={220}
-              height={70}
+              width={500}
+              height={160}
               priority
               className="
                 h-auto
@@ -96,18 +93,18 @@ export default async function Sidebar() {
         <div
           className="
             shrink-0
-            border-t
-            border-teal-600/30
-            bg-teal-700
+            border-t border-slate-100
+            bg-white
             p-4
           "
         >
-          {/* Brand */}
+          {/* Brand Info */}
           <div
             className="
               mb-3
               rounded-xl
-              bg-teal-800/30
+              border border-slate-100
+              bg-slate-50
               px-4
               py-3
             "
@@ -116,7 +113,7 @@ export default async function Sidebar() {
               className="
                 text-xs
                 font-semibold
-                text-white
+                text-slate-800
               "
             >
               WAREVANCE
@@ -127,7 +124,7 @@ export default async function Sidebar() {
                 mt-1
                 text-[11px]
                 leading-5
-                text-teal-100/70
+                text-slate-400
               "
             >
               Inventory & Branch Management
