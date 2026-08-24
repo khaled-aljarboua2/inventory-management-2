@@ -57,69 +57,43 @@ const emptyForm: FormData = {
 export default function SupplierTable({
   suppliers,
 }: Props) {
-  const [search, setSearch] =
-    useState("");
-
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState("all");
-
   const [showModal, setShowModal] =
     useState(false);
-
   const [editingSupplier, setEditingSupplier] =
     useState<Supplier | null>(null);
-
   const [form, setForm] =
     useState<FormData>(emptyForm);
-
   const [loading, setLoading] =
     useState(false);
-
   const [message, setMessage] =
     useState<string | null>(null);
 
-  const filteredSuppliers =
-    useMemo(() => {
-      const query =
-        search.trim().toLowerCase();
+  const filteredSuppliers = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-      return suppliers.filter(
-        (supplier) => {
-          const matchesSearch =
-            !query ||
-            supplier.name
-              .toLowerCase()
-              .includes(query) ||
-            supplier.contact_person
-              ?.toLowerCase()
-              .includes(query) ||
-            supplier.phone
-              ?.toLowerCase()
-              .includes(query) ||
-            supplier.email
-              ?.toLowerCase()
-              .includes(query);
+    return suppliers.filter((supplier) => {
+      const matchesSearch =
+        !query ||
+        supplier.name.toLowerCase().includes(query) ||
+        supplier.contact_person
+          ?.toLowerCase()
+          .includes(query) ||
+        supplier.phone?.toLowerCase().includes(query) ||
+        supplier.email?.toLowerCase().includes(query);
 
-          const matchesStatus =
-            statusFilter === "all" ||
-            (statusFilter ===
-              "active" &&
-              supplier.is_active) ||
-            (statusFilter ===
-              "inactive" &&
-              !supplier.is_active);
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" &&
+          supplier.is_active) ||
+        (statusFilter === "inactive" &&
+          !supplier.is_active);
 
-          return (
-            matchesSearch &&
-            matchesStatus
-          );
-        }
-      );
-    }, [
-      suppliers,
-      search,
-      statusFilter,
-    ]);
+      return matchesSearch && matchesStatus;
+    });
+  }, [suppliers, search, statusFilter]);
 
   function openCreate() {
     setEditingSupplier(null);
@@ -128,22 +102,16 @@ export default function SupplierTable({
     setShowModal(true);
   }
 
-  function openEdit(
-    supplier: Supplier
-  ) {
+  function openEdit(supplier: Supplier) {
     setEditingSupplier(supplier);
 
     setForm({
       name: supplier.name,
       contact_person:
-        supplier.contact_person ??
-        "",
-      phone:
-        supplier.phone ?? "",
-      email:
-        supplier.email ?? "",
-      address:
-        supplier.address ?? "",
+        supplier.contact_person ?? "",
+      phone: supplier.phone ?? "",
+      email: supplier.email ?? "",
+      address: supplier.address ?? "",
     });
 
     setMessage(null);
@@ -163,23 +131,17 @@ export default function SupplierTable({
     setMessage(null);
     setLoading(true);
 
-    const result =
-      editingSupplier
-        ? await updateSupplier(
-            editingSupplier.id,
-            form
-          )
-        : await createSupplier(
-            form
-          );
+    const result = editingSupplier
+      ? await updateSupplier(
+          editingSupplier.id,
+          form
+        )
+      : await createSupplier(form);
 
     setLoading(false);
 
     if (!result.success) {
-      setMessage(
-        result.error ??
-          "حدث خطأ."
-      );
+      setMessage(result.error ?? "حدث خطأ.");
       return;
     }
 
@@ -189,25 +151,22 @@ export default function SupplierTable({
   async function handleToggle(
     supplier: Supplier
   ) {
-    const action =
-      supplier.is_active
-        ? "تعطيل"
-        : "تفعيل";
+    const action = supplier.is_active
+      ? "تعطيل"
+      : "تفعيل";
 
-    const confirmed =
-      window.confirm(
-        `هل تريد ${action} المورد "${supplier.name}"؟`
-      );
+    const confirmed = window.confirm(
+      `هل تريد ${action} المورد "${supplier.name}"؟`
+    );
 
     if (!confirmed) return;
 
     setLoading(true);
 
-    const result =
-      await toggleSupplierStatus(
-        supplier.id,
-        !supplier.is_active
-      );
+    const result = await toggleSupplierStatus(
+      supplier.id,
+      !supplier.is_active
+    );
 
     setLoading(false);
 
@@ -225,26 +184,23 @@ export default function SupplierTable({
   async function handleDelete(
     supplier: Supplier
   ) {
-    const confirmed =
-      window.confirm(
-        `هل أنت متأكد من حذف المورد "${supplier.name}"؟\n\nإذا كان المورد مرتبطًا بأوامر شراء فلن يمكن حذفه.`
-      );
+    const confirmed = window.confirm(
+      `هل أنت متأكد من حذف المورد "${supplier.name}"؟\n\nإذا كان المورد مرتبطًا بأوامر شراء فلن يمكن حذفه.`
+    );
 
     if (!confirmed) return;
 
     setLoading(true);
 
-    const result =
-      await deleteSupplier(
-        supplier.id
-      );
+    const result = await deleteSupplier(
+      supplier.id
+    );
 
     setLoading(false);
 
     if (!result.success) {
       window.alert(
-        result.error ??
-          "تعذر حذف المورد."
+        result.error ?? "تعذر حذف المورد."
       );
       return;
     }
@@ -254,7 +210,6 @@ export default function SupplierTable({
 
   return (
     <>
-      {/* البطاقة الرئيسية */}
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         {/* رأس الصفحة */}
         <div className="border-b border-slate-100 p-5 sm:p-6">
@@ -265,8 +220,7 @@ export default function SupplierTable({
               </h2>
 
               <p className="mt-1 text-sm text-slate-400">
-                {filteredSuppliers.length}{" "}
-                مورد
+                {filteredSuppliers.length} مورد
               </p>
             </div>
 
@@ -282,12 +236,10 @@ export default function SupplierTable({
                   type="search"
                   value={search}
                   onChange={(event) =>
-                    setSearch(
-                      event.target.value
-                    )
+                    setSearch(event.target.value)
                   }
                   placeholder="ابحث عن مورد..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 text-sm text-slate-700 outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
               </div>
 
@@ -295,11 +247,9 @@ export default function SupplierTable({
               <select
                 value={statusFilter}
                 onChange={(event) =>
-                  setStatusFilter(
-                    event.target.value
-                  )
+                  setStatusFilter(event.target.value)
                 }
-                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
               >
                 <option value="all">
                   جميع الموردين
@@ -318,7 +268,7 @@ export default function SupplierTable({
               <button
                 type="button"
                 onClick={openCreate}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-blue-600"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-teal-600"
               >
                 <Plus size={17} />
                 إضافة مورد
@@ -359,8 +309,7 @@ export default function SupplierTable({
             </thead>
 
             <tbody className="divide-y divide-slate-100">
-              {filteredSuppliers.length ===
-              0 ? (
+              {filteredSuppliers.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -381,10 +330,8 @@ export default function SupplierTable({
 
                     <button
                       type="button"
-                      onClick={
-                        openCreate
-                      }
-                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                      onClick={openCreate}
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
                     >
                       <Plus size={16} />
                       إضافة مورد
@@ -395,25 +342,19 @@ export default function SupplierTable({
                 filteredSuppliers.map(
                   (supplier) => (
                     <tr
-                      key={
-                        supplier.id
-                      }
+                      key={supplier.id}
                       className="transition hover:bg-slate-50/70"
                     >
                       {/* المورد */}
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                            <Truck
-                              size={19}
-                            />
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                            <Truck size={19} />
                           </div>
 
                           <div>
                             <p className="font-semibold text-slate-800">
-                              {
-                                supplier.name
-                              }
+                              {supplier.name}
                             </p>
 
                             <p className="mt-0.5 text-xs text-slate-400">
@@ -432,9 +373,7 @@ export default function SupplierTable({
                               className="text-slate-400"
                             />
 
-                            {
-                              supplier.contact_person
-                            }
+                            {supplier.contact_person}
                           </div>
                         ) : (
                           <span className="text-sm text-slate-400">
@@ -453,9 +392,7 @@ export default function SupplierTable({
                                 className="text-slate-400"
                               />
 
-                              {
-                                supplier.phone
-                              }
+                              {supplier.phone}
                             </div>
                           )}
 
@@ -466,9 +403,7 @@ export default function SupplierTable({
                                 className="text-slate-400"
                               />
 
-                              {
-                                supplier.email
-                              }
+                              {supplier.email}
                             </div>
                           )}
 
@@ -491,9 +426,7 @@ export default function SupplierTable({
                             />
 
                             <span>
-                              {
-                                supplier.address
-                              }
+                              {supplier.address}
                             </span>
                           </div>
                         ) : (
@@ -524,32 +457,22 @@ export default function SupplierTable({
                           {/* تعديل */}
                           <button
                             type="button"
-                            disabled={
-                              loading
-                            }
+                            disabled={loading}
                             onClick={() =>
-                              openEdit(
-                                supplier
-                              )
+                              openEdit(supplier)
                             }
                             title="تعديل"
-                            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-teal-50 hover:text-teal-600"
                           >
-                            <Edit3
-                              size={16}
-                            />
+                            <Edit3 size={16} />
                           </button>
 
                           {/* تفعيل / تعطيل */}
                           <button
                             type="button"
-                            disabled={
-                              loading
-                            }
+                            disabled={loading}
                             onClick={() =>
-                              handleToggle(
-                                supplier
-                              )
+                              handleToggle(supplier)
                             }
                             title={
                               supplier.is_active
@@ -562,28 +485,20 @@ export default function SupplierTable({
                                 : "text-emerald-600 hover:bg-emerald-50"
                             }`}
                           >
-                            <Power
-                              size={16}
-                            />
+                            <Power size={16} />
                           </button>
 
                           {/* حذف */}
                           <button
                             type="button"
-                            disabled={
-                              loading
-                            }
+                            disabled={loading}
                             onClick={() =>
-                              handleDelete(
-                                supplier
-                              )
+                              handleDelete(supplier)
                             }
                             title="حذف"
                             className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                           >
-                            <Trash2
-                              size={16}
-                            />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -627,9 +542,7 @@ export default function SupplierTable({
 
               <button
                 type="button"
-                onClick={
-                  closeModal
-                }
+                onClick={closeModal}
                 className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100"
               >
                 <X size={18} />
@@ -644,14 +557,10 @@ export default function SupplierTable({
                   type="text"
                   value={form.name}
                   onChange={(event) =>
-                    setForm(
-                      (current) => ({
-                        ...current,
-                        name: event
-                          .target
-                          .value,
-                      })
-                    )
+                    setForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
                   }
                   placeholder="مثال: شركة التوريد المتحدة"
                   className="input"
@@ -663,21 +572,13 @@ export default function SupplierTable({
                 <Field label="الشخص المسؤول">
                   <input
                     type="text"
-                    value={
-                      form.contact_person
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setForm(
-                        (current) => ({
-                          ...current,
-                          contact_person:
-                            event
-                              .target
-                              .value,
-                        })
-                      )
+                    value={form.contact_person}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        contact_person:
+                          event.target.value,
+                      }))
                     }
                     placeholder="اسم المسؤول"
                     className="input"
@@ -689,14 +590,10 @@ export default function SupplierTable({
                     type="tel"
                     value={form.phone}
                     onChange={(event) =>
-                      setForm(
-                        (current) => ({
-                          ...current,
-                          phone: event
-                            .target
-                            .value,
-                        })
-                      )
+                      setForm((current) => ({
+                        ...current,
+                        phone: event.target.value,
+                      }))
                     }
                     placeholder="05xxxxxxxx"
                     className="input"
@@ -710,14 +607,10 @@ export default function SupplierTable({
                   type="email"
                   value={form.email}
                   onChange={(event) =>
-                    setForm(
-                      (current) => ({
-                        ...current,
-                        email: event
-                          .target
-                          .value,
-                      })
-                    )
+                    setForm((current) => ({
+                      ...current,
+                      email: event.target.value,
+                    }))
                   }
                   placeholder="supplier@example.com"
                   className="input"
@@ -729,14 +622,10 @@ export default function SupplierTable({
                 <textarea
                   value={form.address}
                   onChange={(event) =>
-                    setForm(
-                      (current) => ({
-                        ...current,
-                        address:
-                          event.target
-                            .value,
-                      })
-                    )
+                    setForm((current) => ({
+                      ...current,
+                      address: event.target.value,
+                    }))
                   }
                   rows={3}
                   placeholder="عنوان المورد..."
@@ -756,9 +645,7 @@ export default function SupplierTable({
                 <button
                   type="button"
                   disabled={loading}
-                  onClick={
-                    closeModal
-                  }
+                  onClick={closeModal}
                   className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
                 >
                   إلغاء
@@ -767,10 +654,8 @@ export default function SupplierTable({
                 <button
                   type="button"
                   disabled={loading}
-                  onClick={
-                    handleSubmit
-                  }
-                  className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={handleSubmit}
+                  className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading
                     ? "جاري الحفظ..."
