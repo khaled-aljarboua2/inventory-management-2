@@ -53,42 +53,14 @@ export const PERMISSIONS = {
 } as const;
 
 /* ============================================================
-   حالة المستخدم الحالي
+   Cache داخل طلب السيرفر الحالي
 ============================================================ */
 
-export async function getCurrentUserStatus(): Promise<
-  "unauthenticated" | "inactive" | "active" | "missing"
-> {
-  const supabase = await createClient();
+let permissionsPromise: Promise<Set<string>> | null = null;
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return "unauthenticated";
-  }
-
-  const {
-    data: profile,
-    error,
-  } = await supabase
-    .from("users")
-    .select("id, is_active")
-    .eq("auth_user_id", user.id)
-    .maybeSingle();
-
-  if (error || !profile) {
-    return "missing";
-  }
-
-  if (!profile.is_active) {
-    return "inactive";
-  }
-
-  return "active";
-}
+let profilePromise: Promise<ReturnType<
+  typeof getCurrentUserProfile
+>> | null = null;
 
 /* ============================================================
    المستخدم الحالي
@@ -128,7 +100,6 @@ export async function getCurrentUserProfile() {
       )
     `)
     .eq("auth_user_id", user.id)
-    .eq("is_active", true)
     .single();
 
   if (error || !profile) {
@@ -142,42 +113,61 @@ export async function getCurrentUserProfile() {
 }
 
 /* ============================================================
+   المستخدم الحالي مع Cache
+============================================================ */
+
+export async function getCachedCurrentUserProfile() {
+  if (!profilePromise) {
+    profilePromise = getCurrentUserProfile();
+  }
+
+  return profilePromise;
+}
+
+/* ============================================================
    الصلاحيات الحالية
 ============================================================ */
 
 export async function getCurrentPermissions() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return new Set<string>();
+  if (permissionsPromise) {
+    return permissionsPromise;
   }
 
-  const codes = Object.values(PERMISSIONS);
+  permissionsPromise = (async () => {
+    const supabase = await createClient();
 
-  const results = await Promise.all(
-    codes.map(async (code) => {
-      const { data, error } =
-        await supabase.rpc("has_permission", {
-          permission_code: code,
-        });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      return {
-        code,
-        allowed:
-          !error && data === true,
-      };
-    })
-  );
+    if (!user) {
+      return new Set<string>();
+    }
 
-  return new Set(
-    results
-      .filter((item) => item.allowed)
-      .map((item) => item.code)
-  );
+    const codes = Object.values(PERMISSIONS);
+
+    const results = await Promise.all(
+      codes.map(async (code) => {
+        const { data, error } =
+          await supabase.rpc("has_permission", {
+            permission_code: code,
+          });
+
+        return {
+          code,
+          allowed: !error && data === true,
+        };
+      })
+    );
+
+    return new Set(
+      results
+        .filter((item) => item.allowed)
+        .map((item) => item.code)
+    );
+  })();
+
+  return permissionsPromise;
 }
 
 /* ============================================================
@@ -190,9 +180,7 @@ export async function hasPermission(
   const permissions =
     await getCurrentPermissions();
 
-  return permissions.has(
-    permissionCode
-  );
+  return permissions.has(permissionCode);
 }
 
 /* ============================================================
@@ -205,9 +193,8 @@ export async function hasAnyPermission(
   const permissions =
     await getCurrentPermissions();
 
-  return permissionCodes.some(
-    (permission) =>
-      permissions.has(permission)
+  return permissionCodes.some((permission) =>
+    permissions.has(permission)
   );
 }
 
@@ -221,8 +208,7 @@ export async function hasAllPermissions(
   const permissions =
     await getCurrentPermissions();
 
-  return permissionCodes.every(
-    (permission) =>
-      permissions.has(permission)
+  return permissionCodes.every((permission) =>
+    permissions.has(permission)
   );
 }
