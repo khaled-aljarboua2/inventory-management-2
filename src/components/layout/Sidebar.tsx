@@ -54,26 +54,20 @@ export default async function Sidebar() {
             shrink-0
             border-b
             border-teal-600/30
-            px-4 py-5
+            px-4
+            py-4
           "
         >
-          <div
-            className="
-              overflow-hidden
-              rounded-xl
-              bg-white
-              shadow-sm
-            "
-          >
+          <div className="flex justify-center">
             <Image
               src="/warevance-logo.PNG"
               alt="WAREVANCE - Inventory & Branch Management"
-              width={500}
-              height={160}
+              width={220}
+              height={70}
               priority
               className="
                 h-auto
-                w-full
+                w-[190px]
                 object-contain
               "
             />
@@ -89,9 +83,6 @@ export default async function Sidebar() {
             flex-1
             overflow-y-auto
             overscroll-contain
-            scrollbar-thin
-            scrollbar-thumb-teal-500/50
-            scrollbar-track-transparent
           "
         >
           <SidebarNav
@@ -100,7 +91,7 @@ export default async function Sidebar() {
         </div>
 
         {/* =====================================================
-            Bottom / Logout
+            Bottom
         ====================================================== */}
         <div
           className="
@@ -117,7 +108,8 @@ export default async function Sidebar() {
               mb-3
               rounded-xl
               bg-teal-800/30
-              px-4 py-3
+              px-4
+              py-3
             "
           >
             <p
