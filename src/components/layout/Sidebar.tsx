@@ -5,13 +5,11 @@ import SidebarNav from "./SidebarNav";
 import LogoutButton from "./LogoutButton";
 
 export default async function Sidebar() {
-  const permissions =
-    await getCurrentPermissions();
+  const permissions = await getCurrentPermissions();
 
   return (
     <>
       {/* Overlay - Mobile */}
-
       <label
         htmlFor="mobile-sidebar-toggle"
         className="
@@ -26,7 +24,6 @@ export default async function Sidebar() {
       />
 
       {/* Sidebar */}
-
       <aside
         dir="rtl"
         className="
@@ -52,7 +49,6 @@ export default async function Sidebar() {
         "
       >
         {/* Header */}
-
         <div
           className="
             border-b
@@ -108,15 +104,11 @@ export default async function Sidebar() {
         </div>
 
         {/* Navigation */}
-
         <SidebarNav
-          permissions={Array.from(
-            permissions
-          )}
+          permissions={Array.from(permissions)}
         />
 
         {/* Bottom */}
-
         <div
           className="
             mt-auto
