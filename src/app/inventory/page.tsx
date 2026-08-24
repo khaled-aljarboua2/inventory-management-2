@@ -419,7 +419,7 @@ export default async function InventoryPage() {
             <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
               <Warehouse
                 size={17}
-                className="text-blue-500"
+                className="text-teal-600"
               />
 
               <span>
@@ -430,7 +430,7 @@ export default async function InventoryPage() {
             <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
               <Package
                 size={17}
-                className="text-blue-500"
+                className="text-teal-600"
               />
 
               <span>
@@ -554,7 +554,7 @@ function StatCard({
           className={`flex h-10 w-10 items-center justify-center rounded-xl ${
             danger
               ? "bg-red-50 text-red-500"
-              : "bg-blue-50 text-blue-600"
+              : "bg-teal-50 text-teal-600"
           }`}
         >
           {icon}
