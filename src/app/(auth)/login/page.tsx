@@ -29,7 +29,7 @@ export default function LoginPage() {
           dir="rtl"
           className="flex min-h-screen items-center justify-center bg-slate-50"
         >
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
         </main>
       }
     >
@@ -130,17 +130,17 @@ function LoginContent() {
       ====================================================== */}
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Glow أزرق */}
+        {/* Glow أخضر مزرق */}
 
-        <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-blue-200/40 blur-3xl" />
+        <div className="absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-teal-200/40 blur-3xl" />
 
-        {/* Glow بنفسجي */}
+        {/* Glow ثانوي */}
 
-        <div className="absolute -bottom-40 -left-32 h-[420px] w-[420px] rounded-full bg-indigo-200/30 blur-3xl" />
+        <div className="absolute -bottom-40 -left-32 h-[420px] w-[420px] rounded-full bg-cyan-200/30 blur-3xl" />
 
         {/* Glow مركزي */}
 
-        <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-100/30 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-100/30 blur-3xl" />
 
         {/* Grid خفيف */}
 
@@ -165,7 +165,7 @@ function LoginContent() {
         ==================================================== */}
 
         <div className="mb-7 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-200/70 transition-transform duration-500 hover:scale-105 hover:rotate-1">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-600 to-cyan-600 text-white shadow-lg shadow-teal-200/70 transition-transform duration-500 hover:scale-105 hover:rotate-1">
             <Package
               size={31}
               strokeWidth={1.8}
@@ -188,11 +188,11 @@ function LoginContent() {
         <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-xl shadow-slate-900/[0.06] backdrop-blur-xl sm:p-8">
           {/* الخط العلوي */}
 
-          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500" />
+          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-teal-500 via-cyan-500 to-teal-500" />
 
           {/* Glow داخلي */}
 
-          <div className="pointer-events-none absolute -left-20 -top-20 h-40 w-40 rounded-full bg-blue-100/40 blur-3xl" />
+          <div className="pointer-events-none absolute -left-20 -top-20 h-40 w-40 rounded-full bg-teal-100/40 blur-3xl" />
 
           <div className="relative">
             {/* =================================================
@@ -203,10 +203,10 @@ function LoginContent() {
               <div className="mb-2 flex items-center gap-2">
                 <ShieldCheck
                   size={18}
-                  className="text-blue-600"
+                  className="text-teal-600"
                 />
 
-                <span className="text-xs font-semibold text-blue-600">
+                <span className="text-xs font-semibold text-teal-600">
                   دخول آمن
                 </span>
               </div>
@@ -244,7 +244,7 @@ function LoginContent() {
                   <UserRound
                     size={18}
                     strokeWidth={1.8}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-teal-600"
                   />
 
                   <input
@@ -260,7 +260,7 @@ function LoginContent() {
                     autoComplete="username"
                     required
                     disabled={loading}
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/70 pr-11 pl-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/70 pr-11 pl-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
                   />
                 </div>
               </div>
@@ -281,7 +281,7 @@ function LoginContent() {
                   <LockKeyhole
                     size={18}
                     strokeWidth={1.8}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-teal-600"
                   />
 
                   <input
@@ -301,7 +301,7 @@ function LoginContent() {
                     autoComplete="current-password"
                     required
                     disabled={loading}
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/70 pr-11 pl-12 text-sm tracking-wider text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/70 pr-11 pl-12 text-sm tracking-wider text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
                   />
 
                   <button
@@ -354,7 +354,7 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold text-white shadow-lg shadow-blue-200/60 transition-all duration-300 hover:-translate-y-0.5 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl hover:shadow-blue-200/70 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60"
+                className="group relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 text-sm font-semibold text-white shadow-lg shadow-teal-200/60 transition-all duration-300 hover:-translate-y-0.5 hover:from-teal-700 hover:to-cyan-700 hover:shadow-xl hover:shadow-teal-200/70 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60"
               >
                 {/* تأثير الحركة */}
 
