@@ -376,10 +376,10 @@ function MenuButton({
     <button
       type="button"
       onClick={onClick}
-      className="group mb-1 flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-[15px] font-medium text-slate-700 transition hover:bg-slate-50"
+      className="group mb-1 flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-[15px] font-medium text-slate-700 transition hover:bg-teal-50"
     >
       <div className="flex items-center gap-3">
-        <span className="text-slate-400 transition-colors group-hover:text-blue-600">
+        <span className="text-slate-400 transition-colors group-hover:text-teal-700">
           {icon}
         </span>
 
@@ -442,11 +442,11 @@ function NavLink({
       href={href}
       className={
         sub
-          ? "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
-          : "group mb-1 flex items-center gap-3 rounded-xl px-3.5 py-3 text-[15px] font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          ? "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] text-slate-500 transition hover:bg-teal-50 hover:text-slate-900"
+          : "group mb-1 flex items-center gap-3 rounded-xl px-3.5 py-3 text-[15px] font-medium text-slate-600 transition hover:bg-teal-50 hover:text-slate-900"
       }
     >
-      <span className="text-slate-400 transition-colors group-hover:text-blue-600">
+      <span className="text-slate-400 transition-colors group-hover:text-teal-700">
         {icon}
       </span>
 
