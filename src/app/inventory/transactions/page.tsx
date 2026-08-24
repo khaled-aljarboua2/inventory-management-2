@@ -158,15 +158,25 @@ export default async function TransactionsPage() {
       <DashboardLayout>
         <div
           dir="rtl"
-          className="rounded-2xl border border-red-200 bg-red-50 p-6"
+          className="mx-auto w-full max-w-[1600px]"
         >
-          <p className="font-semibold text-red-700">
-            تعذر تحميل حركة المخزون
-          </p>
+          <div className="rounded-3xl border border-red-200 bg-red-50 p-6">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                !
+              </div>
 
-          <p className="mt-2 text-sm text-red-600">
-            {transactionsError.message}
-          </p>
+              <div>
+                <p className="font-semibold text-red-700">
+                  تعذر تحميل حركة المخزون
+                </p>
+
+                <p className="mt-2 text-sm leading-6 text-red-600">
+                  {transactionsError.message}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -183,24 +193,33 @@ export default async function TransactionsPage() {
         company_id: item.company_id,
         product_id: item.product_id,
         location_id: item.location_id,
+
         transaction_type: String(
           item.transaction_type ?? ""
         ),
+
         reference_type:
           item.reference_type ?? null,
+
         reference_id:
           item.reference_id ?? null,
+
         quantity: Number(
           item.quantity ?? 0
         ),
+
         quantity_before: Number(
           item.quantity_before ?? 0
         ),
+
         quantity_after: Number(
           item.quantity_after ?? 0
         ),
+
         notes: item.notes ?? null,
+
         user_id: item.user_id ?? null,
+
         created_at: item.created_at,
 
         products:
@@ -287,44 +306,49 @@ export default async function TransactionsPage() {
             رأس الصفحة
         ======================================================= */}
 
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
-              <Activity size={16} />
+        <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-7 sm:py-6">
+          <div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full bg-blue-100/40 blur-3xl" />
 
-              <span>
-                إدارة المخزون
-              </span>
+          <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <div className="mb-3 flex items-center gap-2 text-sm text-slate-400">
+                <Activity
+                  size={16}
+                  className="text-blue-500"
+                />
 
-              <span>/</span>
+                <span>
+                  إدارة المخزون
+                </span>
 
-              <span className="text-slate-500">
+                <span>/</span>
+
+                <span className="text-slate-500">
+                  حركة المخزون
+                </span>
+              </div>
+
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
                 حركة المخزون
-              </span>
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                سجل مركزي لجميع الحركات التي أثرت
+                على أرصدة المخزون.
+              </p>
             </div>
 
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              حركة المخزون
-            </h1>
+            {/* عدد المواقع */}
 
-            <p className="mt-2 text-sm text-slate-500">
-              سجل مركزي لجميع الحركات التي أثرت
-              على أرصدة المخزون.
-            </p>
+            <div className="flex w-fit items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700">
+              <Warehouse size={17} />
+
+              <span>
+                {locations.length} موقع
+              </span>
+            </div>
           </div>
-
-          {/* عدد المواقع */}
-          <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
-            <Warehouse
-              size={17}
-              className="text-blue-500"
-            />
-
-            <span>
-              {locations.length} موقع
-            </span>
-          </div>
-        </div>
+        </section>
 
         {/* ======================================================
             الإحصائيات
@@ -353,6 +377,7 @@ export default async function TransactionsPage() {
               "ar-SA"
             )}
             description="حركات رفعت الرصيد"
+            variant="success"
           />
 
           <StatCard
@@ -366,6 +391,7 @@ export default async function TransactionsPage() {
               "ar-SA"
             )}
             description="حركات خفضت الرصيد"
+            variant="blue"
           />
 
           <StatCard
@@ -379,6 +405,7 @@ export default async function TransactionsPage() {
               "ar-SA"
             )}
             description="حركات ناتجة عن التسويات"
+            variant="slate"
           />
         </div>
 
@@ -400,14 +427,33 @@ function StatCard({
   label,
   value,
   description,
+  variant = "blue",
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   description: string;
+  variant?:
+    | "blue"
+    | "success"
+    | "slate";
 }) {
+  const iconStyles = {
+    blue: {
+      box: "bg-blue-50 text-blue-600",
+    },
+    success: {
+      box: "bg-emerald-50 text-emerald-600",
+    },
+    slate: {
+      box: "bg-slate-100 text-slate-600",
+    },
+  };
+
+  const styles = iconStyles[variant];
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+    <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500">
@@ -423,7 +469,9 @@ function StatCard({
           </p>
         </div>
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+        <div
+          className={`flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 ${styles.box}`}
+        >
           {icon}
         </div>
       </div>
