@@ -81,7 +81,7 @@ export default async function Sidebar() {
                   text-white
                 "
               >
-                إدارة المخزون
+                WAREVANCE
               </h2>
 
               <p
@@ -92,7 +92,7 @@ export default async function Sidebar() {
                   text-teal-100
                 "
               >
-                Inventory Management
+                Inventory & Branch Management
               </p>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default async function Sidebar() {
                 text-white
               "
             >
-              نظام إدارة المخزون
+              WAREVANCE
             </p>
 
             <p
@@ -137,7 +137,7 @@ export default async function Sidebar() {
                 text-teal-100/70
               "
             >
-              الإصدار 1.0
+              Inventory & Branch Management
             </p>
           </div>
 
