@@ -27,10 +27,11 @@ export default async function Sidebar() {
         dir="rtl"
         className="
           fixed right-0 top-0 z-50
-          flex h-screen
+          flex h-[100dvh]
           w-[min(320px,85vw)]
           translate-x-full
           flex-col
+          overflow-hidden
           border-l border-teal-800/20
           bg-teal-700
           shadow-2xl
@@ -39,14 +40,18 @@ export default async function Sidebar() {
 
           md:static
           md:flex
+          md:h-screen
           md:w-64
           md:translate-x-0
           md:shadow-none
         "
       >
-        {/* Logo */}
+        {/* =====================================================
+            Logo
+        ====================================================== */}
         <div
           className="
+            shrink-0
             border-b
             border-teal-600/30
             px-4 py-5
@@ -61,7 +66,7 @@ export default async function Sidebar() {
             "
           >
             <Image
-              src="/warevance-logo.png"
+              src="/warevance-logo.PNG"
               alt="WAREVANCE - Inventory & Branch Management"
               width={500}
               height={160}
@@ -75,20 +80,38 @@ export default async function Sidebar() {
           </div>
         </div>
 
-        {/* Navigation */}
-        <SidebarNav
-          permissions={Array.from(permissions)}
-        />
-
-        {/* Bottom */}
+        {/* =====================================================
+            Navigation
+        ====================================================== */}
         <div
           className="
-            mt-auto
+            min-h-0
+            flex-1
+            overflow-y-auto
+            overscroll-contain
+            scrollbar-thin
+            scrollbar-thumb-teal-500/50
+            scrollbar-track-transparent
+          "
+        >
+          <SidebarNav
+            permissions={Array.from(permissions)}
+          />
+        </div>
+
+        {/* =====================================================
+            Bottom / Logout
+        ====================================================== */}
+        <div
+          className="
+            shrink-0
             border-t
             border-teal-600/30
+            bg-teal-700
             p-4
           "
         >
+          {/* Brand */}
           <div
             className="
               mb-3
@@ -100,7 +123,7 @@ export default async function Sidebar() {
             <p
               className="
                 text-xs
-                font-medium
+                font-semibold
                 text-white
               "
             >
@@ -111,6 +134,7 @@ export default async function Sidebar() {
               className="
                 mt-1
                 text-[11px]
+                leading-5
                 text-teal-100/70
               "
             >
@@ -118,6 +142,7 @@ export default async function Sidebar() {
             </p>
           </div>
 
+          {/* Logout */}
           <LogoutButton />
         </div>
       </aside>
