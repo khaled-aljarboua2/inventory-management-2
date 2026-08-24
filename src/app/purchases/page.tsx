@@ -186,7 +186,9 @@ export default async function PurchasesPage() {
             products: firstRelation(
               item.products
             ),
-            units: firstRelation(item.units),
+            units: firstRelation(
+              item.units
+            ),
           })
         ),
     })
