@@ -1,5 +1,4 @@
-import { Package } from "lucide-react";
-
+import Image from "next/image";
 import { getCurrentPermissions } from "@/lib/permissions";
 import SidebarNav from "./SidebarNav";
 import LogoutButton from "./LogoutButton";
@@ -45,56 +44,34 @@ export default async function Sidebar() {
           md:shadow-none
         "
       >
-        {/* Header */}
+        {/* Logo */}
         <div
           className="
             border-b
             border-teal-600/30
-            px-6 py-6
+            px-4 py-5
           "
         >
-          <div className="flex items-center gap-3">
-            <div
+          <div
+            className="
+              overflow-hidden
+              rounded-xl
+              bg-white
+              shadow-sm
+            "
+          >
+            <Image
+              src="/warevance-logo.png"
+              alt="WAREVANCE - Inventory & Branch Management"
+              width={500}
+              height={160}
+              priority
               className="
-                flex h-10 w-10
-                shrink-0
-                items-center justify-center
-                rounded-xl
-                bg-white
-                text-teal-700
-                shadow-sm
+                h-auto
+                w-full
+                object-contain
               "
-            >
-              <Package
-                size={21}
-                strokeWidth={2.2}
-              />
-            </div>
-
-            <div className="min-w-0">
-              <h2
-                className="
-                  truncate
-                  text-lg
-                  font-bold
-                  tracking-tight
-                  text-white
-                "
-              >
-                WAREVANCE
-              </h2>
-
-              <p
-                className="
-                  mt-0.5
-                  truncate
-                  text-xs
-                  text-teal-100
-                "
-              >
-                Inventory & Branch Management
-              </p>
-            </div>
+            />
           </div>
         </div>
 
