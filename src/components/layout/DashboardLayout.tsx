@@ -1,9 +1,6 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
-import {
-  getCurrentUserProfile,
-  getCurrentUserStatus,
-} from "@/lib/permissions";
+import { getCurrentUserProfile } from "@/lib/permissions";
 import { redirect } from "next/navigation";
 
 type Props = {
@@ -13,29 +10,14 @@ type Props = {
 export default async function DashboardLayout({
   children,
 }: Props) {
-  const status =
-    await getCurrentUserStatus();
-
-  /* ==========================================================
-     حماية الحساب
-  ========================================================== */
-
-  if (status === "inactive") {
-    redirect("/login?error=account_disabled");
-  }
-
-  if (
-    status === "unauthenticated" ||
-    status === "missing"
-  ) {
-    redirect("/login");
-  }
-
-  const profile =
-    await getCurrentUserProfile();
+  const profile = await getCurrentUserProfile();
 
   if (!profile) {
     redirect("/login");
+  }
+
+  if (!profile.is_active) {
+    redirect("/login?error=account_disabled");
   }
 
   return (
