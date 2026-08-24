@@ -45,32 +45,23 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [identifier, setIdentifier] =
-    useState("");
-
-  const [password, setPassword] =
-    useState("");
-
-  const [showPassword, setShowPassword] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(false);
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   /* ==========================================================
-     رسالة الخطأ القادمة من الرابط
+     رسالة الخطأ
   ========================================================== */
 
-  const accountError =
-    searchParams.get("error");
+  const accountError = searchParams.get("error");
 
   const initialError =
     accountError === "account_disabled"
       ? "حسابك غير نشط، يرجى التواصل مع مسؤول النظام."
       : "";
 
-  const [error, setError] =
-    useState(initialError);
+  const [error, setError] = useState(initialError);
 
   /* ==========================================================
      تسجيل الدخول
@@ -188,8 +179,7 @@ function LoginContent() {
           style={{
             backgroundImage:
               "linear-gradient(#0f172a 1px, transparent 1px), linear-gradient(90deg, #0f172a 1px, transparent 1px)",
-            backgroundSize:
-              "40px 40px",
+            backgroundSize: "40px 40px",
           }}
         />
       </div>
@@ -201,40 +191,24 @@ function LoginContent() {
       <div className="relative z-10 w-full max-w-md">
 
         {/* ===================================================
-            الشعار
+            الشعار - بدون خلفية
         ==================================================== */}
 
-        <div className="mb-7 flex justify-center">
-          <div
+        <div className="mb-6 flex justify-center">
+          <img
+            src="/warevance-logo.PNG"
+            alt="WAREVANCE - Inventory & Branch Management"
             className="
-              flex
+              h-auto
               w-full
-              max-w-[340px]
-              items-center
-              justify-center
-              rounded-2xl
-              bg-white
-              px-6
-              py-5
-              shadow-lg
-              shadow-slate-900/[0.06]
+              max-w-[270px]
+              object-contain
             "
-          >
-            <img
-              src="/warevance-logo.PNG"
-              alt="WAREVANCE - Inventory & Branch Management"
-              className="
-                h-auto
-                w-full
-                max-w-[280px]
-                object-contain
-              "
-            />
-          </div>
+          />
         </div>
 
         {/* ===================================================
-            بطاقة الدخول
+            بطاقة تسجيل الدخول
         ==================================================== */}
 
         <div
@@ -253,7 +227,6 @@ function LoginContent() {
           "
         >
           {/* الخط العلوي */}
-
           <div
             className="
               absolute
@@ -268,7 +241,6 @@ function LoginContent() {
           />
 
           {/* Glow داخلي */}
-
           <div
             className="
               pointer-events-none
@@ -319,9 +291,7 @@ function LoginContent() {
               className="space-y-5"
             >
 
-              {/* =================================================
-                  اسم المستخدم / البريد
-              ================================================== */}
+              {/* اسم المستخدم / البريد */}
 
               <div>
                 <label
@@ -395,9 +365,7 @@ function LoginContent() {
                 </div>
               </div>
 
-              {/* =================================================
-                  كلمة المرور
-              ================================================== */}
+              {/* كلمة المرور */}
 
               <div>
                 <label
@@ -515,9 +483,7 @@ function LoginContent() {
                 </div>
               </div>
 
-              {/* =================================================
-                  رسالة الخطأ
-              ================================================== */}
+              {/* رسالة الخطأ */}
 
               {error && (
                 <div
@@ -560,9 +526,7 @@ function LoginContent() {
                 </div>
               )}
 
-              {/* =================================================
-                  زر الدخول
-              ================================================== */}
+              {/* زر الدخول */}
 
               <button
                 type="submit"
@@ -598,8 +562,6 @@ function LoginContent() {
                   disabled:opacity-60
                 "
               >
-                {/* تأثير الحركة */}
-
                 <span
                   className="
                     absolute
