@@ -374,7 +374,7 @@ export default async function StatsGrid() {
               strokeWidth={2}
             />
           }
-          color="blue"
+          color="teal"
         />
 
         <StatCard
