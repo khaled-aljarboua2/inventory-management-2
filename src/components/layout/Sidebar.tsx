@@ -32,8 +32,8 @@ export default async function Sidebar() {
           w-[min(320px,85vw)]
           translate-x-full
           flex-col
-          border-l border-slate-200
-          bg-white
+          border-l border-teal-800/20
+          bg-teal-700
           shadow-2xl
           transition-transform duration-300
           peer-checked:translate-x-0
@@ -43,18 +43,14 @@ export default async function Sidebar() {
           md:w-64
           md:translate-x-0
           md:shadow-none
-
-          dark:border-slate-800
-          dark:bg-slate-950
         "
       >
         {/* Header */}
         <div
           className="
             border-b
-            border-slate-100
+            border-teal-600/30
             px-6 py-6
-            dark:border-slate-800
           "
         >
           <div className="flex items-center gap-3">
@@ -64,8 +60,8 @@ export default async function Sidebar() {
                 shrink-0
                 items-center justify-center
                 rounded-xl
-                bg-teal-700
-                text-white
+                bg-white
+                text-teal-700
                 shadow-sm
               "
             >
@@ -82,8 +78,7 @@ export default async function Sidebar() {
                   text-lg
                   font-bold
                   tracking-tight
-                  text-slate-900
-                  dark:text-slate-100
+                  text-white
                 "
               >
                 إدارة المخزون
@@ -94,7 +89,7 @@ export default async function Sidebar() {
                   mt-0.5
                   truncate
                   text-xs
-                  text-slate-400
+                  text-teal-100
                 "
               >
                 Inventory Management
@@ -113,26 +108,23 @@ export default async function Sidebar() {
           className="
             mt-auto
             border-t
-            border-slate-100
+            border-teal-600/30
             p-4
-            dark:border-slate-800
           "
         >
           <div
             className="
               mb-3
               rounded-xl
-              bg-slate-50
+              bg-teal-800/30
               px-4 py-3
-              dark:bg-slate-900
             "
           >
             <p
               className="
                 text-xs
                 font-medium
-                text-slate-500
-                dark:text-slate-400
+                text-white
               "
             >
               نظام إدارة المخزون
@@ -142,7 +134,7 @@ export default async function Sidebar() {
               className="
                 mt-1
                 text-[11px]
-                text-slate-400
+                text-teal-100/70
               "
             >
               الإصدار 1.0
