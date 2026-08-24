@@ -1,7 +1,7 @@
 <div dir="rtl">
 
-WAREVANCE
-"Inventory & Branch Management"
+"WAREVANCE
+Inventory & Branch Management"
 
 ## تعريف المشروع
 
