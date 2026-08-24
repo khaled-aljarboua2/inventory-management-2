@@ -17,6 +17,7 @@ import {
   deletePurchaseOrder,
   receivePurchaseOrder,
 } from "./actions";
+
 type Supplier = {
   id: string;
   name: string;
@@ -127,8 +128,7 @@ export default function PurchaseTable({
   products,
   units,
 }: Props) {
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
   const [statusFilter, setStatusFilter] =
     useState("all");
@@ -162,9 +162,7 @@ export default function PurchaseTable({
     ]);
 
   const [receiveQuantities, setReceiveQuantities] =
-    useState<Record<string, string>>(
-      {}
-    );
+    useState<Record<string, string>>({});
 
   const [receiptItems, setReceiptItems] =
     useState<ReceiptItem[]>([]);
@@ -266,7 +264,7 @@ export default function PurchaseTable({
       status.toLowerCase()
     ) {
       case "approved":
-        return "bg-blue-50 text-blue-700";
+        return "bg-teal-50 text-teal-700";
 
       case "received":
         return "bg-emerald-50 text-emerald-700";
@@ -456,14 +454,6 @@ export default function PurchaseTable({
     window.location.reload();
   }
 
-  /*
-   * حساب الكميات المستلمة من بيانات أوامر الشراء
-   *
-   * ملاحظة:
-   * بما أن الصفحة الحالية لا تحمل goods_receipts
-   * معها، سنجلب بيانات الاستلام عند فتح نافذة
-   * الاستلام من خلال API route مخصص.
-   */
   async function openReceive(order: Order) {
     setLoading(true);
     setMessage(null);
@@ -626,39 +616,25 @@ export default function PurchaseTable({
   return (
     <>
       {/* القائمة الرئيسية */}
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)]">
-        <div className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-l from-blue-50/70 via-white to-white p-5 sm:p-6">
-          <div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full bg-blue-100/40 blur-3xl" />
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 p-5 sm:p-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                أوامر الشراء
+              </h2>
 
-          <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/60">
-                <ShoppingCart
-                  size={22}
-                  strokeWidth={1.9}
-                />
-              </div>
-
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900">
-                  أوامر الشراء
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  إدارة ومتابعة أوامر الشراء والاستلام.
-                </p>
-
-                <div className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">
-                  {filteredOrders.length} أمر
-                </div>
-              </div>
+              <p className="mt-1 text-sm text-slate-400">
+                {filteredOrders.length}{" "}
+                أمر
+              </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <div className="relative sm:w-80">
                 <Search
                   size={18}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
                 <input
@@ -670,7 +646,7 @@ export default function PurchaseTable({
                     )
                   }
                   placeholder="ابحث برقم الأمر أو المورد..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-10 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 text-sm outline-none focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
               </div>
 
@@ -681,7 +657,7 @@ export default function PurchaseTable({
                     event.target.value
                   )
                 }
-                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
               >
                 <option value="all">
                   جميع الحالات
@@ -710,7 +686,7 @@ export default function PurchaseTable({
                   resetCreate();
                   setShowCreate(true);
                 }}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-md shadow-blue-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-md"
               >
                 <Plus size={17} />
                 أمر شراء جديد
@@ -722,36 +698,36 @@ export default function PurchaseTable({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px] text-right">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/80">
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+              <tr className="border-b border-slate-100 bg-slate-50/70">
+                <th className="px-6 py-4 text-xs text-slate-500">
                   رقم الأمر
                 </th>
 
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+                <th className="px-6 py-4 text-xs text-slate-500">
                   المورد
                 </th>
 
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+                <th className="px-6 py-4 text-xs text-slate-500">
                   الموقع
                 </th>
 
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+                <th className="px-6 py-4 text-xs text-slate-500">
                   المنتجات
                 </th>
 
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+                <th className="px-6 py-4 text-xs text-slate-500">
                   الإجمالي
                 </th>
 
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+                <th className="px-6 py-4 text-xs text-slate-500">
                   الحالة
                 </th>
 
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+                <th className="px-6 py-4 text-xs text-slate-500">
                   التاريخ
                 </th>
 
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+                <th className="px-6 py-4 text-xs text-slate-500">
                   الإجراءات
                 </th>
               </tr>
@@ -765,11 +741,12 @@ export default function PurchaseTable({
                     colSpan={8}
                     className="px-6 py-20 text-center"
                   >
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
-                      <ShoppingCart size={30} />
-                    </div>
+                    <ShoppingCart
+                      size={32}
+                      className="mx-auto mb-3 text-slate-300"
+                    />
 
-                    <p className="mt-5 font-semibold text-slate-700">
+                    <p className="font-semibold text-slate-700">
                       لا توجد أوامر شراء
                     </p>
                   </td>
@@ -779,7 +756,7 @@ export default function PurchaseTable({
                   (order) => (
                     <tr
                       key={order.id}
-                      className="group transition-all duration-150 hover:bg-blue-50/30"
+                      className="transition hover:bg-teal-50/40"
                     >
                       <td className="px-6 py-5">
                         <button
@@ -789,7 +766,7 @@ export default function PurchaseTable({
                               order
                             )
                           }
-                          className="font-mono text-sm font-bold text-slate-800 transition-colors hover:text-blue-600"
+                          className="font-mono text-sm font-bold text-slate-800 transition-colors hover:text-teal-600"
                         >
                           {
                             order.order_number
@@ -812,7 +789,7 @@ export default function PurchaseTable({
                           }
                         </p>
 
-                        <p className="mt-1 text-xs font-mono text-slate-400">
+                        <p className="text-xs text-slate-400">
                           {
                             order.locations
                               ?.code
@@ -820,14 +797,12 @@ export default function PurchaseTable({
                         </p>
                       </td>
 
-                      <td className="px-6 py-5">
-                        <span className="inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-600">
-                          {
-                            order
-                              .purchase_order_items
-                              .length
-                          }
-                        </span>
+                      <td className="px-6 py-5 text-sm text-slate-600">
+                        {
+                          order
+                            .purchase_order_items
+                            .length
+                        }
                       </td>
 
                       <td className="px-6 py-5 font-semibold text-slate-800">
@@ -865,7 +840,7 @@ export default function PurchaseTable({
                                 order
                               )
                             }
-                            className="rounded-lg px-3 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-50"
+                            className="rounded-lg px-3 py-2 text-xs font-semibold text-teal-600 transition-colors hover:bg-teal-50"
                           >
                             التفاصيل
                           </button>
@@ -883,7 +858,7 @@ export default function PurchaseTable({
                                     order
                                   )
                                 }
-                                className="rounded-lg px-3 py-2 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-50"
+                                className="rounded-lg px-3 py-2 text-xs font-semibold text-emerald-600 hover:bg-emerald-50"
                               >
                                 اعتماد
                               </button>
@@ -898,7 +873,7 @@ export default function PurchaseTable({
                                     order
                                   )
                                 }
-                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
                               >
                                 <Trash2 size={14} />
                                 حذف
@@ -911,26 +886,30 @@ export default function PurchaseTable({
                             <>
                               <button
                                 type="button"
-                                disabled={loading}
+                                disabled={
+                                  loading
+                                }
                                 onClick={() =>
                                   handleCancel(
                                     order
                                   )
                                 }
-                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
                               >
                                 إلغاء
                               </button>
 
                               <button
                                 type="button"
-                                disabled={loading}
+                                disabled={
+                                  loading
+                                }
                                 onClick={() =>
                                   openReceive(
                                     order
                                   )
                                 }
-                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-amber-600 transition hover:bg-amber-50 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-orange-600 hover:bg-orange-50 disabled:opacity-50"
                               >
                                 <PackageCheck
                                   size={14}
@@ -1026,7 +1005,7 @@ export default function PurchaseTable({
                 <button
                   type="button"
                   onClick={addItem}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal-100"
                 >
                   <Plus size={14} />
                   إضافة منتج
@@ -1160,7 +1139,7 @@ export default function PurchaseTable({
                             index
                           )
                         }
-                        className="mt-3 text-xs font-semibold text-red-500 transition hover:text-red-700"
+                        className="mt-3 text-xs font-semibold text-red-500"
                       >
                         حذف المنتج
                       </button>
@@ -1194,7 +1173,7 @@ export default function PurchaseTable({
                 onClick={() =>
                   setShowCreate(false)
                 }
-                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
               >
                 إلغاء
               </button>
@@ -1203,7 +1182,7 @@ export default function PurchaseTable({
                 type="button"
                 disabled={loading}
                 onClick={handleCreate}
-                className="flex-1 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-blue-100 transition hover:bg-blue-700 hover:shadow-lg disabled:opacity-50"
+                className="flex-1 rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-teal-700 hover:shadow-md disabled:opacity-50"
               >
                 {loading
                   ? "جاري الحفظ..."
@@ -1258,23 +1237,23 @@ export default function PurchaseTable({
                 <table className="w-full text-right">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-500">
+                      <th className="px-4 py-3 text-xs text-slate-500">
                         المنتج
                       </th>
 
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-500">
+                      <th className="px-4 py-3 text-xs text-slate-500">
                         الوحدة
                       </th>
 
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-500">
+                      <th className="px-4 py-3 text-xs text-slate-500">
                         الكمية
                       </th>
 
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-500">
+                      <th className="px-4 py-3 text-xs text-slate-500">
                         السعر
                       </th>
 
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-500">
+                      <th className="px-4 py-3 text-xs text-slate-500">
                         الإجمالي
                       </th>
                     </tr>
@@ -1283,11 +1262,8 @@ export default function PurchaseTable({
                   <tbody className="divide-y divide-slate-100">
                     {selectedOrder.purchase_order_items.map(
                       (item) => (
-                        <tr
-                          key={item.id}
-                          className="transition hover:bg-slate-50/70"
-                        >
-                          <td className="px-4 py-4 text-sm font-semibold text-slate-800">
+                        <tr key={item.id}>
+                          <td className="px-4 py-4 text-sm font-semibold">
                             {
                               item.products
                                 ?.name
@@ -1301,13 +1277,13 @@ export default function PurchaseTable({
                             }
                           </td>
 
-                          <td className="px-4 py-4 text-sm text-slate-700">
+                          <td className="px-4 py-4 text-sm">
                             {
                               item.quantity
                             }
                           </td>
 
-                          <td className="px-4 py-4 text-sm text-slate-600">
+                          <td className="px-4 py-4 text-sm">
                             {formatMoney(
                               Number(
                                 item.unit_cost
@@ -1315,7 +1291,7 @@ export default function PurchaseTable({
                             )}
                           </td>
 
-                          <td className="px-4 py-4 text-sm font-bold text-slate-800">
+                          <td className="px-4 py-4 text-sm font-bold">
                             {formatMoney(
                               Number(
                                 item.total
@@ -1329,12 +1305,12 @@ export default function PurchaseTable({
                 </table>
               </div>
 
-              <div className="flex justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex justify-between rounded-2xl bg-teal-50 p-4">
                 <span className="font-semibold text-slate-500">
                   الإجمالي
                 </span>
 
-                <span className="text-xl font-bold text-slate-900">
+                <span className="text-xl font-bold text-teal-700">
                   {formatMoney(
                     totalOrder(
                       selectedOrder
@@ -1344,7 +1320,7 @@ export default function PurchaseTable({
               </div>
 
               {selectedOrder.notes && (
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-xs text-slate-400">
                     الملاحظات
                   </p>
@@ -1368,7 +1344,7 @@ export default function PurchaseTable({
                         selectedOrder
                       )
                     }
-                    className="flex-1 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                    className="flex-1 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50"
                   >
                     إلغاء أمر الشراء
                   </button>
@@ -1381,7 +1357,7 @@ export default function PurchaseTable({
                         selectedOrder
                       )
                     }
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-amber-100 transition hover:bg-amber-600 hover:shadow-lg disabled:opacity-50"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-teal-700 hover:shadow-md disabled:opacity-50"
                   >
                     <PackageCheck
                       size={17}
@@ -1406,7 +1382,7 @@ export default function PurchaseTable({
             }}
           >
             <div className="space-y-5">
-              <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
+              <div className="rounded-2xl border border-teal-100 bg-teal-50 p-4 text-sm text-teal-800">
                 الموقع المستلم:
                 <strong className="mr-1">
                   {
@@ -1424,7 +1400,7 @@ export default function PurchaseTable({
                   return (
                     <div
                       key={item.id}
-                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                      className="rounded-2xl border border-slate-200 p-4"
                     >
                       <div className="mb-4 flex items-center justify-between">
                         <div>
@@ -1449,7 +1425,7 @@ export default function PurchaseTable({
                           className={
                             receiptItem.remainingQuantity >
                             0
-                              ? "text-amber-500"
+                              ? "text-teal-500"
                               : "text-emerald-500"
                           }
                         />
@@ -1468,12 +1444,12 @@ export default function PurchaseTable({
                           </p>
                         </div>
 
-                        <div className="rounded-xl bg-blue-50 p-3">
-                          <p className="text-[11px] text-blue-500">
+                        <div className="rounded-xl bg-teal-50 p-3">
+                          <p className="text-[11px] text-teal-500">
                             المستلم
                           </p>
 
-                          <p className="mt-1 font-bold text-blue-700">
+                          <p className="mt-1 font-bold text-teal-700">
                             {
                               receiptItem.receivedQuantity
                             }
@@ -1484,7 +1460,7 @@ export default function PurchaseTable({
                           className={`rounded-xl p-3 ${
                             receiptItem.remainingQuantity >
                             0
-                              ? "bg-amber-50"
+                              ? "bg-teal-50"
                               : "bg-emerald-50"
                           }`}
                         >
@@ -1492,7 +1468,7 @@ export default function PurchaseTable({
                             className={`text-[11px] ${
                               receiptItem.remainingQuantity >
                               0
-                                ? "text-amber-500"
+                                ? "text-teal-500"
                                 : "text-emerald-500"
                             }`}
                           >
@@ -1503,7 +1479,7 @@ export default function PurchaseTable({
                             className={`mt-1 font-bold ${
                               receiptItem.remainingQuantity >
                               0
-                                ? "text-amber-700"
+                                ? "text-teal-700"
                                 : "text-emerald-700"
                             }`}
                           >
@@ -1630,7 +1606,7 @@ export default function PurchaseTable({
                   type="button"
                   disabled={loading}
                   onClick={handleReceive}
-                  className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-amber-100 transition hover:bg-amber-600 hover:shadow-lg disabled:opacity-50"
+                  className="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-teal-700 hover:shadow-md disabled:opacity-50"
                 >
                   {loading
                     ? "جاري الاستلام..."
@@ -1657,7 +1633,7 @@ function Modal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -1665,7 +1641,7 @@ function Modal({
         onClick={(event) =>
           event.stopPropagation()
         }
-        className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-slate-200 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.22)]"
+        className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">
           <div>
@@ -1681,7 +1657,7 @@ function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-teal-50 hover:text-teal-600"
           >
             <X size={18} />
           </button>
@@ -1721,7 +1697,7 @@ function Info({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+    <div className="rounded-xl border border-teal-100 bg-teal-50/60 p-4">
       <p className="text-xs text-slate-400">
         {label}
       </p>
@@ -1739,7 +1715,7 @@ function Message({
   text: string;
 }) {
   return (
-    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+    <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
       {text}
     </div>
   );
