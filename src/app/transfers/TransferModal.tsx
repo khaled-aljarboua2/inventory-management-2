@@ -48,12 +48,8 @@ type TransferRow = {
 type Props = {
   locations: Location[];
   products: Product[];
-
-  // موجودة للتوافق مع الصفحة الحالية،
-  // لكن لم تعد تستخدم لتحديد المصدر.
   currentLocationId: string | null;
   isGeneralManager: boolean;
-
   onClose: () => void;
 };
 
@@ -62,16 +58,8 @@ export default function TransferModal({
   products,
   onClose,
 }: Props) {
-  // ==========================================================
-  // المواقع
-  // ==========================================================
-
-  // جميع المستخدمين يختارون المصدر بأنفسهم
   const [fromLocation, setFromLocation] = useState("");
-
-  // جميع المستخدمين يختارون الوجهة بأنفسهم
   const [toLocation, setToLocation] = useState("");
-
   const [notes, setNotes] = useState("");
 
   const [rows, setRows] = useState<TransferRow[]>([
@@ -86,10 +74,6 @@ export default function TransferModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ==========================================================
-  // المواقع النشطة
-  // ==========================================================
-
   const activeLocations = useMemo(
     () =>
       (locations ?? []).filter(
@@ -98,10 +82,6 @@ export default function TransferModal({
     [locations]
   );
 
-  // ==========================================================
-  // المنتجات النشطة
-  // ==========================================================
-
   const activeProducts = useMemo(
     () =>
       (products ?? []).filter(
@@ -109,10 +89,6 @@ export default function TransferModal({
       ),
     [products]
   );
-
-  // ==========================================================
-  // إضافة صنف
-  // ==========================================================
 
   function addRow() {
     setRows((current) => [
@@ -126,10 +102,6 @@ export default function TransferModal({
     ]);
   }
 
-  // ==========================================================
-  // حذف صنف
-  // ==========================================================
-
   function removeRow(id: string) {
     setRows((current) =>
       current.length === 1
@@ -137,10 +109,6 @@ export default function TransferModal({
         : current.filter((row) => row.id !== id)
     );
   }
-
-  // ==========================================================
-  // تعديل صنف
-  // ==========================================================
 
   function updateRow(
     id: string,
@@ -178,10 +146,6 @@ export default function TransferModal({
     );
   }
 
-  // ==========================================================
-  // إنشاء الطلب
-  // ==========================================================
-
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
   ) {
@@ -189,27 +153,15 @@ export default function TransferModal({
 
     setError("");
 
-    // --------------------------------------------------------
-    // المصدر
-    // --------------------------------------------------------
-
     if (!fromLocation) {
       setError("حدد موقع المصدر من القائمة أولًا.");
       return;
     }
 
-    // --------------------------------------------------------
-    // الوجهة
-    // --------------------------------------------------------
-
     if (!toLocation) {
       setError("حدد موقع الوجهة من القائمة أولًا.");
       return;
     }
-
-    // --------------------------------------------------------
-    // منع تطابق المصدر والوجهة
-    // --------------------------------------------------------
 
     if (fromLocation === toLocation) {
       setError(
@@ -217,10 +169,6 @@ export default function TransferModal({
       );
       return;
     }
-
-    // --------------------------------------------------------
-    // التحقق من المنتجات
-    // --------------------------------------------------------
 
     if (!Array.isArray(rows) || rows.length === 0) {
       setError("أضف منتجًا واحدًا على الأقل.");
@@ -251,9 +199,7 @@ export default function TransferModal({
       const result = await createTransfer({
         sourceLocationId: fromLocation,
         destinationLocationId: toLocation,
-
         notes,
-
         items: rows.map((row) => ({
           product_id: row.product_id,
           unit_id: row.unit_id,
@@ -286,13 +232,12 @@ export default function TransferModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
     >
       <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-        {/* ======================================================
-            الرأس
-        ======================================================= */}
+
+        {/* الرأس */}
 
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <ArrowLeftRight size={20} />
             </div>
 
@@ -321,9 +266,7 @@ export default function TransferModal({
           onSubmit={handleSubmit}
           className="space-y-6 p-6"
         >
-          {/* ====================================================
-              الخطأ
-          ===================================================== */}
+          {/* الخطأ */}
 
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
@@ -331,14 +274,11 @@ export default function TransferModal({
             </div>
           )}
 
-          {/* ====================================================
-              المواقع
-          ===================================================== */}
+          {/* المواقع */}
 
           <div className="grid gap-4 md:grid-cols-2">
-            {/* ==================================================
-                المصدر
-            =================================================== */}
+
+            {/* المصدر */}
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -361,7 +301,7 @@ export default function TransferModal({
                   activeLocations.length === 0
                 }
                 required
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:bg-slate-100"
               >
                 <option value="">
                   {activeLocations.length === 0
@@ -381,9 +321,7 @@ export default function TransferModal({
               </select>
             </div>
 
-            {/* ==================================================
-                الوجهة
-            =================================================== */}
+            {/* الوجهة */}
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -400,7 +338,7 @@ export default function TransferModal({
                   activeLocations.length === 0
                 }
                 required
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:bg-slate-100"
               >
                 <option value="">
                   {activeLocations.length === 0
@@ -421,17 +359,11 @@ export default function TransferModal({
             </div>
           </div>
 
-          {/* ====================================================
-              تنبيه
-          ===================================================== */}
+          {/* تنبيه */}
 
-          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+          <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-sm text-teal-700">
             اختر موقع المصدر وموقع الوجهة من المواقع النشطة.
           </div>
-
-          {/* ====================================================
-              تنبيه المواقع
-          ===================================================== */}
 
           {activeLocations.length < 2 && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
@@ -439,9 +371,7 @@ export default function TransferModal({
             </div>
           )}
 
-          {/* ====================================================
-              المنتجات
-          ===================================================== */}
+          {/* المنتجات */}
 
           <div className="overflow-hidden rounded-2xl border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-5 py-4">
@@ -462,7 +392,7 @@ export default function TransferModal({
                   loading ||
                   activeProducts.length === 0
                 }
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus size={15} />
                 إضافة منتج
@@ -516,7 +446,7 @@ export default function TransferModal({
                               )
                             }
                             disabled={loading}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
                           >
                             <option value="">
                               {activeProducts.length === 0
@@ -548,7 +478,7 @@ export default function TransferModal({
                             disabled={
                               loading || !product
                             }
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-100"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:bg-slate-100"
                           >
                             <option value="">
                               اختر الوحدة
@@ -582,7 +512,7 @@ export default function TransferModal({
                               )
                             }
                             disabled={loading}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
                           />
                         </td>
 
@@ -609,9 +539,7 @@ export default function TransferModal({
             </div>
           </div>
 
-          {/* ====================================================
-              الملاحظات
-          ===================================================== */}
+          {/* الملاحظات */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -626,13 +554,11 @@ export default function TransferModal({
               disabled={loading}
               rows={3}
               placeholder="أضف أي ملاحظات متعلقة بطلب النقل..."
-              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:bg-slate-100"
+              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:bg-slate-100"
             />
           </div>
 
-          {/* ====================================================
-              الأزرار
-          ===================================================== */}
+          {/* الأزرار */}
 
           <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
             <button
@@ -653,7 +579,7 @@ export default function TransferModal({
                 !fromLocation ||
                 !toLocation
               }
-              className="rounded-xl bg-slate-900 px-7 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-slate-900 px-7 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-lg hover:shadow-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading
                 ? "جاري إنشاء الطلب..."
