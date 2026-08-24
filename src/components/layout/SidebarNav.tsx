@@ -231,8 +231,6 @@ export default function SidebarNav({
           />
 
           <SubMenu open={masterOpen}>
-            {/* المنتجات */}
-
             {allowed("products.view") && (
               <NavLink
                 href="/products"
@@ -243,8 +241,6 @@ export default function SidebarNav({
                 sub
               />
             )}
-
-            {/* الوحدات */}
 
             {allowed("products.view") && (
               <NavLink
@@ -257,8 +253,6 @@ export default function SidebarNav({
               />
             )}
 
-            {/* الفروع */}
-
             {allowed("locations.view") && (
               <NavLink
                 href="/branches"
@@ -269,8 +263,6 @@ export default function SidebarNav({
                 sub
               />
             )}
-
-            {/* المستودعات */}
 
             {allowed("locations.view") && (
               <NavLink
@@ -296,8 +288,6 @@ export default function SidebarNav({
             الإدارة
           </SectionTitle>
 
-          {/* المستخدمون */}
-
           {allowed("users.view") && (
             <NavLink
               href="/users"
@@ -308,8 +298,6 @@ export default function SidebarNav({
             />
           )}
 
-          {/* الأدوار والصلاحيات */}
-
           {allowed("users.manage_access") && (
             <NavLink
               href="/roles"
@@ -319,8 +307,6 @@ export default function SidebarNav({
               label="الأدوار والصلاحيات"
             />
           )}
-
-          {/* الإعدادات العامة */}
 
           {allowed("settings.view") && (
             <NavLink
@@ -350,7 +336,7 @@ function SectionTitle({
 }) {
   return (
     <p
-      className={`mb-3 px-3 text-xs font-semibold tracking-wider text-slate-400 ${className}`}
+      className={`mb-3 px-3 text-xs font-semibold tracking-wider text-teal-100/70 ${className}`}
     >
       {children}
     </p>
@@ -376,10 +362,20 @@ function MenuButton({
     <button
       type="button"
       onClick={onClick}
-      className="group mb-1 flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-[15px] font-medium text-slate-700 transition hover:bg-teal-50"
+      className="
+        group mb-1 flex w-full
+        items-center justify-between
+        rounded-xl
+        px-3.5 py-3
+        text-[15px]
+        font-medium
+        text-white
+        transition
+        hover:bg-teal-800/50
+      "
     >
       <div className="flex items-center gap-3">
-        <span className="text-slate-400 transition-colors group-hover:text-teal-700">
+        <span className="text-teal-100 transition-colors group-hover:text-white">
           {icon}
         </span>
 
@@ -388,7 +384,7 @@ function MenuButton({
 
       <ChevronDown
         size={17}
-        className={`text-slate-400 transition-transform ${
+        className={`text-teal-100 transition-transform ${
           open ? "rotate-180" : ""
         }`}
       />
@@ -415,7 +411,7 @@ function SubMenu({
           : "max-h-0 opacity-0"
       }`}
     >
-      <div className="mr-5 mt-1 space-y-1 border-r border-slate-200 pr-3">
+      <div className="mr-5 mt-1 space-y-1 border-r border-white/20 pr-3">
         {children}
       </div>
     </div>
@@ -442,11 +438,29 @@ function NavLink({
       href={href}
       className={
         sub
-          ? "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] text-slate-500 transition hover:bg-teal-50 hover:text-slate-900"
-          : "group mb-1 flex items-center gap-3 rounded-xl px-3.5 py-3 text-[15px] font-medium text-slate-600 transition hover:bg-teal-50 hover:text-slate-900"
+          ? `
+            group flex items-center gap-3
+            rounded-lg
+            px-3 py-2.5
+            text-[14px]
+            text-teal-50
+            transition
+            hover:bg-teal-800/50
+            hover:text-white
+          `
+          : `
+            group mb-1 flex items-center gap-3
+            rounded-xl
+            px-3.5 py-3
+            text-[15px]
+            font-medium
+            text-white
+            transition
+            hover:bg-teal-800/50
+          `
       }
     >
-      <span className="text-slate-400 transition-colors group-hover:text-teal-700">
+      <span className="text-teal-100 transition-colors group-hover:text-white">
         {icon}
       </span>
 
