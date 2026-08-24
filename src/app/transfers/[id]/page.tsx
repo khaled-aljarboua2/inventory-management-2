@@ -116,7 +116,7 @@ const statusConfig: Record<
   approved: {
     label: "معتمدة",
     className:
-      "bg-blue-50 text-blue-700",
+      "bg-teal-50 text-teal-700",
     icon: CheckCircle2,
   },
 
@@ -168,10 +168,6 @@ export default async function TransferDetailsPage({
   const supabase =
     await createClient();
 
-  // ============================================================
-  // المستخدم الحالي
-  // ============================================================
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -188,10 +184,6 @@ export default async function TransferDetailsPage({
       </DashboardLayout>
     );
   }
-
-  // ============================================================
-  // مستخدم النظام
-  // ============================================================
 
   const {
     data: dbUser,
@@ -223,10 +215,6 @@ export default async function TransferDetailsPage({
       </DashboardLayout>
     );
   }
-
-  // ============================================================
-  // تحميل الطلب والمنتجات
-  // ============================================================
 
   const [
     {
@@ -328,10 +316,6 @@ export default async function TransferDetailsPage({
       .order("name"),
   ]);
 
-  // ============================================================
-  // أخطاء التحميل
-  // ============================================================
-
   if (
     transferError ||
     !transfer
@@ -344,7 +328,7 @@ export default async function TransferDetailsPage({
         >
           <Link
             href="/transfers"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600"
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-teal-600"
           >
             <ArrowRight size={16} />
             العودة إلى طلبات النقل
@@ -367,7 +351,7 @@ export default async function TransferDetailsPage({
         >
           <Link
             href="/transfers"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600"
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-teal-600"
           >
             <ArrowRight size={16} />
             العودة إلى طلبات النقل
@@ -410,10 +394,6 @@ export default async function TransferDetailsPage({
     })),
   }));
 
-  // ============================================================
-  // التحقق من الشركة
-  // ============================================================
-
   const fromCompanyId =
     normalizedTransfer.from_location
       ?.company_id;
@@ -436,7 +416,7 @@ export default async function TransferDetailsPage({
         >
           <Link
             href="/transfers"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600"
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-teal-600"
           >
             <ArrowRight size={16} />
             العودة إلى طلبات النقل
@@ -449,10 +429,6 @@ export default async function TransferDetailsPage({
       </DashboardLayout>
     );
   }
-
-  // ============================================================
-  // الحالة
-  // ============================================================
 
   const currentStatus =
     String(
@@ -482,37 +458,29 @@ export default async function TransferDetailsPage({
     );
   }
 
-  // ============================================================
-  // الصفحة
-  // ============================================================
-
   return (
     <DashboardLayout>
       <div
         dir="rtl"
         className="mx-auto w-full max-w-[1600px] space-y-7"
       >
-        {/* =====================================================
-            العودة
-        ====================================================== */}
+        {/* العودة */}
 
         <Link
           href="/transfers"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-blue-600"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-teal-600"
         >
           <ArrowRight size={16} />
           العودة إلى طلبات النقل
         </Link>
 
-        {/* =====================================================
-            رأس الطلب
-        ====================================================== */}
+        {/* رأس الطلب */}
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
                   <ArrowLeftRight
                     size={23}
                   />
@@ -570,9 +538,7 @@ export default async function TransferDetailsPage({
           </div>
         </section>
 
-        {/* =====================================================
-            مسار النقل
-        ====================================================== */}
+        {/* مسار النقل */}
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6">
@@ -592,9 +558,7 @@ export default async function TransferDetailsPage({
           />
         </section>
 
-        {/* =====================================================
-            المصدر والوجهة
-        ====================================================== */}
+        {/* المصدر والوجهة */}
 
         <div className="grid gap-5 md:grid-cols-2">
           <LocationCard
@@ -612,9 +576,7 @@ export default async function TransferDetailsPage({
           />
         </div>
 
-        {/* =====================================================
-            الأصناف
-        ====================================================== */}
+        {/* الأصناف */}
 
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 p-6">
@@ -730,7 +692,7 @@ export default async function TransferDetailsPage({
                           }
                         </td>
 
-                        <td className="px-6 py-5 font-semibold text-blue-600">
+                        <td className="px-6 py-5 font-semibold text-teal-600">
                           {item
                             .approved_quantity ??
                             "—"}
@@ -756,9 +718,7 @@ export default async function TransferDetailsPage({
           </div>
         </section>
 
-        {/* =====================================================
-            الملاحظات
-        ====================================================== */}
+        {/* الملاحظات */}
 
         {normalizedTransfer.notes && (
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -776,9 +736,7 @@ export default async function TransferDetailsPage({
   );
 }
 
-/* ============================================================
-   بطاقة الموقع
-============================================================ */
+/* بطاقة الموقع */
 
 function LocationCard({
   title,
@@ -823,9 +781,7 @@ function LocationCard({
   );
 }
 
-/* ============================================================
-   Timeline
-============================================================ */
+/* Timeline */
 
 function TransferTimeline({
   status,
@@ -839,28 +795,24 @@ function TransferTimeline({
       description:
         "تم إنشاء طلب النقل",
     },
-
     {
       key: "approved",
       label: "الاعتماد",
       description:
         "تم اعتماد الطلب",
     },
-
     {
       key: "preparing",
       label: "التجهيز",
       description:
         "جاري تجهيز الأصناف",
     },
-
     {
       key: "shipped",
       label: "الشحن",
       description:
         "تم شحن الأصناف",
     },
-
     {
       key: "received",
       label: "الاستلام",
@@ -922,7 +874,7 @@ function TransferTimeline({
               <div
                 className={`rounded-2xl border p-4 ${
                   active
-                    ? "border-blue-200 bg-blue-50"
+                    ? "border-teal-200 bg-teal-50"
                     : completed
                     ? "border-emerald-200 bg-emerald-50"
                     : "border-slate-200 bg-white"
@@ -932,7 +884,7 @@ function TransferTimeline({
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-full ${
                       active
-                        ? "bg-blue-600 text-white"
+                        ? "bg-teal-600 text-white"
                         : completed
                         ? "bg-emerald-500 text-white"
                         : "bg-slate-100 text-slate-400"
@@ -947,7 +899,7 @@ function TransferTimeline({
                     <p
                       className={`text-sm font-bold ${
                         active
-                          ? "text-blue-800"
+                          ? "text-teal-800"
                           : completed
                           ? "text-emerald-800"
                           : "text-slate-600"
