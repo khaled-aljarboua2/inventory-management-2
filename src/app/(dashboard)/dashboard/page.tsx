@@ -41,15 +41,15 @@ export default function DashboardPage() {
                   items-center
                   gap-2
                   rounded-full
-                  bg-blue-50
+                  bg-teal-50
                   px-3
                   py-1.5
                   text-xs
                   font-semibold
-                  text-blue-600
+                  text-teal-700
                 "
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                <span className="h-1.5 w-1.5 rounded-full bg-teal-600" />
                 نظام إدارة المخزون
               </div>
 
@@ -88,8 +88,8 @@ export default function DashboardPage() {
                 items-center
                 justify-center
                 rounded-2xl
-                bg-slate-50
-                text-slate-500
+                bg-teal-50
+                text-teal-600
                 lg:flex
               "
             >
