@@ -82,10 +82,6 @@ export default function TransactionsTable({
     setDirectionFilter,
   ] = useState("all");
 
-  // ============================================================
-  // الفلاتر
-  // ============================================================
-
   const filteredTransactions = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -168,10 +164,6 @@ export default function TransactionsTable({
     directionFilter,
   ]);
 
-  // ============================================================
-  // إحصائيات النتائج الحالية
-  // ============================================================
-
   const totalIncoming =
     filteredTransactions.filter(
       (transaction) =>
@@ -189,10 +181,6 @@ export default function TransactionsTable({
     locationFilter !== "all" ||
     transactionFilter !== "all" ||
     directionFilter !== "all";
-
-  // ============================================================
-  // الأدوات
-  // ============================================================
 
   function resetFilters() {
     setSearch("");
@@ -224,18 +212,12 @@ export default function TransactionsTable({
 
   return (
     <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      {/* ======================================================
-          رأس القسم
-      ======================================================= */}
-
       <div className="border-b border-slate-100 bg-white p-5 sm:p-6">
         <div className="flex flex-col gap-5">
 
-          {/* العنوان */}
-
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                 <ClipboardList size={20} />
               </div>
 
@@ -253,32 +235,26 @@ export default function TransactionsTable({
               </div>
             </div>
 
-            {/* الموقع المحدد */}
-
             {selectedLocation && (
-              <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3.5 py-2.5 text-sm font-semibold text-blue-700">
+              <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-teal-100 bg-teal-50 px-3.5 py-2.5 text-sm font-semibold text-teal-700">
                 <Warehouse size={16} />
 
                 <span>
                   {selectedLocation.name}
                 </span>
 
-                <span className="font-mono text-xs text-blue-500">
+                <span className="font-mono text-xs text-teal-500">
                   {selectedLocation.code}
                 </span>
               </div>
             )}
           </div>
 
-          {/* ==================================================
-              اختيار الموقع
-          =================================================== */}
-
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
             <div className="mb-2 flex items-center gap-2">
               <Warehouse
                 size={16}
-                className="text-blue-500"
+                className="text-teal-500"
               />
 
               <label className="text-xs font-semibold text-slate-600">
@@ -293,7 +269,7 @@ export default function TransactionsTable({
                   event.target.value
                 )
               }
-              className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+              className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
             >
               <option value="all">
                 جميع المواقع
@@ -310,13 +286,7 @@ export default function TransactionsTable({
             </select>
           </div>
 
-          {/* ==================================================
-              البحث والفلاتر
-          =================================================== */}
-
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_180px_auto]">
-
-            {/* البحث */}
 
             <div className="relative">
               <Search
@@ -333,7 +303,7 @@ export default function TransactionsTable({
                   )
                 }
                 placeholder="ابحث عن منتج أو SKU أو مستخدم..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-10 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-10 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
               />
 
               {search && (
@@ -348,8 +318,6 @@ export default function TransactionsTable({
               )}
             </div>
 
-            {/* نوع الحركة */}
-
             <select
               value={transactionFilter}
               onChange={(event) =>
@@ -357,7 +325,7 @@ export default function TransactionsTable({
                   event.target.value
                 )
               }
-              className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+              className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
             >
               <option value="all">
                 جميع أنواع الحركات
@@ -380,8 +348,6 @@ export default function TransactionsTable({
               </option>
             </select>
 
-            {/* الاتجاه */}
-
             <select
               value={directionFilter}
               onChange={(event) =>
@@ -389,7 +355,7 @@ export default function TransactionsTable({
                   event.target.value
                 )
               }
-              className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+              className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
             >
               <option value="all">
                 كل الاتجاهات
@@ -404,26 +370,19 @@ export default function TransactionsTable({
               </option>
             </select>
 
-            {/* إعادة الضبط */}
-
             {hasFilters ? (
               <button
                 type="button"
                 onClick={resetFilters}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition-all duration-200 hover:border-blue-200 hover:bg-blue-100"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-teal-100 bg-teal-50 px-4 text-sm font-semibold text-teal-700 transition-all duration-200 hover:border-teal-200 hover:bg-teal-100"
               >
                 <RotateCcw size={16} />
-
                 إعادة ضبط
               </button>
             ) : (
               <div className="hidden lg:block" />
             )}
           </div>
-
-          {/* ==================================================
-              ملخص النتائج
-          =================================================== */}
 
           <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
@@ -456,17 +415,13 @@ export default function TransactionsTable({
             </div>
 
             {hasFilters && (
-              <span className="text-xs font-medium text-blue-600">
+              <span className="text-xs font-medium text-teal-600">
                 يتم عرض النتائج حسب الفلاتر المحددة
               </span>
             )}
           </div>
         </div>
       </div>
-
-      {/* ======================================================
-          الجدول
-      ======================================================= */}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1400px] text-right">
@@ -539,10 +494,9 @@ export default function TransactionsTable({
                       <button
                         type="button"
                         onClick={resetFilters}
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200"
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-md hover:shadow-teal-200"
                       >
                         <RotateCcw size={15} />
-
                         إعادة ضبط الفلاتر
                       </button>
                     )}
@@ -562,21 +516,17 @@ export default function TransactionsTable({
                   return (
                     <tr
                       key={transaction.id}
-                      className="group transition-all duration-200 hover:bg-blue-50/30"
+                      className="group transition-all duration-200 hover:bg-teal-50/30"
                     >
-                      {/* التاريخ */}
-
                       <td className="px-5 py-5 text-sm text-slate-500">
                         {formatDate(
                           transaction.created_at
                         )}
                       </td>
 
-                      {/* المنتج */}
-
                       <td className="px-5 py-5">
                         <div>
-                          <p className="font-semibold text-slate-800 transition-colors group-hover:text-blue-600">
+                          <p className="font-semibold text-slate-800 transition-colors group-hover:text-teal-600">
                             {transaction.products?.name ??
                               "منتج غير معروف"}
                           </p>
@@ -588,8 +538,6 @@ export default function TransactionsTable({
                           </p>
                         </div>
                       </td>
-
-                      {/* الموقع */}
 
                       <td className="px-5 py-5">
                         <div>
@@ -604,8 +552,6 @@ export default function TransactionsTable({
                           </p>
                         </div>
                       </td>
-
-                      {/* نوع الحركة */}
 
                       <td className="px-5 py-5">
                         <span
@@ -625,8 +571,6 @@ export default function TransactionsTable({
                         </span>
                       </td>
 
-                      {/* الكمية */}
-
                       <td className="px-5 py-5">
                         <span
                           className={`text-base font-bold ${
@@ -640,8 +584,6 @@ export default function TransactionsTable({
                         </span>
                       </td>
 
-                      {/* قبل */}
-
                       <td className="px-5 py-5 font-medium text-slate-600">
                         {formatNumber(
                           Number(
@@ -650,8 +592,6 @@ export default function TransactionsTable({
                           )
                         )}
                       </td>
-
-                      {/* بعد */}
 
                       <td className="px-5 py-5">
                         <span className="font-bold text-slate-800">
@@ -663,8 +603,6 @@ export default function TransactionsTable({
                           )}
                         </span>
                       </td>
-
-                      {/* المرجع */}
 
                       <td className="px-5 py-5">
                         <div>
@@ -682,14 +620,10 @@ export default function TransactionsTable({
                         </div>
                       </td>
 
-                      {/* المستخدم */}
-
                       <td className="px-5 py-5 text-sm text-slate-600">
                         {transaction.users?.full_name ??
                           "—"}
                       </td>
-
-                      {/* الملاحظات */}
 
                       <td className="max-w-56 px-5 py-5 text-sm text-slate-500">
                         <span
@@ -709,10 +643,6 @@ export default function TransactionsTable({
           </tbody>
         </table>
       </div>
-
-      {/* ======================================================
-          Footer
-      ======================================================= */}
 
       {filteredTransactions.length > 0 && (
         <div className="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/40 px-5 py-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
@@ -736,10 +666,6 @@ export default function TransactionsTable({
   );
 }
 
-// ============================================================
-// أسماء أنواع الحركات
-// ============================================================
-
 function transactionTypeLabel(type: string) {
   switch (String(type).toLowerCase()) {
     case "purchase":
@@ -759,14 +685,10 @@ function transactionTypeLabel(type: string) {
   }
 }
 
-// ============================================================
-// ألوان أنواع الحركات
-// ============================================================
-
 function transactionTypeClass(type: string) {
   switch (String(type).toLowerCase()) {
     case "purchase":
-      return "bg-blue-50 text-blue-700";
+      return "bg-teal-50 text-teal-700";
 
     case "transfer_in":
       return "bg-emerald-50 text-emerald-700";
@@ -781,10 +703,6 @@ function transactionTypeClass(type: string) {
       return "bg-slate-100 text-slate-600";
   }
 }
-
-// ============================================================
-// أسماء المراجع
-// ============================================================
 
 function referenceLabel(
   referenceType: string | null
