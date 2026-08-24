@@ -13,7 +13,7 @@ export default function StatCard({
   value,
   description = "محدث حاليًا",
   icon,
-  color = "blue",
+  color = "teal",
 }: Props) {
   const themes: Record<
     string,
@@ -24,11 +24,11 @@ export default function StatCard({
       dot: string;
     }
   > = {
-    blue: {
-      iconBg: "bg-blue-50",
-      iconText: "text-blue-600",
-      accent: "bg-blue-600",
-      dot: "bg-blue-500",
+    teal: {
+      iconBg: "bg-teal-50",
+      iconText: "text-teal-600",
+      accent: "bg-teal-600",
+      dot: "bg-teal-500",
     },
 
     green: {
@@ -53,7 +53,7 @@ export default function StatCard({
     },
   };
 
-  const theme = themes[color] ?? themes.blue;
+  const theme = themes[color] ?? themes.teal;
 
   return (
     <div
