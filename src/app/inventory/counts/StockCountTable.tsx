@@ -21,6 +21,7 @@ type StockCount = {
   notes: string | null;
   created_at: string;
   completed_at: string | null;
+
   locations: {
     id: string;
     name: string;
@@ -44,37 +45,46 @@ export default function StockCountTable({
   const router = useRouter();
 
   const [search, setSearch] = useState("");
-  const [showCreate, setShowCreate] =
-    useState(false);
+  const [showCreate, setShowCreate] = useState(false);
 
-  const [locationId, setLocationId] =
-    useState("");
-
+  const [locationId, setLocationId] = useState("");
   const [notes, setNotes] = useState("");
-  const [creating, setCreating] =
-    useState(false);
 
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+
+  // ============================================================
+  // البحث
+  // ============================================================
 
   const filteredCounts = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    if (!query) return counts;
+    if (!query) {
+      return counts;
+    }
 
     return counts.filter((count) => {
       const locationName =
-        count.locations?.name.toLowerCase() ?? "";
+        count.locations?.name?.toLowerCase() ?? "";
 
       const locationCode =
-        count.locations?.code.toLowerCase() ?? "";
+        count.locations?.code?.toLowerCase() ?? "";
+
+      const status =
+        count.status?.toLowerCase() ?? "";
 
       return (
         locationName.includes(query) ||
         locationCode.includes(query) ||
-        count.status.toLowerCase().includes(query)
+        status.includes(query)
       );
     });
   }, [counts, search]);
+
+  // ============================================================
+  // فتح نافذة إنشاء الجرد
+  // ============================================================
 
   function openCreateModal() {
     setLocationId(locations[0]?.id ?? "");
@@ -83,12 +93,22 @@ export default function StockCountTable({
     setShowCreate(true);
   }
 
+  // ============================================================
+  // إغلاق النافذة
+  // ============================================================
+
   function closeCreateModal() {
-    if (creating) return;
+    if (creating) {
+      return;
+    }
 
     setShowCreate(false);
     setError("");
   }
+
+  // ============================================================
+  // إنشاء الجرد
+  // ============================================================
 
   async function createCount() {
     setError("");
@@ -106,8 +126,7 @@ export default function StockCountTable({
         {
           method: "POST",
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             locationId,
@@ -151,258 +170,482 @@ export default function StockCountTable({
 
   return (
     <>
+      {/* ========================================================
+          جدول عمليات الجرد
+      ========================================================= */}
+
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              عمليات الجرد
-            </h2>
 
-            <p className="mt-1 text-sm text-slate-400">
-              {counts.length} عملية جرد
-            </p>
-          </div>
+        {/* ======================================================
+            رأس القسم
+        ======================================================= */}
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative">
-              <Search
-                size={17}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-              />
+        <div className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-l from-blue-50/70 via-white to-white px-5 py-6 sm:px-6">
+          <div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full bg-blue-100/40 blur-3xl" />
 
-              <input
-                type="search"
-                value={search}
-                onChange={(event) =>
-                  setSearch(event.target.value)
-                }
-                placeholder="ابحث عن موقع أو حالة..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 sm:w-72"
-              />
+          <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+
+            {/* العنوان */}
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200/60">
+                <ClipboardCheck
+                  size={23}
+                  strokeWidth={1.9}
+                />
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">
+                  عمليات الجرد
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  إنشاء ومتابعة عمليات جرد المخزون.
+                </p>
+
+                <div className="mt-3 inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">
+                  {counts.length.toLocaleString(
+                    "ar-SA"
+                  )}{" "}
+                  عملية جرد
+                </div>
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={openCreateModal}
-              disabled={locations.length === 0}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Plus size={18} />
-              إنشاء جرد
-            </button>
+            {/* الأدوات */}
+            <div className="flex flex-col gap-3 sm:flex-row">
+
+              {/* البحث */}
+              <div className="relative">
+                <Search
+                  size={17}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(event) =>
+                    setSearch(
+                      event.target.value
+                    )
+                  }
+                  placeholder="ابحث عن موقع أو حالة..."
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-10 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 sm:w-72"
+                />
+
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSearch("")
+                    }
+                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                    aria-label="مسح البحث"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+
+              {/* إنشاء جرد */}
+              <button
+                type="button"
+                onClick={
+                  openCreateModal
+                }
+                disabled={
+                  locations.length === 0
+                }
+                className="group inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+              >
+                <Plus
+                  size={18}
+                  className="transition-transform duration-200 group-hover:rotate-90"
+                />
+
+                إنشاء جرد
+              </button>
+            </div>
           </div>
         </div>
 
-        {filteredCounts.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <ClipboardCheck
-              size={32}
-              className="mx-auto text-slate-300"
-            />
+        {/* ======================================================
+            حالة عدم وجود نتائج
+        ======================================================= */}
 
-            <p className="mt-4 font-semibold text-slate-700">
-              لا توجد عمليات جرد
+        {filteredCounts.length === 0 ? (
+          <div className="px-6 py-20 text-center">
+
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
+              <ClipboardCheck
+                size={30}
+              />
+            </div>
+
+            <p className="mt-5 font-semibold text-slate-700">
+              {search
+                ? "لا توجد نتائج مطابقة"
+                : "لا توجد عمليات جرد"}
             </p>
 
             <p className="mt-1 text-sm text-slate-400">
-              أنشئ جردًا جديدًا للبدء.
+              {search
+                ? "جرّب البحث باستخدام اسم موقع مختلف."
+                : "أنشئ جردًا جديدًا للبدء."}
             </p>
+
+            {search && (
+              <button
+                type="button"
+                onClick={() =>
+                  setSearch("")
+                }
+                className="mt-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+              >
+                <X size={15} />
+                مسح البحث
+              </button>
+            )}
           </div>
         ) : (
+          /* ====================================================
+             الجدول
+          ===================================================== */
+
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px] text-right">
+            <table className="w-full min-w-[900px] text-right">
+
+              {/* رأس الجدول */}
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/70">
-                  <th className="px-6 py-4 text-xs text-slate-500">
+
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500">
                     الموقع
                   </th>
 
-                  <th className="px-6 py-4 text-xs text-slate-500">
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500">
                     تاريخ الإنشاء
                   </th>
 
-                  <th className="px-6 py-4 text-xs text-slate-500">
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500">
                     الحالة
                   </th>
 
-                  <th className="px-6 py-4 text-xs text-slate-500">
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500">
                     ملاحظات
                   </th>
 
-                  <th className="px-6 py-4 text-xs text-slate-500">
-                    إجراء
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+                    الإجراء
                   </th>
+
                 </tr>
               </thead>
 
+              {/* جسم الجدول */}
               <tbody className="divide-y divide-slate-100">
-                {filteredCounts.map((count) => {
-                  const isCompleted =
-                    count.status === "completed";
 
-                  return (
-                    <tr
-                      key={count.id}
-                      className="transition hover:bg-slate-50/60"
-                    >
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                            <MapPin size={18} />
+                {filteredCounts.map(
+                  (count) => {
+                    const isCompleted =
+                      count.status ===
+                      "completed";
+
+                    return (
+                      <tr
+                        key={count.id}
+                        className="group transition-colors duration-150 hover:bg-slate-50/70"
+                      >
+
+                        {/* الموقع */}
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-200 group-hover:scale-105">
+                              <MapPin
+                                size={18}
+                              />
+                            </div>
+
+                            <div>
+                              <p className="font-semibold text-slate-800">
+                                {count.locations
+                                  ?.name ??
+                                  "موقع غير معروف"}
+                              </p>
+
+                              <p className="mt-1 font-mono text-xs text-slate-400">
+                                {count.locations
+                                  ?.code ??
+                                  "—"}
+                              </p>
+                            </div>
+
+                          </div>
+                        </td>
+
+                        {/* تاريخ الإنشاء */}
+                        <td className="px-6 py-5">
+                          <div className="text-sm font-medium text-slate-600">
+                            {new Date(
+                              count.created_at
+                            ).toLocaleDateString(
+                              "ar-SA",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
                           </div>
 
-                          <div>
-                            <p className="font-semibold text-slate-800">
-                              {count.locations?.name ??
-                                "موقع غير معروف"}
-                            </p>
-
-                            <p className="mt-1 text-xs text-slate-400">
-                              {count.locations?.code ??
-                                "—"}
-                            </p>
+                          <div className="mt-1 text-xs text-slate-400">
+                            {new Date(
+                              count.created_at
+                            ).toLocaleTimeString(
+                              "ar-SA",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {new Date(
-                          count.created_at
-                        ).toLocaleDateString("ar-SA")}
-                      </td>
+                        {/* الحالة */}
+                        <td className="px-6 py-5">
 
-                      <td className="px-6 py-5">
-                        <span
-                          className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                            isCompleted
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-orange-50 text-orange-700"
-                          }`}
-                        >
-                          {isCompleted
-                            ? "مكتمل"
-                            : "قيد التنفيذ"}
-                        </span>
-                      </td>
+                          {isCompleted ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
 
-                      <td className="max-w-xs truncate px-6 py-5 text-sm text-slate-500">
-                        {count.notes ?? "—"}
-                      </td>
+                              مكتمل
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700">
+                              <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
 
-                      <td className="px-6 py-5">
-                        <Link
-                          href={`/inventory/counts/${count.id}`}
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                        >
-                          <Eye size={16} />
-                          فتح الجرد
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
+                              قيد التنفيذ
+                            </span>
+                          )}
+
+                        </td>
+
+                        {/* الملاحظات */}
+                        <td className="max-w-xs px-6 py-5">
+                          <span
+                            title={
+                              count.notes ??
+                              ""
+                            }
+                            className="block max-w-xs truncate text-sm text-slate-500"
+                          >
+                            {count.notes ??
+                              "—"}
+                          </span>
+                        </td>
+
+                        {/* الإجراء */}
+                        <td className="px-6 py-5">
+                          <Link
+                            href={`/inventory/counts/${count.id}`}
+                            className="group/action inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                          >
+                            <Eye
+                              size={16}
+                              className="transition-transform duration-200 group-hover/action:scale-110"
+                            />
+
+                            فتح الجرد
+                          </Link>
+                        </td>
+
+                      </tr>
+                    );
+                  }
+                )}
+
               </tbody>
             </table>
           </div>
         )}
       </section>
 
+      {/* ========================================================
+          نافذة إنشاء جرد
+      ========================================================= */}
+
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  إنشاء جرد جديد
-                </h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              closeCreateModal();
+            }
+          }}
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
 
-                <p className="mt-1 text-sm text-slate-400">
-                  سيبدأ الجرد فارغًا.
-                </p>
+            {/* رأس النافذة */}
+            <div className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-l from-blue-50/70 via-white to-white px-6 py-6">
+              <div className="pointer-events-none absolute -left-10 -top-10 h-28 w-28 rounded-full bg-blue-100/50 blur-2xl" />
+
+              <div className="relative flex items-start justify-between gap-4">
+
+                <div className="flex items-start gap-3">
+
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-200">
+                    <ClipboardCheck
+                      size={21}
+                    />
+                  </div>
+
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">
+                      إنشاء جرد جديد
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      سيبدأ الجرد فارغًا.
+                    </p>
+                  </div>
+
+                </div>
+
+                <button
+                  type="button"
+                  onClick={
+                    closeCreateModal
+                  }
+                  disabled={creating}
+                  className="rounded-xl p-2 text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="إغلاق"
+                >
+                  <X size={19} />
+                </button>
+
               </div>
-
-              <button
-                type="button"
-                onClick={closeCreateModal}
-                disabled={creating}
-                className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              >
-                <X size={19} />
-              </button>
             </div>
 
+            {/* محتوى النافذة */}
             <div className="space-y-5 p-6">
+
+              {/* الموقع */}
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <MapPin
+                    size={15}
+                    className="text-blue-500"
+                  />
+
                   الموقع
                 </label>
 
                 <select
                   value={locationId}
                   onChange={(event) =>
-                    setLocationId(event.target.value)
+                    setLocationId(
+                      event.target.value
+                    )
                   }
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                  disabled={creating}
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <option value="">
                     اختر الموقع
                   </option>
 
-                  {locations.map((location) => (
-                    <option
-                      key={location.id}
-                      value={location.id}
-                    >
-                      {location.name} —{" "}
-                      {location.code}
-                    </option>
-                  ))}
+                  {locations.map(
+                    (location) => (
+                      <option
+                        key={location.id}
+                        value={location.id}
+                      >
+                        {location.name} —{" "}
+                        {location.code}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
 
+              {/* الملاحظات */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  ملاحظات — اختياري
+                  ملاحظات
+                  <span className="mr-1 text-xs font-normal text-slate-400">
+                    (اختياري)
+                  </span>
                 </label>
 
                 <textarea
                   value={notes}
                   onChange={(event) =>
-                    setNotes(event.target.value)
+                    setNotes(
+                      event.target.value
+                    )
                   }
-                  rows={3}
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
-                  placeholder="مثال: جرد نهاية اليوم"
+                  disabled={creating}
+                  rows={4}
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  placeholder="مثال: جرد نهاية اليوم..."
                 />
               </div>
 
+              {/* الخطأ */}
               {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                  {error}
+                <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm font-medium text-red-700">
+                  <X
+                    size={17}
+                    className="mt-0.5 shrink-0"
+                  />
+
+                  <span>
+                    {error}
+                  </span>
                 </div>
               )}
+
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-5">
+            {/* أزرار النافذة */}
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-5 sm:flex-row sm:justify-end">
+
               <button
                 type="button"
-                onClick={closeCreateModal}
+                onClick={
+                  closeCreateModal
+                }
                 disabled={creating}
-                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 إلغاء
               </button>
 
               <button
                 type="button"
-                onClick={createCount}
-                disabled={creating || !locationId}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={
+                  createCount
+                }
+                disabled={
+                  creating ||
+                  !locationId
+                }
+                className="group inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
               >
-                {creating && (
+                {creating ? (
                   <Loader2
                     size={17}
                     className="animate-spin"
+                  />
+                ) : (
+                  <Plus
+                    size={17}
+                    className="transition-transform duration-200 group-hover:rotate-90"
                   />
                 )}
 
@@ -410,6 +653,7 @@ export default function StockCountTable({
                   ? "جاري الإنشاء..."
                   : "إنشاء الجرد"}
               </button>
+
             </div>
           </div>
         </div>
