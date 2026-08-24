@@ -173,11 +173,11 @@ function LoginContent() {
           </div>
 
           <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900">
-            نظام إدارة المخزون
+            WAREVANCE
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            إدارة المخزون والفروع والمستودعات بسهولة
+            Inventory & Branch Management
           </p>
         </div>
 
@@ -393,7 +393,7 @@ function LoginContent() {
 
         <div className="mt-6 text-center">
           <p className="text-xs text-slate-400">
-            نظام إدارة المخزون متعدد الفروع
+            WAREVANCE · Inventory & Branch Management
           </p>
 
           <p className="mt-1 text-[10px] text-slate-300">
