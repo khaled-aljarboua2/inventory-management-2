@@ -68,7 +68,7 @@ export default async function Sidebar() {
                 shrink-0
                 items-center justify-center
                 rounded-xl
-                bg-blue-600
+                bg-teal-700
                 text-white
                 shadow-sm
               "
