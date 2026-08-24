@@ -138,8 +138,7 @@ export default function CountDetail({
 
       if (!response.ok || !result.count) {
         throw new Error(
-          result.error ??
-            "تعذر تحميل الجرد."
+          result.error ?? "تعذر تحميل الجرد."
         );
       }
 
@@ -161,18 +160,13 @@ export default function CountDetail({
         newQuantities[item.id] =
           item.counted_quantity === null
             ? ""
-            : String(
-                item.counted_quantity
-              );
+            : String(item.counted_quantity);
 
         newNotes[item.id] =
           item.notes ?? "";
       }
 
-      setQuantities(
-        newQuantities
-      );
-
+      setQuantities(newQuantities);
       setNotes(newNotes);
     } catch (err) {
       setError(
@@ -187,9 +181,6 @@ export default function CountDetail({
 
   // ============================================================
   // تحميل المنتجات
-  //
-  // with_stock = true
-  // يعني عرض المنتجات ذات الرصيد فقط.
   // ============================================================
 
   const loadProducts = useCallback(
@@ -245,9 +236,7 @@ export default function CountDetail({
             : "تعذر تحميل المنتجات."
         );
       } finally {
-        setLoadingProducts(
-          false
-        );
+        setLoadingProducts(false);
       }
     },
     [countId]
@@ -262,7 +251,7 @@ export default function CountDetail({
   }, [loadCount]);
 
   // ============================================================
-  // تحميل المنتجات حسب نوع الإضافة
+  // تحميل المنتجات
   // ============================================================
 
   useEffect(() => {
@@ -279,9 +268,7 @@ export default function CountDetail({
       }, 250);
 
     return () => {
-      window.clearTimeout(
-        timer
-      );
+      window.clearTimeout(timer);
     };
   }, [
     showAddProducts,
@@ -319,11 +306,10 @@ export default function CountDetail({
 
   const allCounted =
     totalItems > 0 &&
-    totalItems ===
-      filledCount;
+    totalItems === filledCount;
 
   // ============================================================
-  // البحث داخل أصناف الجرد
+  // البحث داخل الجرد
   // ============================================================
 
   const filteredItems =
@@ -361,33 +347,24 @@ export default function CountDetail({
     ]);
 
   const isCompleted =
-    count?.status ===
-    "completed";
+    count?.status === "completed";
 
   // ============================================================
-  // فتح نافذة الإضافة
-  // الافتراضي: ذات رصيد
+  // فتح نافذة إضافة المنتجات
   // ============================================================
 
   function openAddProducts() {
     setShowAddProducts(true);
-
     setAddMode("with_stock");
-
     setProductSearch("");
-
     setSelectedProductIds([]);
-
     setAddError("");
 
-    void loadProducts(
-      "",
-      true
-    );
+    void loadProducts("", true);
   }
 
   // ============================================================
-  // تحديد / إلغاء تحديد منتج
+  // تحديد المنتج
   // ============================================================
 
   function toggleProduct(
@@ -395,13 +372,9 @@ export default function CountDetail({
   ) {
     setSelectedProductIds(
       (current) =>
-        current.includes(
-          productId
-        )
+        current.includes(productId)
           ? current.filter(
-              (id) =>
-                id !==
-                productId
+              (id) => id !== productId
             )
           : [
               ...current,
@@ -412,17 +385,12 @@ export default function CountDetail({
 
   // ============================================================
   // إضافة المنتجات
-  //
-  // مهم:
-  // with_stock = فلتر فقط.
-  // الإضافة الفعلية تكون للمنتجات المحددة.
   // ============================================================
 
   async function addProducts() {
     if (
       addMode === "selected" &&
-      selectedProductIds.length ===
-        0
+      selectedProductIds.length === 0
     ) {
       setAddError(
         "اختر منتجًا واحدًا على الأقل."
@@ -433,8 +401,7 @@ export default function CountDetail({
 
     if (
       addMode === "with_stock" &&
-      selectedProductIds.length ===
-        0
+      selectedProductIds.length === 0
     ) {
       setAddError(
         "اختر منتجًا واحدًا على الأقل من المنتجات ذات الرصيد."
@@ -458,16 +425,9 @@ export default function CountDetail({
             productIds: string[];
           };
 
-      // ========================================================
-      // ذات رصيد:
-      // نرسل المحدد فقط
-      // ========================================================
-
       if (
-        addMode ===
-          "with_stock" ||
-        addMode ===
-          "selected"
+        addMode === "with_stock" ||
+        addMode === "selected"
       ) {
         body = {
           mode: "selected",
@@ -475,11 +435,6 @@ export default function CountDetail({
             selectedProductIds,
         };
       } else {
-        // ======================================================
-        // جرد شامل:
-        // يبقى كما كان
-        // ======================================================
-
         body = {
           mode: "all",
         };
@@ -490,15 +445,11 @@ export default function CountDetail({
           `/api/inventory/counts/${countId}/items`,
           {
             method: "POST",
-
             headers: {
               "Content-Type":
                 "application/json",
             },
-
-            body: JSON.stringify(
-              body
-            ),
+            body: JSON.stringify(body),
           }
         );
 
@@ -512,13 +463,8 @@ export default function CountDetail({
         );
       }
 
-      setShowAddProducts(
-        false
-      );
-
-      setSelectedProductIds(
-        []
-      );
+      setShowAddProducts(false);
+      setSelectedProductIds([]);
 
       setMessage(
         result.message ??
@@ -533,14 +479,12 @@ export default function CountDetail({
           : "تعذر إضافة المنتجات."
       );
     } finally {
-      setAddingProducts(
-        false
-      );
+      setAddingProducts(false);
     }
   }
 
   // ============================================================
-  // حذف منتج من الجرد
+  // حذف منتج
   // ============================================================
 
   async function deleteItem(
@@ -555,10 +499,7 @@ export default function CountDetail({
       return;
     }
 
-    setDeletingItemId(
-      item.id
-    );
-
+    setDeletingItemId(item.id);
     setMessage("");
     setError("");
 
@@ -568,15 +509,12 @@ export default function CountDetail({
           `/api/inventory/counts/${countId}/items`,
           {
             method: "DELETE",
-
             headers: {
               "Content-Type":
                 "application/json",
             },
-
             body: JSON.stringify({
-              itemId:
-                item.id,
+              itemId: item.id,
             }),
           }
         );
@@ -604,9 +542,7 @@ export default function CountDetail({
           : "تعذر حذف المنتج من الجرد."
       );
     } finally {
-      setDeletingItemId(
-        null
-      );
+      setDeletingItemId(null);
     }
   }
 
@@ -632,18 +568,15 @@ export default function CountDetail({
           `/api/inventory/counts/${countId}`,
           {
             method: "PATCH",
-
             headers: {
               "Content-Type":
                 "application/json",
             },
-
             body: JSON.stringify({
               items:
                 count.items.map(
                   (item) => ({
                     id: item.id,
-
                     counted_quantity:
                       quantities[
                         item.id
@@ -654,12 +587,10 @@ export default function CountDetail({
                               item.id
                             ]
                           ),
-
                     notes:
                       notes[
                         item.id
-                      ]?.trim() ||
-                      null,
+                      ]?.trim() || null,
                   })
                 ),
             }),
@@ -725,18 +656,12 @@ export default function CountDetail({
         count.items.map(
           (item) => ({
             id: item.id,
-
             counted_quantity:
               Number(
-                quantities[
-                  item.id
-                ]
+                quantities[item.id]
               ),
-
             notes:
-              notes[
-                item.id
-              ]?.trim() ||
+              notes[item.id]?.trim() ||
               null,
           })
         );
@@ -746,12 +671,10 @@ export default function CountDetail({
           `/api/inventory/counts/${countId}`,
           {
             method: "PATCH",
-
             headers: {
               "Content-Type":
                 "application/json",
             },
-
             body: JSON.stringify({
               items,
             }),
@@ -798,9 +721,7 @@ export default function CountDetail({
           : "تعذر إكمال الجرد."
       );
     } finally {
-      setCompleting(
-        false
-      );
+      setCompleting(false);
     }
   }
 
@@ -810,7 +731,7 @@ export default function CountDetail({
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
+      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500 shadow-sm">
         جاري تحميل الجرد...
       </div>
     );
@@ -819,8 +740,7 @@ export default function CountDetail({
   if (!count) {
     return (
       <div className="rounded-3xl border border-red-200 bg-red-50 p-6 font-semibold text-red-700">
-        {error ||
-          "الجرد غير موجود."}
+        {error || "الجرد غير موجود."}
       </div>
     );
   }
@@ -835,24 +755,19 @@ export default function CountDetail({
         <div>
           <Link
             href="/inventory/counts"
-            className="mb-4 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600"
+            className="mb-4 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-blue-600"
           >
-            <ArrowRight
-              size={16}
-            />
-
+            <ArrowRight size={16} />
             العودة إلى الجرد
           </Link>
 
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-              <ClipboardCheck
-                size={24}
-              />
+              <ClipboardCheck size={24} />
             </div>
 
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
                 جرد المخزون
               </h1>
 
@@ -869,15 +784,10 @@ export default function CountDetail({
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={
-                openAddProducts
-              }
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white"
+              onClick={openAddProducts}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md"
             >
-              <Plus
-                size={17}
-              />
-
+              <Plus size={17} />
               إضافة منتجات
             </button>
 
@@ -888,14 +798,10 @@ export default function CountDetail({
                 completing ||
                 totalItems === 0
               }
-              onClick={
-                saveItems
-              }
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+              onClick={saveItems}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Save
-                size={17}
-              />
+              <Save size={17} />
 
               {saving
                 ? "جاري الحفظ..."
@@ -909,14 +815,10 @@ export default function CountDetail({
                 completing ||
                 !allCounted
               }
-              onClick={
-                completeCount
-              }
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              onClick={completeCount}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <CheckCircle2
-                size={17}
-              />
+              <CheckCircle2 size={17} />
 
               {completing
                 ? "جاري الإكمال..."
@@ -941,24 +843,23 @@ export default function CountDetail({
       {!isCompleted &&
         totalItems === 0 && (
           <div className="mt-5 flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-700">
-            <AlertTriangle
-              size={18}
-            />
+            <AlertTriangle size={18} />
 
-            لم تتم إضافة أي أصناف للجرد بعد.
+            <span>
+              لم تتم إضافة أي أصناف للجرد بعد.
+            </span>
           </div>
         )}
 
       <section className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold">
+            <h2 className="text-lg font-bold text-slate-900">
               أصناف الجرد
             </h2>
 
             <p className="mt-1 text-sm text-slate-400">
-              تم العد:{" "}
-              {filledCount} /{" "}
+              تم العد: {filledCount} /{" "}
               {totalItems}
             </p>
           </div>
@@ -971,19 +872,14 @@ export default function CountDetail({
               />
 
               <input
-                value={
-                  countSearch
-                }
-                onChange={(
-                  event
-                ) =>
+                value={countSearch}
+                onChange={(event) =>
                   setCountSearch(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="ابحث بالاسم أو SKU..."
-                className="h-11 rounded-xl border border-slate-200 pr-10 pl-3 text-sm"
+                className="h-11 rounded-xl border border-slate-200 bg-slate-50/70 pr-10 pl-3 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
               />
             </div>
           )}
@@ -996,21 +892,16 @@ export default function CountDetail({
               className="mx-auto text-slate-300"
             />
 
-            <p className="mt-4 font-semibold">
+            <p className="mt-4 font-semibold text-slate-700">
               الجرد فارغ
             </p>
 
             <button
               type="button"
-              onClick={
-                openAddProducts
-              }
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white"
+              onClick={openAddProducts}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:shadow-md"
             >
-              <Plus
-                size={17}
-              />
-
+              <Plus size={17} />
               إضافة منتجات
             </button>
           </div>
@@ -1053,20 +944,16 @@ export default function CountDetail({
                 {filteredItems.map(
                   (item) => {
                     const value =
-                      quantities[
-                        item.id
-                      ] ?? "";
+                      quantities[item.id] ??
+                      "";
 
                     const actual =
                       value === ""
                         ? null
-                        : Number(
-                            value
-                          );
+                        : Number(value);
 
                     const difference =
-                      actual ===
-                      null
+                      actual === null
                         ? null
                         : actual -
                           Number(
@@ -1075,30 +962,19 @@ export default function CountDetail({
 
                     return (
                       <tr
-                        key={
-                          item.id
-                        }
+                        key={item.id}
+                        className="transition-colors hover:bg-slate-50/70"
                       >
-                        <td className="px-6 py-5 font-semibold">
-                          {
-                            item
-                              .products
-                              ?.name
-                          }
+                        <td className="px-6 py-5 font-semibold text-slate-800">
+                          {item.products?.name}
                         </td>
 
-                        <td className="px-6 py-5 font-mono text-xs">
-                          {
-                            item
-                              .products
-                              ?.sku
-                          }
+                        <td className="px-6 py-5 font-mono text-xs text-slate-500">
+                          {item.products?.sku}
                         </td>
 
-                        <td className="px-6 py-5 font-bold">
-                          {
-                            item.system_quantity
-                          }
+                        <td className="px-6 py-5 font-bold text-slate-900">
+                          {item.system_quantity}
                         </td>
 
                         <td className="px-6 py-5">
@@ -1106,69 +982,57 @@ export default function CountDetail({
                             type="number"
                             min="0"
                             step="any"
-                            disabled={
-                              isCompleted
-                            }
-                            value={
-                              value
-                            }
-                            onChange={(
-                              event
-                            ) =>
+                            disabled={isCompleted}
+                            value={value}
+                            onChange={(event) =>
                               setQuantities(
-                                (
-                                  current
-                                ) => ({
+                                (current) => ({
                                   ...current,
                                   [item.id]:
-                                    event
-                                      .target
-                                      .value,
+                                    event.target.value,
                                 })
                               )
                             }
-                            className="h-11 w-28 rounded-xl border border-slate-200 px-3"
+                            className="h-11 w-28 rounded-xl border border-slate-200 bg-slate-50/70 px-3 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
                           />
                         </td>
 
-                        <td className="px-6 py-5 font-bold">
-                          {difference ===
-                          null
+                        <td
+                          className={`px-6 py-5 font-bold ${
+                            difference === null
+                              ? "text-slate-400"
+                              : difference > 0
+                              ? "text-emerald-600"
+                              : difference < 0
+                              ? "text-red-600"
+                              : "text-slate-600"
+                          }`}
+                        >
+                          {difference === null
                             ? "—"
-                            : difference >
-                              0
+                            : difference > 0
                             ? `+${difference}`
                             : difference}
                         </td>
 
                         <td className="px-6 py-5">
                           <input
-                            disabled={
-                              isCompleted
-                            }
+                            disabled={isCompleted}
                             value={
-                              notes[
-                                item.id
-                              ] ??
+                              notes[item.id] ??
                               ""
                             }
-                            onChange={(
-                              event
-                            ) =>
+                            onChange={(event) =>
                               setNotes(
-                                (
-                                  current
-                                ) => ({
+                                (current) => ({
                                   ...current,
                                   [item.id]:
-                                    event
-                                      .target
-                                      .value,
+                                    event.target.value,
                                 })
                               )
                             }
                             placeholder="ملاحظة..."
-                            className="h-11 min-w-56 rounded-xl border border-slate-200 px-3"
+                            className="h-11 min-w-56 rounded-xl border border-slate-200 bg-slate-50/70 px-3 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
                           />
                         </td>
 
@@ -1185,22 +1049,16 @@ export default function CountDetail({
                                   item
                                 )
                               }
-                              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 disabled:opacity-50"
+                              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition-all duration-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {deletingItemId ===
                               item.id ? (
                                 <Loader2
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                   className="animate-spin"
                                 />
                               ) : (
-                                <Trash2
-                                  size={
-                                    16
-                                  }
-                                />
+                                <Trash2 size={16} />
                               )}
 
                               حذف
@@ -1222,13 +1080,13 @@ export default function CountDetail({
       ========================================================= */}
 
       {showAddProducts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
+          <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b p-6">
+
+            <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <div>
-                <h2 className="text-lg font-bold">
+                <h2 className="text-lg font-bold text-slate-900">
                   إضافة منتجات للجرد
                 </h2>
 
@@ -1241,24 +1099,20 @@ export default function CountDetail({
                 type="button"
                 onClick={() =>
                   !addingProducts &&
-                  setShowAddProducts(
-                    false
-                  )
+                  setShowAddProducts(false)
                 }
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                aria-label="إغلاق"
               >
-                <X
-                  size={20}
-                />
+                <X size={20} />
               </button>
             </div>
 
-            {/* ==================================================
-                خيارات الإضافة
-                ================================================== */}
+            {/* خيارات الإضافة */}
 
-            <div className="grid gap-3 border-b p-5 md:grid-cols-3">
-
+            <div className="grid gap-3 border-b border-slate-100 p-5 md:grid-cols-3">
               {/* جرد شامل */}
+
               <button
                 type="button"
                 onClick={() => {
@@ -1266,15 +1120,13 @@ export default function CountDetail({
                   setSelectedProductIds([]);
                   setProductSearch("");
                 }}
-                className={`rounded-2xl border p-4 text-right ${
+                className={`rounded-2xl border p-4 text-right transition-all duration-200 ${
                   addMode === "all"
-                    ? "border-blue-300 bg-blue-50"
-                    : ""
+                    ? "border-blue-300 bg-blue-50 text-blue-700 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
-                <Layers3
-                  size={20}
-                />
+                <Layers3 size={20} />
 
                 <p className="mt-2 font-semibold">
                   جرد شامل
@@ -1286,31 +1138,21 @@ export default function CountDetail({
               </button>
 
               {/* ذات رصيد */}
+
               <button
                 type="button"
                 onClick={() => {
-                  setAddMode(
-                    "with_stock"
-                  );
-
-                  setSelectedProductIds(
-                    []
-                  );
-
-                  setProductSearch(
-                    ""
-                  );
+                  setAddMode("with_stock");
+                  setSelectedProductIds([]);
+                  setProductSearch("");
                 }}
-                className={`rounded-2xl border p-4 text-right ${
-                  addMode ===
-                  "with_stock"
-                    ? "border-blue-300 bg-blue-50"
-                    : ""
+                className={`rounded-2xl border p-4 text-right transition-all duration-200 ${
+                  addMode === "with_stock"
+                    ? "border-blue-300 bg-blue-50 text-blue-700 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
-                <Boxes
-                  size={20}
-                />
+                <Boxes size={20} />
 
                 <p className="mt-2 font-semibold">
                   ذات رصيد
@@ -1322,31 +1164,21 @@ export default function CountDetail({
               </button>
 
               {/* اختيار يدوي */}
+
               <button
                 type="button"
                 onClick={() => {
-                  setAddMode(
-                    "selected"
-                  );
-
-                  setSelectedProductIds(
-                    []
-                  );
-
-                  setProductSearch(
-                    ""
-                  );
+                  setAddMode("selected");
+                  setSelectedProductIds([]);
+                  setProductSearch("");
                 }}
-                className={`rounded-2xl border p-4 text-right ${
-                  addMode ===
-                  "selected"
-                    ? "border-blue-300 bg-blue-50"
-                    : ""
+                className={`rounded-2xl border p-4 text-right transition-all duration-200 ${
+                  addMode === "selected"
+                    ? "border-blue-300 bg-blue-50 text-blue-700 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
-                <Search
-                  size={20}
-                />
+                <Search size={20} />
 
                 <p className="mt-2 font-semibold">
                   اختيار يدوي
@@ -1358,17 +1190,12 @@ export default function CountDetail({
               </button>
             </div>
 
-            {/* ==================================================
-                المنتجات
-                ================================================== */}
+            {/* المنتجات */}
 
             <div className="flex-1 overflow-y-auto p-5">
-
               {addError && (
-                <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
-                  {
-                    addError
-                  }
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {addError}
                 </div>
               )}
 
@@ -1379,29 +1206,21 @@ export default function CountDetail({
                 />
 
                 <input
-                  value={
-                    productSearch
-                  }
-                  onChange={(
-                    event
-                  ) =>
+                  value={productSearch}
+                  onChange={(event) =>
                     setProductSearch(
-                      event.target
-                        .value
+                      event.target.value
                     )
                   }
                   placeholder="ابحث باسم المنتج أو SKU..."
-                  className="h-11 w-full rounded-xl border border-slate-200 pr-10 pl-4 text-sm"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 pr-10 pl-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
                 />
               </div>
 
-              {addMode ===
-                "with_stock" && (
+              {addMode === "with_stock" && (
                 <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
                   <div className="flex items-center gap-2">
-                    <Boxes
-                      size={17}
-                    />
+                    <Boxes size={17} />
 
                     <span>
                       يتم عرض المنتجات ذات الرصيد في موقع الجرد فقط. حدد المنتجات التي تريد جردها.
@@ -1413,14 +1232,12 @@ export default function CountDetail({
               {loadingProducts ? (
                 <div className="py-12 text-center">
                   <Loader2
-                    className="mx-auto animate-spin text-slate-400"
+                    className="mx-auto animate-spin text-blue-500"
                   />
                 </div>
               ) : (
                 <div className="max-h-96 space-y-2 overflow-y-auto">
-
-                  {products.length ===
-                  0 ? (
+                  {products.length === 0 ? (
                     <div className="py-12 text-center">
                       <Package
                         size={32}
@@ -1440,9 +1257,7 @@ export default function CountDetail({
                     </div>
                   ) : (
                     products.map(
-                      (
-                        product
-                      ) => {
+                      (product) => {
                         const selected =
                           selectedProductIds.includes(
                             product.id
@@ -1450,24 +1265,20 @@ export default function CountDetail({
 
                         return (
                           <button
-                            key={
-                              product.id
-                            }
+                            key={product.id}
                             type="button"
                             onClick={() =>
                               toggleProduct(
                                 product.id
                               )
                             }
-                            className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-right ${
+                            className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-right transition-all duration-200 ${
                               selected
-                                ? "border-blue-300 bg-blue-50"
-                                : "border-slate-200 hover:bg-slate-50"
+                                ? "border-blue-300 bg-blue-50 shadow-sm"
+                                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                             }`}
                           >
                             <div className="flex items-center gap-3">
-
-                              {/* Checkbox */}
                               <span
                                 className={`flex h-5 w-5 items-center justify-center rounded border text-xs ${
                                   selected
@@ -1475,21 +1286,16 @@ export default function CountDetail({
                                     : "border-slate-300 bg-white"
                                 }`}
                               >
-                                {selected &&
-                                  "✓"}
+                                {selected && "✓"}
                               </span>
 
                               <div>
-                                <p className="font-semibold">
-                                  {
-                                    product.name
-                                  }
+                                <p className="font-semibold text-slate-800">
+                                  {product.name}
                                 </p>
 
                                 <p className="font-mono text-xs text-slate-400">
-                                  {
-                                    product.sku
-                                  }
+                                  {product.sku}
                                 </p>
                               </div>
                             </div>
@@ -1499,10 +1305,8 @@ export default function CountDetail({
                                 رصيد النظام
                               </p>
 
-                              <p className="font-bold">
-                                {
-                                  product.system_quantity
-                                }
+                              <p className="font-bold text-slate-900">
+                                {product.system_quantity}
                               </p>
                             </div>
                           </button>
@@ -1514,12 +1318,9 @@ export default function CountDetail({
               )}
             </div>
 
-            {/* ==================================================
-                Footer
-                ================================================== */}
+            {/* Footer */}
 
-            <div className="flex items-center justify-between border-t p-5">
-
+            <div className="flex items-center justify-between border-t border-slate-100 p-5">
               <div className="text-sm text-slate-500">
                 {selectedProductIds.length >
                 0
@@ -1528,15 +1329,12 @@ export default function CountDetail({
               </div>
 
               <div className="flex gap-3">
-
                 <button
                   type="button"
                   onClick={() =>
-                    setShowAddProducts(
-                      false
-                    )
+                    setShowAddProducts(false)
                   }
-                  className="rounded-xl border px-5 py-2.5 text-sm"
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-50"
                 >
                   إلغاء
                 </button>
@@ -1546,17 +1344,14 @@ export default function CountDetail({
                   disabled={
                     addingProducts ||
                     loadingProducts ||
-                    (
-                      addMode !==
-                        "all" &&
+                    (addMode !== "all" &&
                       selectedProductIds.length ===
-                        0
-                    )
+                        0)
                   }
                   onClick={() =>
                     void addProducts()
                   }
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {addingProducts && (
                     <Loader2
@@ -1565,8 +1360,7 @@ export default function CountDetail({
                     />
                   )}
 
-                  {addMode ===
-                  "all"
+                  {addMode === "all"
                     ? "إضافة جميع المنتجات"
                     : "إضافة المحدد"}
                 </button>
