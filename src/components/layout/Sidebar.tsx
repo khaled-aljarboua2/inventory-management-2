@@ -8,7 +8,9 @@ export default async function Sidebar() {
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* =====================================================
+          Mobile Overlay
+      ====================================================== */}
       <label
         htmlFor="mobile-sidebar-toggle"
         className="
@@ -22,18 +24,36 @@ export default async function Sidebar() {
         aria-label="إغلاق القائمة"
       />
 
-      {/* Sidebar */}
+      {/* =====================================================
+          Sidebar
+      ====================================================== */}
       <aside
         dir="rtl"
         className="
-          fixed right-0 top-0 z-50
-          flex h-[100dvh]
+          fixed
+          right-0
+          top-0
+          z-50
+
+          flex
+          h-[100dvh]
           w-[min(320px,85vw)]
-          translate-x-full
           flex-col
-          bg-white
+
+          translate-x-full
+
+          overflow-hidden
+
+          border-l
+          border-teal-800/20
+
+          bg-teal-700
+
           shadow-2xl
-          transition-transform duration-300
+
+          transition-transform
+          duration-300
+
           peer-checked:translate-x-0
 
           md:static
@@ -43,19 +63,29 @@ export default async function Sidebar() {
           md:shadow-none
         "
       >
-        {/* =====================================================
-            Logo
-        ====================================================== */}
+        {/* ===================================================
+            Logo Area
+        ==================================================== */}
         <div
           className="
             shrink-0
-            border-b border-slate-100
+
+            border-b
+            border-slate-200
+
             bg-white
+
             px-4
-            py-5
+            py-4
           "
         >
-          <div className="flex justify-center">
+          <div
+            className="
+              flex
+              items-center
+              justify-center
+            "
+          >
             <Image
               src="/warevance-logo.PNG"
               alt="WAREVANCE - Inventory & Branch Management"
@@ -71,9 +101,9 @@ export default async function Sidebar() {
           </div>
         </div>
 
-        {/* =====================================================
+        {/* ===================================================
             Navigation
-        ====================================================== */}
+        ==================================================== */}
         <div
           className="
             min-h-0
@@ -87,24 +117,32 @@ export default async function Sidebar() {
           />
         </div>
 
-        {/* =====================================================
-            Bottom
-        ====================================================== */}
+        {/* ===================================================
+            Bottom Area
+        ==================================================== */}
         <div
           className="
             shrink-0
-            border-t border-slate-100
-            bg-white
+
+            border-t
+            border-teal-600/30
+
+            bg-teal-700
+
             p-4
           "
         >
-          {/* Brand Info */}
+          {/* =================================================
+              Brand Information
+          ================================================== */}
           <div
             className="
               mb-3
+
               rounded-xl
-              border border-slate-100
-              bg-slate-50
+
+              bg-teal-800/30
+
               px-4
               py-3
             "
@@ -113,7 +151,7 @@ export default async function Sidebar() {
               className="
                 text-xs
                 font-semibold
-                text-slate-800
+                text-white
               "
             >
               WAREVANCE
@@ -124,14 +162,16 @@ export default async function Sidebar() {
                 mt-1
                 text-[11px]
                 leading-5
-                text-slate-400
+                text-teal-100/70
               "
             >
               Inventory & Branch Management
             </p>
           </div>
 
-          {/* Logout */}
+          {/* =================================================
+              Logout
+          ================================================== */}
           <LogoutButton />
         </div>
       </aside>
