@@ -57,10 +57,6 @@ type Location = {
 export default async function TransactionsPage() {
   const supabase = await createClient();
 
-  // ============================================================
-  // المستخدم الحالي
-  // ============================================================
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -77,10 +73,6 @@ export default async function TransactionsPage() {
       </DashboardLayout>
     );
   }
-
-  // ============================================================
-  // مستخدم النظام
-  // ============================================================
 
   const {
     data: dbUser,
@@ -104,10 +96,6 @@ export default async function TransactionsPage() {
       </DashboardLayout>
     );
   }
-
-  // ============================================================
-  // الحركات
-  // ============================================================
 
   const {
     data: rawTransactions,
@@ -182,10 +170,6 @@ export default async function TransactionsPage() {
     );
   }
 
-  // ============================================================
-  // تجهيز الحركات
-  // ============================================================
-
   const transactions: Transaction[] =
     (rawTransactions ?? []).map(
       (item: any) => ({
@@ -233,10 +217,6 @@ export default async function TransactionsPage() {
       })
     );
 
-  // ============================================================
-  // المواقع الموجودة في الحركات
-  // ============================================================
-
   const locationMap = new Map<
     string,
     Location
@@ -268,10 +248,6 @@ export default async function TransactionsPage() {
       )
     );
 
-  // ============================================================
-  // الإحصائيات
-  // ============================================================
-
   const totalTransactions =
     transactions.length;
 
@@ -302,19 +278,15 @@ export default async function TransactionsPage() {
         dir="rtl"
         className="mx-auto w-full max-w-[1600px] space-y-7"
       >
-        {/* ======================================================
-            رأس الصفحة
-        ======================================================= */}
-
         <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-7 sm:py-6">
-          <div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full bg-blue-100/40 blur-3xl" />
+          <div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full bg-teal-100/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
               <div className="mb-3 flex items-center gap-2 text-sm text-slate-400">
                 <Activity
                   size={16}
-                  className="text-blue-500"
+                  className="text-teal-500"
                 />
 
                 <span>
@@ -338,9 +310,7 @@ export default async function TransactionsPage() {
               </p>
             </div>
 
-            {/* عدد المواقع */}
-
-            <div className="flex w-fit items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700">
+            <div className="flex w-fit items-center gap-2 rounded-xl border border-teal-100 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-700">
               <Warehouse size={17} />
 
               <span>
@@ -349,10 +319,6 @@ export default async function TransactionsPage() {
             </div>
           </div>
         </section>
-
-        {/* ======================================================
-            الإحصائيات
-        ======================================================= */}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
@@ -391,7 +357,7 @@ export default async function TransactionsPage() {
               "ar-SA"
             )}
             description="حركات خفضت الرصيد"
-            variant="blue"
+            variant="teal"
           />
 
           <StatCard
@@ -409,10 +375,6 @@ export default async function TransactionsPage() {
           />
         </div>
 
-        {/* ======================================================
-            جدول الحركات
-        ======================================================= */}
-
         <TransactionsTable
           transactions={transactions}
           locations={locations}
@@ -427,20 +389,20 @@ function StatCard({
   label,
   value,
   description,
-  variant = "blue",
+  variant = "teal",
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   description: string;
   variant?:
-    | "blue"
+    | "teal"
     | "success"
     | "slate";
 }) {
   const iconStyles = {
-    blue: {
-      box: "bg-blue-50 text-blue-600",
+    teal: {
+      box: "bg-teal-50 text-teal-600",
     },
     success: {
       box: "bg-emerald-50 text-emerald-600",
