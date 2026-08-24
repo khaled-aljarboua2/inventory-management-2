@@ -30,7 +30,7 @@ type ProductUnit = {
   units: Unit | null;
 };
 
-type Barcode = {
+type BarcodeItem = {
   id: string;
   barcode: string;
   unit_id: string | null;
@@ -42,7 +42,7 @@ type Props = {
   productId: string;
   units: Unit[];
   productUnits: ProductUnit[];
-  barcodes: Barcode[];
+  barcodes: BarcodeItem[];
 };
 
 type ApiResult = {
@@ -84,7 +84,8 @@ export default function ProductManagement({
   // =========================================================
 
   const [barcode, setBarcode] = useState("");
-  const [barcodeUnitId, setBarcodeUnitId] = useState("");
+  const [barcodeUnitId, setBarcodeUnitId] =
+    useState("");
   const [barcodeDefault, setBarcodeDefault] =
     useState(false);
 
@@ -142,12 +143,16 @@ export default function ProductManagement({
     const factor = Number(conversionFactor);
 
     if (!Number.isFinite(factor) || factor <= 0) {
-      setError("معامل التحويل يجب أن يكون أكبر من صفر.");
+      setError(
+        "معامل التحويل يجب أن يكون أكبر من صفر."
+      );
       return;
     }
 
     if (isBase && factor !== 1) {
-      setError("الوحدة الأساسية يجب أن يكون معاملها 1.");
+      setError(
+        "الوحدة الأساسية يجب أن يكون معاملها 1."
+      );
       return;
     }
 
@@ -235,12 +240,16 @@ export default function ProductManagement({
     const factor = Number(editConversionFactor);
 
     if (!Number.isFinite(factor) || factor <= 0) {
-      setError("معامل التحويل يجب أن يكون أكبر من صفر.");
+      setError(
+        "معامل التحويل يجب أن يكون أكبر من صفر."
+      );
       return;
     }
 
     if (editIsBase && factor !== 1) {
-      setError("الوحدة الأساسية يجب أن يكون معاملها 1.");
+      setError(
+        "الوحدة الأساسية يجب أن يكون معاملها 1."
+      );
       return;
     }
 
@@ -291,7 +300,11 @@ export default function ProductManagement({
   // =========================================================
 
   async function deleteUnit(id: string) {
-    if (!confirm("هل أنت متأكد من حذف هذه الوحدة؟")) {
+    if (
+      !confirm(
+        "هل أنت متأكد من حذف هذه الوحدة؟"
+      )
+    ) {
       return;
     }
 
@@ -391,13 +404,17 @@ export default function ProductManagement({
   // تعديل الباركود
   // =========================================================
 
-  function startEditBarcode(item: Barcode) {
+  function startEditBarcode(item: BarcodeItem) {
     clearMessages();
 
     setEditingBarcodeId(item.id);
     setEditBarcode(item.barcode);
-    setEditBarcodeUnitId(item.unit_id ?? "");
-    setEditBarcodeDefault(item.is_default);
+    setEditBarcodeUnitId(
+      item.unit_id ?? ""
+    );
+    setEditBarcodeDefault(
+      item.is_default
+    );
   }
 
   function cancelEditBarcode() {
@@ -432,8 +449,10 @@ export default function ProductManagement({
           },
           body: JSON.stringify({
             barcode: editBarcode.trim(),
-            unitId: editBarcodeUnitId || null,
-            isDefault: editBarcodeDefault,
+            unitId:
+              editBarcodeUnitId || null,
+            isDefault:
+              editBarcodeDefault,
           }),
         }
       );
@@ -467,7 +486,11 @@ export default function ProductManagement({
   // =========================================================
 
   async function deleteBarcode(id: string) {
-    if (!confirm("هل أنت متأكد من حذف هذا الباركود؟")) {
+    if (
+      !confirm(
+        "هل أنت متأكد من حذف هذا الباركود؟"
+      )
+    ) {
       return;
     }
 
@@ -506,8 +529,10 @@ export default function ProductManagement({
   }
 
   return (
-    <div dir="rtl" className="space-y-6">
-
+    <div
+      dir="rtl"
+      className="space-y-6"
+    >
       {/* =====================================================
           الرسائل
       ====================================================== */}
@@ -543,8 +568,8 @@ export default function ProductManagement({
       ====================================================== */}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
         {/* رأس القسم */}
+
         <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
@@ -574,6 +599,7 @@ export default function ProductManagement({
         </div>
 
         {/* نموذج إضافة الوحدة */}
+
         <div className="border-b border-slate-100 bg-slate-50/40 p-5 sm:p-6">
           <div className="mb-4">
             <p className="text-sm font-semibold text-slate-800">
@@ -587,8 +613,8 @@ export default function ProductManagement({
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr_1fr_auto]">
-
             {/* الوحدة */}
+
             <div>
               <label className="mb-2 block text-xs font-semibold text-slate-600">
                 الوحدة
@@ -621,6 +647,7 @@ export default function ProductManagement({
             </div>
 
             {/* معامل التحويل */}
+
             <div>
               <label className="mb-2 block text-xs font-semibold text-slate-600">
                 معامل التحويل
@@ -652,6 +679,7 @@ export default function ProductManagement({
             </div>
 
             {/* الوحدة الأساسية */}
+
             <label className="flex h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50/40">
               <input
                 type="checkbox"
@@ -682,6 +710,7 @@ export default function ProductManagement({
             </label>
 
             {/* زر الإضافة */}
+
             <button
               type="button"
               disabled={
@@ -709,6 +738,7 @@ export default function ProductManagement({
         </div>
 
         {/* جدول الوحدات */}
+
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-right">
             <thead>
@@ -765,6 +795,7 @@ export default function ProductManagement({
                         className="bg-blue-50/40"
                       >
                         {/* الوحدة */}
+
                         <td className="px-5 py-4">
                           <select
                             value={editUnitId}
@@ -793,6 +824,7 @@ export default function ProductManagement({
                         </td>
 
                         {/* المعامل */}
+
                         <td className="px-5 py-4">
                           <input
                             type="number"
@@ -815,6 +847,7 @@ export default function ProductManagement({
                         </td>
 
                         {/* النوع */}
+
                         <td className="px-5 py-4">
                           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
                             <input
@@ -848,6 +881,7 @@ export default function ProductManagement({
                         </td>
 
                         {/* الإجراءات */}
+
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             <button
@@ -893,6 +927,7 @@ export default function ProductManagement({
                       className="group transition-colors duration-150 hover:bg-slate-50/80"
                     >
                       {/* الوحدة */}
+
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-200 group-hover:scale-105">
@@ -921,6 +956,7 @@ export default function ProductManagement({
                       </td>
 
                       {/* المعامل */}
+
                       <td className="px-5 py-5">
                         <span className="inline-flex rounded-lg bg-slate-100 px-3 py-1.5 font-mono text-xs font-semibold text-slate-600">
                           {item.conversion_factor}
@@ -928,6 +964,7 @@ export default function ProductManagement({
                       </td>
 
                       {/* النوع */}
+
                       <td className="px-5 py-5">
                         {item.is_base ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
@@ -945,6 +982,7 @@ export default function ProductManagement({
                       </td>
 
                       {/* الإجراءات */}
+
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-2">
                           <button
@@ -996,12 +1034,12 @@ export default function ProductManagement({
       ====================================================== */}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
         {/* رأس القسم */}
+
         <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 <Barcode size={20} />
               </div>
 
@@ -1027,6 +1065,7 @@ export default function ProductManagement({
         </div>
 
         {/* نموذج إضافة الباركود */}
+
         <div className="border-b border-slate-100 bg-slate-50/40 p-5 sm:p-6">
           <div className="mb-4">
             <p className="text-sm font-semibold text-slate-800">
@@ -1039,8 +1078,8 @@ export default function ProductManagement({
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr_1fr_auto]">
-
             {/* رقم الباركود */}
+
             <div>
               <label className="mb-2 block text-xs font-semibold text-slate-600">
                 رقم الباركود
@@ -1056,16 +1095,19 @@ export default function ProductManagement({
                   type="text"
                   value={barcode}
                   onChange={(e) =>
-                    setBarcode(e.target.value)
+                    setBarcode(
+                      e.target.value
+                    )
                   }
                   disabled={loading}
                   placeholder="أدخل رقم الباركود..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-4 font-mono text-sm text-slate-700 outline-none transition-all duration-200 placeholder:font-sans placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-400 focus:ring-4 focus:ring-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-4 font-mono text-sm text-slate-700 outline-none transition-all duration-200 placeholder:font-sans placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
             </div>
 
             {/* الوحدة */}
+
             <div>
               <label className="mb-2 block text-xs font-semibold text-slate-600">
                 الوحدة المرتبطة
@@ -1079,7 +1121,7 @@ export default function ProductManagement({
                   )
                 }
                 disabled={loading}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-violet-400 focus:ring-4 focus:ring-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <option value="">
                   بدون وحدة
@@ -1100,7 +1142,8 @@ export default function ProductManagement({
             </div>
 
             {/* افتراضي */}
-            <label className="flex h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 hover:border-violet-200 hover:bg-violet-50/40">
+
+            <label className="flex h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50/40">
               <input
                 type="checkbox"
                 checked={barcodeDefault}
@@ -1110,7 +1153,7 @@ export default function ProductManagement({
                     e.target.checked
                   )
                 }
-                className="h-4 w-4 accent-violet-600"
+                className="h-4 w-4 accent-blue-600"
               />
 
               <div>
@@ -1125,6 +1168,7 @@ export default function ProductManagement({
             </label>
 
             {/* إضافة */}
+
             <button
               type="button"
               disabled={
@@ -1132,7 +1176,7 @@ export default function ProductManagement({
                 !barcode.trim()
               }
               onClick={addBarcode}
-              className="group flex h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white shadow-sm shadow-violet-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-md hover:shadow-violet-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+              className="group flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
             >
               {loading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -1153,6 +1197,7 @@ export default function ProductManagement({
         </div>
 
         {/* جدول الباركود */}
+
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-right">
             <thead>
@@ -1207,9 +1252,10 @@ export default function ProductManagement({
                     return (
                       <tr
                         key={item.id}
-                        className="bg-violet-50/40"
+                        className="bg-blue-50/40"
                       >
                         {/* الباركود */}
+
                         <td className="px-5 py-4">
                           <input
                             type="text"
@@ -1220,11 +1266,12 @@ export default function ProductManagement({
                               )
                             }
                             disabled={loading}
-                            className="h-10 w-full rounded-xl border border-violet-200 bg-white px-3 font-mono text-sm outline-none focus:ring-4 focus:ring-violet-50"
+                            className="h-10 w-full rounded-xl border border-blue-200 bg-white px-3 font-mono text-sm outline-none focus:ring-4 focus:ring-blue-50"
                           />
                         </td>
 
                         {/* الوحدة */}
+
                         <td className="px-5 py-4">
                           <select
                             value={
@@ -1232,12 +1279,11 @@ export default function ProductManagement({
                             }
                             onChange={(e) =>
                               setEditBarcodeUnitId(
-                                e.target
-                                  .value
+                                e.target.value
                               )
                             }
                             disabled={loading}
-                            className="h-10 w-full rounded-xl border border-violet-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-violet-50"
+                            className="h-10 w-full rounded-xl border border-blue-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-blue-50"
                           >
                             <option value="">
                               بدون وحدة
@@ -1266,6 +1312,7 @@ export default function ProductManagement({
                         </td>
 
                         {/* الحالة */}
+
                         <td className="px-5 py-4">
                           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
                             <input
@@ -1282,7 +1329,7 @@ export default function ProductManagement({
                                     .checked
                                 )
                               }
-                              className="h-4 w-4 accent-violet-600"
+                              className="h-4 w-4 accent-blue-600"
                             />
 
                             <span className="text-xs font-medium text-slate-600">
@@ -1292,6 +1339,7 @@ export default function ProductManagement({
                         </td>
 
                         {/* الإجراءات */}
+
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             <button
@@ -1337,9 +1385,10 @@ export default function ProductManagement({
                       className="group transition-colors duration-150 hover:bg-slate-50/80"
                     >
                       {/* الباركود */}
+
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 transition-transform duration-200 group-hover:scale-105">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-200 group-hover:scale-105">
                             <Barcode size={18} />
                           </div>
 
@@ -1350,6 +1399,7 @@ export default function ProductManagement({
                       </td>
 
                       {/* الوحدة */}
+
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-2">
                           <Package
@@ -1365,6 +1415,7 @@ export default function ProductManagement({
                       </td>
 
                       {/* الحالة */}
+
                       <td className="px-5 py-5">
                         {item.is_default ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
@@ -1382,6 +1433,7 @@ export default function ProductManagement({
                       </td>
 
                       {/* الإجراءات */}
+
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-2">
                           <button
@@ -1392,7 +1444,7 @@ export default function ProductManagement({
                               )
                             }
                             disabled={loading}
-                            className="group/edit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 disabled:opacity-50"
+                            className="group/edit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
                           >
                             <Edit3
                               size={14}
