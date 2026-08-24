@@ -83,7 +83,7 @@ const statusConfig: Record<
   approved: {
     label: "معتمدة",
     className:
-      "bg-blue-50 text-blue-700",
+      "bg-teal-50 text-teal-700",
     icon: CheckCircle2,
   },
 
@@ -263,10 +263,6 @@ export default function TransfersList({
   return (
     <>
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        {/* =====================================================
-            الحالات
-        ====================================================== */}
-
         <div className="grid gap-4 border-b border-slate-100 bg-slate-50/50 p-5 md:grid-cols-3 xl:grid-cols-7">
           <StatusCard
             label="الكل"
@@ -393,10 +389,6 @@ export default function TransfersList({
           />
         </div>
 
-        {/* =====================================================
-            Toolbar
-        ====================================================== */}
-
         <div className="border-b border-slate-100 p-5 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -411,7 +403,6 @@ export default function TransfersList({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              {/* البحث */}
               <div className="relative sm:w-80">
                 <Search
                   size={18}
@@ -426,7 +417,7 @@ export default function TransfersList({
                     )
                   }
                   placeholder="ابحث برقم الطلب أو الموقع..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
 
                 {search && (
@@ -442,13 +433,12 @@ export default function TransfersList({
                 )}
               </div>
 
-              {/* طلب جديد */}
               <button
                 type="button"
                 onClick={() =>
                   setModalOpen(true)
                 }
-                className="group inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100"
+                className="group inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-lg hover:shadow-teal-100"
               >
                 <ArrowLeftRight
                   size={18}
@@ -460,10 +450,6 @@ export default function TransfersList({
             </div>
           </div>
         </div>
-
-        {/* =====================================================
-            الجدول
-        ====================================================== */}
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1200px] text-right">
@@ -543,12 +529,12 @@ export default function TransfersList({
                     return (
                       <tr
                         key={transfer.id}
-                        className="group transition hover:bg-blue-50/30"
+                        className="group transition hover:bg-teal-50/30"
                       >
                         <td className="px-6 py-5">
                           <Link
                             href={`/transfers/${transfer.id}`}
-                            className="font-mono text-sm font-bold text-slate-800 transition hover:text-blue-600"
+                            className="font-mono text-sm font-bold text-slate-800 transition hover:text-teal-600"
                           >
                             {
                               transfer.request_number
@@ -668,10 +654,6 @@ export default function TransfersList({
         </div>
       </section>
 
-      {/* =====================================================
-          نافذة إنشاء طلب النقل
-      ====================================================== */}
-
       {modalOpen && (
         <TransferModal
           locations={locations}
@@ -690,10 +672,6 @@ export default function TransfersList({
     </>
   );
 }
-
-/* ============================================================
-   بطاقة الحالة
-============================================================ */
 
 function StatusCard({
   label,
@@ -714,7 +692,7 @@ function StatusCard({
       onClick={onClick}
       className={`rounded-2xl border p-4 text-right transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${
         active
-          ? "border-blue-200 bg-blue-50"
+          ? "border-teal-200 bg-teal-50"
           : "border-slate-200 bg-white"
       }`}
     >
