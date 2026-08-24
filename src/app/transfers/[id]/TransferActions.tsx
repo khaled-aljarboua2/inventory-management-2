@@ -208,7 +208,7 @@ export default function TransferActions({
                   )
                 )
               }
-              variant="blue"
+              variant="teal"
             />
           )}
 
@@ -331,7 +331,7 @@ function ActionButton({
   loading: boolean;
   onClick: () => void;
   variant:
-    | "blue"
+    | "teal"
     | "purple"
     | "indigo"
     | "green"
@@ -340,12 +340,16 @@ function ActionButton({
   const colors = {
     slate:
       "bg-slate-800 hover:bg-slate-900",
-    blue:
-      "bg-blue-600 hover:bg-blue-700 hover:shadow-blue-100",
+
+    teal:
+      "bg-teal-600 hover:bg-teal-700 hover:shadow-teal-100",
+
     purple:
       "bg-purple-600 hover:bg-purple-700 hover:shadow-purple-100",
+
     indigo:
       "bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-100",
+
     green:
       "bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-100",
   };
@@ -624,7 +628,7 @@ function TransferEditModal({
                 type="button"
                 onClick={addRow}
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:opacity-50"
               >
                 <Plus size={15} />
                 إضافة منتج
@@ -682,7 +686,7 @@ function TransferEditModal({
                               )
                             }
                             disabled={loading}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
                           >
                             <option value="">
                               اختر المنتج
@@ -722,7 +726,7 @@ function TransferEditModal({
                               loading ||
                               !product
                             }
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-100"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:bg-slate-100"
                           >
                             <option value="">
                               اختر الوحدة
@@ -767,7 +771,7 @@ function TransferEditModal({
                               )
                             }
                             disabled={loading}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
                           />
                         </td>
 
@@ -813,7 +817,7 @@ function TransferEditModal({
               }
               disabled={loading}
               rows={3}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:bg-slate-100"
+              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:bg-slate-100"
               placeholder="أضف أي ملاحظات..."
             />
           </div>
@@ -832,7 +836,7 @@ function TransferEditModal({
               type="button"
               onClick={handleSave}
               disabled={loading}
-              className="rounded-xl bg-slate-900 px-7 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-slate-900 px-7 py-3 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading
                 ? "جاري الحفظ..."
