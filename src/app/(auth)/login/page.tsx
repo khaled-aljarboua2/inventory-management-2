@@ -202,7 +202,7 @@ function LoginContent() {
     className="
       h-auto
       w-full
-      max-w-[290px]
+      max-w-[390px]
       object-contain
     "
   />
