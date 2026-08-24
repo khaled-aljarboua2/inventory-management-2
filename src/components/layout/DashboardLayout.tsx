@@ -39,7 +39,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="relative flex min-h-screen bg-slate-100 dark:bg-slate-950">
+    <div className="relative flex min-h-screen bg-background">
       <input
         id="mobile-sidebar-toggle"
         type="checkbox"
