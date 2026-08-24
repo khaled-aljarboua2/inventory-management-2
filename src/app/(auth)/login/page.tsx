@@ -194,19 +194,19 @@ function LoginContent() {
             الشعار - بدون خلفية
         ==================================================== */}
 
-        <div className="mb-6 flex justify-center">
-          <img
-            src="/warevance-logo.PNG"
-            alt="WAREVANCE - Inventory & Branch Management"
-            className="
-              h-auto
-              w-full
-              max-w-[270px]
-              object-contain
-            "
-          />
-        </div>
-
+     {/* Logo */}
+<div className="mb-3 flex justify-center">
+  <img
+    src="/warevance-logo.PNG"
+    alt="WAREVANCE - Inventory & Branch Management"
+    className="
+      h-auto
+      w-full
+      max-w-[240px]
+      object-contain
+    "
+  />
+</div>
         {/* ===================================================
             بطاقة تسجيل الدخول
         ==================================================== */}
