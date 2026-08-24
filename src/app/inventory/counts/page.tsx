@@ -60,9 +60,7 @@ export default async function StockCountsPage() {
     error: userError,
   } = await supabase
     .from("users")
-    .select(
-      "id, company_id, is_active"
-    )
+    .select("id, company_id, is_active")
     .eq("auth_user_id", user.id)
     .eq("is_active", true)
     .single();
@@ -87,12 +85,9 @@ export default async function StockCountsPage() {
   const {
     data: hasCountPermission,
     error: permissionError,
-  } = await supabase.rpc(
-    "has_permission",
-    {
-      permission_code: "stock.count",
-    }
-  );
+  } = await supabase.rpc("has_permission", {
+    permission_code: "stock.count",
+  });
 
   if (
     permissionError ||
@@ -110,7 +105,8 @@ export default async function StockCountsPage() {
             </h1>
 
             <p className="mt-2 text-sm text-red-600">
-              لا تملك الصلاحية اللازمة للوصول إلى صفحة جرد المخزون.
+              لا تملك الصلاحية اللازمة للوصول
+              إلى صفحة جرد المخزون.
             </p>
           </div>
         </div>
@@ -155,9 +151,7 @@ export default async function StockCountsPage() {
 
     supabase
       .from("locations")
-      .select(
-        "id, name, code"
-      )
+      .select("id, name, code")
       .eq(
         "company_id",
         dbUser.company_id
@@ -178,16 +172,24 @@ export default async function StockCountsPage() {
       <DashboardLayout>
         <div
           dir="rtl"
-          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
+          className="rounded-2xl border border-red-200 bg-red-50 p-6"
         >
-          تعذر تحميل بيانات الجرد.
+          <p className="font-semibold text-red-700">
+            تعذر تحميل بيانات الجرد.
+          </p>
+
+          <p className="mt-2 text-sm text-red-600">
+            {countsError?.message ??
+              locationsError?.message ??
+              "حدث خطأ غير معروف."}
+          </p>
         </div>
       </DashboardLayout>
     );
   }
 
   // ============================================================
-  // طلبات الجرد التابعة للشركة
+  // تجهيز عمليات الجرد
   // ============================================================
 
   const companyCounts: StockCount[] =
@@ -213,26 +215,38 @@ export default async function StockCountsPage() {
         dir="rtl"
         className="mx-auto w-full max-w-[1600px] space-y-7"
       >
-        <div>
-          <p className="text-sm text-slate-400">
-            إدارة المخزون / الجرد
-          </p>
+        {/* ======================================================
+            رأس الصفحة
+        ======================================================= */}
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
+            <span>إدارة المخزون</span>
+
+            <span>/</span>
+
+            <span className="text-slate-500">
+              الجرد
+            </span>
+          </div>
+
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             جرد المخزون
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            إنشاء عمليات الجرد ومقارنة الكميات الفعلية
-            مع أرصدة النظام.
+            إنشاء عمليات الجرد ومقارنة الكميات
+            الفعلية مع أرصدة النظام.
           </p>
         </div>
 
+        {/* ======================================================
+            جدول الجرد
+        ======================================================= */}
+
         <StockCountTable
           counts={companyCounts}
-          locations={
-            locations ?? []
-          }
+          locations={locations ?? []}
         />
       </div>
     </DashboardLayout>
