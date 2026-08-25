@@ -28,11 +28,16 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { createClient } from "@/lib/supabase/client";
 
 type Profile = {
+  id: string;
+  auth_user_id: string;
   full_name: string;
   username: string | null;
   email: string;
+  is_active: boolean;
   roles: {
+    id: string;
     name: string;
+    description: string | null;
   } | null;
 } | null;
 
@@ -127,63 +132,30 @@ export default function Topbar({
   const loadNotifications =
     useCallback(
       async () => {
+        if (!profile?.id) {
+          setNotifications([]);
+          return;
+        }
+
         setNotificationsLoading(true);
 
         try {
-          const {
-            data: {
-              user,
-            },
-          } =
-            await supabase.auth.getUser();
-
-          if (!user) {
-            setNotifications([]);
-            return;
-          }
-
-          const {
-            data: dbUser,
-            error: userError,
-          } = await supabase
-            .from("users")
-            .select("id")
-            .eq(
-              "auth_user_id",
-              user.id
-            )
-            .eq(
-              "is_active",
-              true
-            )
-            .maybeSingle();
-
-          if (
-            userError ||
-            !dbUser
-          ) {
-            setNotifications([]);
-            return;
-          }
-
           const {
             data,
             error,
           } = await supabase
             .from("notifications")
-            .select(
-              `
-                id,
-                user_id,
-                title,
-                message,
-                is_read,
-                created_at
-              `
-            )
+            .select(`
+              id,
+              user_id,
+              title,
+              message,
+              is_read,
+              created_at
+            `)
             .eq(
               "user_id",
-              dbUser.id
+              profile.id
             )
             .order(
               "created_at",
@@ -215,26 +187,18 @@ export default function Topbar({
           );
         }
       },
-      [supabase]
+      [
+        profile?.id,
+        supabase,
+      ]
     );
 
   // ==========================================================
-  // تحميل أولي + تحديث دوري
+  // تحميل أولي فقط
   // ==========================================================
 
   useEffect(() => {
     void loadNotifications();
-
-    const interval =
-      window.setInterval(() => {
-        void loadNotifications();
-      }, 30000);
-
-    return () => {
-      window.clearInterval(
-        interval
-      );
-    };
   }, [loadNotifications]);
 
   // ==========================================================
@@ -242,80 +206,42 @@ export default function Topbar({
   // ==========================================================
 
   useEffect(() => {
-    let channel:
-      | ReturnType<
-          typeof supabase.channel
-        >
-      | null = null;
+    if (!profile?.id) {
+      return;
+    }
 
     let cancelled = false;
 
-    async function subscribe() {
-      const {
-        data: {
-          user,
-        },
-      } =
-        await supabase.auth.getUser();
-
-      if (!user || cancelled) {
-        return;
-      }
-
-      const {
-        data: dbUser,
-      } = await supabase
-        .from("users")
-        .select("id")
-        .eq(
-          "auth_user_id",
-          user.id
+    const channel =
+      supabase
+        .channel(
+          `notifications-${profile.id}`
         )
-        .eq(
-          "is_active",
-          true
-        )
-        .maybeSingle();
-
-      if (
-        !dbUser ||
-        cancelled
-      ) {
-        return;
-      }
-
-      channel =
-        supabase
-          .channel(
-            `notifications-${dbUser.id}`
-          )
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "notifications",
-              filter: `user_id=eq.${dbUser.id}`,
-            },
-            () => {
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${profile.id}`,
+          },
+          () => {
+            if (!cancelled) {
               void loadNotifications();
             }
-          )
-          .subscribe();
-    }
-
-    void subscribe();
+          }
+        )
+        .subscribe();
 
     return () => {
       cancelled = true;
 
-      if (channel) {
-        void supabase.removeChannel(
-          channel
-        );
-      }
+      void supabase.removeChannel(
+        channel
+      );
     };
   }, [
+    profile?.id,
     supabase,
     loadNotifications,
   ]);
@@ -497,7 +423,8 @@ export default function Topbar({
   async function markAllNotificationsAsRead() {
     if (
       unreadCount === 0 ||
-      markingAllRead
+      markingAllRead ||
+      !profile?.id
     ) {
       return;
     }
@@ -505,36 +432,6 @@ export default function Topbar({
     setMarkingAllRead(true);
 
     try {
-      const {
-        data: {
-          user,
-        },
-      } =
-        await supabase.auth.getUser();
-
-      if (!user) {
-        return;
-      }
-
-      const {
-        data: dbUser,
-      } = await supabase
-        .from("users")
-        .select("id")
-        .eq(
-          "auth_user_id",
-          user.id
-        )
-        .eq(
-          "is_active",
-          true
-        )
-        .maybeSingle();
-
-      if (!dbUser) {
-        return;
-      }
-
       const {
         error,
       } = await supabase
@@ -544,7 +441,7 @@ export default function Topbar({
         })
         .eq(
           "user_id",
-          dbUser.id
+          profile.id
         )
         .eq(
           "is_read",
