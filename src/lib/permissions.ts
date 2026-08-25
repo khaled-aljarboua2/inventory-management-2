@@ -52,7 +52,36 @@ export const PERMISSIONS = {
   SETTINGS_UPDATE: "settings.update",
 } as const;
 
-export async function getCurrentUserProfile() {
+type CurrentUserProfile = {
+  id: string;
+  auth_user_id: string;
+  company_id: string;
+  role_id: string | null;
+  location_id: string | null;
+  full_name: string;
+  username: string | null;
+  email: string;
+  is_active: boolean;
+  roles: {
+    id: string;
+    name: string;
+    description: string | null;
+  } | null;
+};
+
+type CurrentUserContext = {
+  profile: CurrentUserProfile | null;
+  permissions: Set<string>;
+};
+
+/**
+ * يجلب المستخدم الحالي + صلاحياته من نفس جلسة Supabase.
+ *
+ * الهدف:
+ * - عدم استدعاء auth.getUser() أكثر من مرة في نفس العملية.
+ * - تحميل profile والصلاحيات بالتوازي بعد الحصول على المستخدم.
+ */
+export async function getCurrentUserContext(): Promise<CurrentUserContext> {
   const supabase = await createClient();
 
   const {
@@ -61,74 +90,98 @@ export async function getCurrentUserProfile() {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return null;
+    return {
+      profile: null,
+      permissions: new Set<string>(),
+    };
   }
 
-  const {
-    data: profile,
-    error,
-  } = await supabase
-    .from("users")
-    .select(`
-      id,
-      auth_user_id,
-      company_id,
-      role_id,
-      location_id,
-      full_name,
-      username,
-      email,
-      is_active,
-      roles (
-        id,
-        name,
-        description
-      )
-    `)
-    .eq("auth_user_id", user.id)
-    .single();
+  const [profileResult, permissionsResult] =
+    await Promise.all([
+      supabase
+        .from("users")
+        .select(`
+          id,
+          auth_user_id,
+          company_id,
+          role_id,
+          location_id,
+          full_name,
+          username,
+          email,
+          is_active,
 
-  if (error || !profile) {
-    return null;
+          roles (
+            id,
+            name,
+            description
+          )
+        `)
+        .eq("auth_user_id", user.id)
+        .single(),
+
+      supabase.rpc(
+        "get_current_user_permissions"
+      ),
+    ]);
+
+  const profile =
+    !profileResult.error &&
+    profileResult.data
+      ? {
+          ...profileResult.data,
+          roles: firstRelation(
+            profileResult.data.roles
+          ),
+        }
+      : null;
+
+  const permissions = new Set<string>();
+
+  if (
+    !permissionsResult.error &&
+    permissionsResult.data
+  ) {
+    const rows =
+      permissionsResult.data as Array<{
+        permission_code: string;
+      }>;
+
+    for (const row of rows) {
+      if (row.permission_code) {
+        permissions.add(
+          row.permission_code
+        );
+      }
+    }
   }
 
   return {
-    ...profile,
-    roles: firstRelation(profile.roles),
+    profile,
+    permissions,
   };
 }
 
-export async function getCurrentPermissions(): Promise<Set<string>> {
-  const supabase = await createClient();
+/**
+ * توافق مع الاستدعاءات الحالية في المشروع.
+ */
+export async function getCurrentUserProfile() {
+  const context =
+    await getCurrentUserContext();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  return context.profile;
+}
 
-  if (!user) {
-    return new Set<string>();
-  }
+/**
+ * توافق مع الاستدعاءات الحالية في المشروع.
+ */
+export async function getCurrentPermissions(): Promise<
+  Set<string>
+> {
+  const context =
+    await getCurrentUserContext();
 
-  const {
-    data,
-    error,
-  } = await supabase.rpc(
-    "get_current_user_permissions"
-  );
-
-  if (error || !data) {
-    return new Set<string>();
-  }
-
-  const rows = data as Array<{
-    permission_code: string;
-  }>;
-
-  return new Set<string>(
-    rows.map(
-      (item) => item.permission_code
-    )
-  );
+  return context.permissions;
 }
 
 export async function hasPermission(
@@ -137,7 +190,9 @@ export async function hasPermission(
   const permissions =
     await getCurrentPermissions();
 
-  return permissions.has(permissionCode);
+  return permissions.has(
+    permissionCode
+  );
 }
 
 export async function hasAnyPermission(
@@ -146,8 +201,9 @@ export async function hasAnyPermission(
   const permissions =
     await getCurrentPermissions();
 
-  return permissionCodes.some((permission) =>
-    permissions.has(permission)
+  return permissionCodes.some(
+    (permission) =>
+      permissions.has(permission)
   );
 }
 
@@ -157,7 +213,8 @@ export async function hasAllPermissions(
   const permissions =
     await getCurrentPermissions();
 
-  return permissionCodes.every((permission) =>
-    permissions.has(permission)
+  return permissionCodes.every(
+    (permission) =>
+      permissions.has(permission)
   );
 }
