@@ -63,20 +63,64 @@ export default async function InventoryPage() {
   }
 
   // ============================================================
-  // مستخدم النظام
+  // مستخدم النظام + أرصدة المخزون
+  //
+  // الاستعلامان مستقلان، لذلك يتم تنفيذهما بالتوازي.
+  // لا يوجد تغيير في البيانات أو الصلاحيات.
   // ============================================================
 
-  const {
-    data: dbUser,
-    error: userError,
-  } = await supabase
-    .from("users")
-    .select(
-      "id, company_id, is_active"
-    )
-    .eq("auth_user_id", user.id)
-    .eq("is_active", true)
-    .single();
+  const [
+    {
+      data: dbUser,
+      error: userError,
+    },
+    {
+      data: balances,
+      error: balancesError,
+    },
+  ] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id, company_id, is_active")
+      .eq("auth_user_id", user.id)
+      .eq("is_active", true)
+      .single(),
+
+    supabase
+      .from("stock_balances")
+      .select(
+        `
+          id,
+          product_id,
+          location_id,
+          available_quantity,
+          reserved_quantity,
+          minimum_quantity,
+          maximum_quantity,
+          last_count_date,
+          updated_at,
+
+          products (
+            id,
+            name,
+            sku
+          ),
+
+          locations (
+            id,
+            name,
+            code
+          )
+        `
+      )
+      .order("updated_at", {
+        ascending: false,
+      }),
+  ]);
+
+  // ============================================================
+  // التحقق من المستخدم
+  // ============================================================
 
   if (userError || !dbUser) {
     return (
@@ -91,46 +135,9 @@ export default async function InventoryPage() {
     );
   }
 
-  const companyId =
-    dbUser.company_id;
-
   // ============================================================
-  // أرصدة المخزون
+  // التحقق من أرصدة المخزون
   // ============================================================
-
-  const {
-    data: balances,
-    error: balancesError,
-  } = await supabase
-    .from("stock_balances")
-    .select(
-      `
-        id,
-        product_id,
-        location_id,
-        available_quantity,
-        reserved_quantity,
-        minimum_quantity,
-        maximum_quantity,
-        last_count_date,
-        updated_at,
-
-        products (
-          id,
-          name,
-          sku
-        ),
-
-        locations (
-          id,
-          name,
-          code
-        )
-      `
-    )
-    .order("updated_at", {
-      ascending: false,
-    });
 
   if (balancesError) {
     return (
@@ -151,8 +158,10 @@ export default async function InventoryPage() {
     );
   }
 
+  const companyId = dbUser.company_id;
+
   // ============================================================
-  // التحقق من الشركة
+  // تجهيز بيانات المخزون
   // ============================================================
 
   const inventory: InventoryBalance[] =
@@ -188,6 +197,12 @@ export default async function InventoryPage() {
     ),
   ];
 
+  // ============================================================
+  // التحقق من ملكية المواقع والمنتجات للشركة
+  //
+  // الاستعلامان متوازيان أصلًا.
+  // ============================================================
+
   const [
     {
       data: companyLocations,
@@ -202,14 +217,8 @@ export default async function InventoryPage() {
       ? supabase
           .from("locations")
           .select("id")
-          .eq(
-            "company_id",
-            companyId
-          )
-          .in(
-            "id",
-            locationIds
-          )
+          .eq("company_id", companyId)
+          .in("id", locationIds)
       : Promise.resolve({
           data: [],
           error: null,
@@ -219,19 +228,17 @@ export default async function InventoryPage() {
       ? supabase
           .from("products")
           .select("id")
-          .eq(
-            "company_id",
-            companyId
-          )
-          .in(
-            "id",
-            productIds
-          )
+          .eq("company_id", companyId)
+          .in("id", productIds)
       : Promise.resolve({
           data: [],
           error: null,
         }),
   ]);
+
+  // ============================================================
+  // أخطاء التحقق
+  // ============================================================
 
   if (locationsError) {
     return (
@@ -265,21 +272,21 @@ export default async function InventoryPage() {
     );
   }
 
-  const validLocationIds =
-    new Set(
-      (companyLocations ?? []).map(
-        (location) =>
-          location.id
-      )
-    );
+  // ============================================================
+  // التحقق من الشركة
+  // ============================================================
 
-  const validProductIds =
-    new Set(
-      (companyProducts ?? []).map(
-        (product) =>
-          product.id
-      )
-    );
+  const validLocationIds = new Set(
+    (companyLocations ?? []).map(
+      (location) => location.id
+    )
+  );
+
+  const validProductIds = new Set(
+    (companyProducts ?? []).map(
+      (product) => product.id
+    )
+  );
 
   const companyInventory =
     inventory.filter(
@@ -349,15 +356,18 @@ export default async function InventoryPage() {
         ) <= 0
     ).length;
 
-  const locationMap =
-    new Map<
-      string,
-      {
-        id: string;
-        name: string;
-        code: string;
-      }
-    >();
+  // ============================================================
+  // المواقع المستخدمة
+  // ============================================================
+
+  const locationMap = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      code: string;
+    }
+  >();
 
   companyInventory.forEach(
     (item) => {
@@ -378,6 +388,10 @@ export default async function InventoryPage() {
   const locations = Array.from(
     locationMap.values()
   );
+
+  // ============================================================
+  // الصفحة
+  // ============================================================
 
   return (
     <DashboardLayout>
@@ -513,6 +527,10 @@ export default async function InventoryPage() {
     </DashboardLayout>
   );
 }
+
+/* ==============================================================
+   Stat Card
+================================================================ */
 
 function StatCard({
   icon,
