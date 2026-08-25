@@ -108,7 +108,7 @@ export default function UserModal({
 
         <div className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <UserPlus size={21} />
             </div>
 
@@ -298,7 +298,7 @@ export default function UserModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-100 transition hover:bg-blue-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-100 transition hover:bg-teal-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading
                 ? "جاري الإنشاء..."
@@ -345,7 +345,7 @@ function Field({
           label !== "رقم الجوال" &&
           label !== "اسم المستخدم"
         }
-        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
       />
     </div>
   );
