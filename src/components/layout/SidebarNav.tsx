@@ -436,6 +436,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={
         sub
           ? `
