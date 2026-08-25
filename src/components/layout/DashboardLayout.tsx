@@ -1,8 +1,7 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import {
-  getCurrentUserProfile,
-  getCurrentPermissions,
+  getCurrentUserContext,
 } from "@/lib/permissions";
 import { redirect } from "next/navigation";
 
@@ -13,11 +12,10 @@ type Props = {
 export default async function DashboardLayout({
   children,
 }: Props) {
-  const [profile, permissions] =
-    await Promise.all([
-      getCurrentUserProfile(),
-      getCurrentPermissions(),
-    ]);
+  const {
+    profile,
+    permissions,
+  } = await getCurrentUserContext();
 
   if (!profile) {
     redirect("/login");
@@ -35,10 +33,14 @@ export default async function DashboardLayout({
         className="peer sr-only"
       />
 
-      <Sidebar permissions={permissions} />
+      <Sidebar
+        permissions={permissions}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar profile={profile} />
+        <Topbar
+          profile={profile}
+        />
 
         <main className="min-w-0 p-3 sm:p-4 lg:p-6">
           {children}
