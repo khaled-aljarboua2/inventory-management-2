@@ -99,21 +99,21 @@ export default function UserModal({
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-950/50 p-3 backdrop-blur-sm sm:p-4"
     >
-      <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
         {/* =====================================================
             Header
         ====================================================== */}
 
-        <div className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-4 sm:px-6 sm:py-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <UserPlus size={21} />
             </div>
 
-            <div>
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-bold tracking-tight text-slate-900">
                 مستخدم جديد
               </h2>
 
@@ -127,7 +127,7 @@ export default function UserModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
           >
             <X size={20} />
           </button>
@@ -139,7 +139,7 @@ export default function UserModal({
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 p-6"
+          className="min-h-0 overflow-y-auto space-y-6 p-4 sm:p-6"
         >
           {/* Error */}
 
@@ -147,13 +147,15 @@ export default function UserModal({
             <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
               <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-red-500" />
 
-              <span>{error}</span>
+              <span className="min-w-0 break-words">
+                {error}
+              </span>
             </div>
           )}
 
           {/* Basic information */}
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/40 p-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/40 p-4 sm:p-5">
             <div className="mb-4">
               <h3 className="text-sm font-bold text-slate-800">
                 بيانات المستخدم
@@ -164,7 +166,7 @@ export default function UserModal({
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid min-w-0 gap-4 md:grid-cols-2">
               <Field
                 label="الاسم الكامل"
                 value={fullName}
@@ -194,7 +196,7 @@ export default function UserModal({
                 placeholder="05xxxxxxxx"
               />
 
-              <div className="md:col-span-2">
+              <div className="min-w-0 md:col-span-2">
                 <Field
                   label="كلمة المرور"
                   type="password"
@@ -208,7 +210,7 @@ export default function UserModal({
 
           {/* Access */}
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <div className="mb-4">
               <h3 className="text-sm font-bold text-slate-800">
                 الصلاحيات والوصول
@@ -219,7 +221,7 @@ export default function UserModal({
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid min-w-0 gap-4 md:grid-cols-2">
               {/* الدور */}
 
               <SelectField label="الدور">
@@ -285,7 +287,7 @@ export default function UserModal({
 
           {/* Buttons */}
 
-          <div className="flex gap-3 border-t border-slate-100 pt-5">
+          <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row">
             <button
               type="button"
               onClick={onClose}
@@ -329,7 +331,7 @@ function Field({
   type?: string;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <label className="mb-2 block text-sm font-semibold text-slate-700">
         {label}
       </label>
@@ -345,7 +347,7 @@ function Field({
           label !== "رقم الجوال" &&
           label !== "اسم المستخدم"
         }
-        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
       />
     </div>
   );
@@ -363,7 +365,7 @@ function SelectField({
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <label className="mb-2 block text-sm font-semibold text-slate-700">
         {label}
       </label>
