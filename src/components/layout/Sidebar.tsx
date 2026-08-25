@@ -113,7 +113,7 @@ export default function Sidebar({
           "
         >
           <SidebarNav
-            permissions={Array.from(permissions)}
+            permissions={permissions}
           />
         </div>
 
