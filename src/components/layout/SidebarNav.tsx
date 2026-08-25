@@ -21,14 +21,14 @@ import {
 import { useState } from "react";
 
 type Props = {
-  permissions: string[];
+  permissions: Set<string>;
 };
 
 export default function SidebarNav({
   permissions,
 }: Props) {
   const allowed = (permission: string) =>
-    permissions.includes(permission);
+    permissions.has(permission);
 
   const [inventoryOpen, setInventoryOpen] =
     useState(true);
@@ -67,7 +67,7 @@ export default function SidebarNav({
     allowed("settings.view");
 
   return (
-    <nav className="flex-1 overflow-y-auto px-3 py-5">
+    <nav className="px-3 py-5">
       {/* ========================================================
           الرئيسية
       ========================================================= */}
