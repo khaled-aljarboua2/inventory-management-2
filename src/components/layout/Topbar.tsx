@@ -52,10 +52,7 @@ export default function Topbar({
 }) {
   const router = useRouter();
 
-  // ==========================================================
-  // Supabase Client ثابت
-  // ==========================================================
-
+  // مهم: إنشاء Supabase client مرة واحدة فقط
   const supabase = useMemo(
     () => createClient(),
     []
@@ -66,12 +63,6 @@ export default function Topbar({
 
   const notificationsRef =
     useRef<HTMLDivElement>(null);
-
-  const dbUserIdRef =
-    useRef<string | null>(null);
-
-  const loadingNotificationsRef =
-    useRef(false);
 
   const [profileOpen, setProfileOpen] =
     useState(false);
@@ -130,82 +121,48 @@ export default function Topbar({
     ).length;
 
   // ==========================================================
-  // الحصول على مستخدم النظام
-  // يتم مرة واحدة فقط ثم يتم تخزين ID
-  // ==========================================================
-
-  const getDbUserId =
-    useCallback(
-      async (): Promise<string | null> => {
-        if (dbUserIdRef.current) {
-          return dbUserIdRef.current;
-        }
-
-        const {
-          data: {
-            user,
-          },
-        } =
-          await supabase.auth.getUser();
-
-        if (!user) {
-          return null;
-        }
-
-        const {
-          data: dbUser,
-          error,
-        } = await supabase
-          .from("users")
-          .select("id")
-          .eq(
-            "auth_user_id",
-            user.id
-          )
-          .eq(
-            "is_active",
-            true
-          )
-          .maybeSingle();
-
-        if (error || !dbUser) {
-          return null;
-        }
-
-        dbUserIdRef.current =
-          dbUser.id;
-
-        return dbUser.id;
-      },
-      [supabase]
-    );
-
-  // ==========================================================
   // تحميل الإشعارات
   // ==========================================================
 
   const loadNotifications =
     useCallback(
       async () => {
-        // منع أكثر من طلب في نفس الوقت
-        if (
-          loadingNotificationsRef.current
-        ) {
-          return;
-        }
-
-        loadingNotificationsRef.current =
-          true;
-
         setNotificationsLoading(true);
 
         try {
-          const dbUserId =
-            await getDbUserId();
+          const {
+            data: {
+              user,
+            },
+          } =
+            await supabase.auth.getUser();
 
-          if (!dbUserId) {
+          if (!user) {
             setNotifications([]);
+            return;
+          }
 
+          const {
+            data: dbUser,
+            error: userError,
+          } = await supabase
+            .from("users")
+            .select("id")
+            .eq(
+              "auth_user_id",
+              user.id
+            )
+            .eq(
+              "is_active",
+              true
+            )
+            .maybeSingle();
+
+          if (
+            userError ||
+            !dbUser
+          ) {
+            setNotifications([]);
             return;
           }
 
@@ -226,7 +183,7 @@ export default function Topbar({
             )
             .eq(
               "user_id",
-              dbUserId
+              dbUser.id
             )
             .order(
               "created_at",
@@ -241,7 +198,6 @@ export default function Topbar({
               "Notifications load error:",
               error
             );
-
             return;
           }
 
@@ -254,47 +210,27 @@ export default function Topbar({
             error
           );
         } finally {
-          loadingNotificationsRef.current =
-            false;
-
           setNotificationsLoading(
             false
           );
         }
       },
-      [
-        supabase,
-        getDbUserId,
-      ]
+      [supabase]
     );
 
   // ==========================================================
-  // تحميل أولي + تحديث احتياطي كل 60 ثانية
+  // تحميل أولي + تحديث دوري
   // ==========================================================
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function initialize() {
-      if (cancelled) {
-        return;
-      }
-
-      await loadNotifications();
-    }
-
-    void initialize();
+    void loadNotifications();
 
     const interval =
       window.setInterval(() => {
-        if (!cancelled) {
-          void loadNotifications();
-        }
-      }, 60000);
+        void loadNotifications();
+      }, 30000);
 
     return () => {
-      cancelled = true;
-
       window.clearInterval(
         interval
       );
@@ -303,7 +239,6 @@ export default function Topbar({
 
   // ==========================================================
   // Supabase Realtime
-  // نراقب INSERT فقط للإشعارات الجديدة
   // ==========================================================
 
   useEffect(() => {
@@ -316,11 +251,34 @@ export default function Topbar({
     let cancelled = false;
 
     async function subscribe() {
-      const dbUserId =
-        await getDbUserId();
+      const {
+        data: {
+          user,
+        },
+      } =
+        await supabase.auth.getUser();
+
+      if (!user || cancelled) {
+        return;
+      }
+
+      const {
+        data: dbUser,
+      } = await supabase
+        .from("users")
+        .select("id")
+        .eq(
+          "auth_user_id",
+          user.id
+        )
+        .eq(
+          "is_active",
+          true
+        )
+        .maybeSingle();
 
       if (
-        !dbUserId ||
+        !dbUser ||
         cancelled
       ) {
         return;
@@ -329,20 +287,18 @@ export default function Topbar({
       channel =
         supabase
           .channel(
-            `notifications-${dbUserId}`
+            `notifications-${dbUser.id}`
           )
           .on(
             "postgres_changes",
             {
-              event: "INSERT",
+              event: "*",
               schema: "public",
               table: "notifications",
-              filter: `user_id=eq.${dbUserId}`,
+              filter: `user_id=eq.${dbUser.id}`,
             },
             () => {
-              if (!cancelled) {
-                void loadNotifications();
-              }
+              void loadNotifications();
             }
           )
           .subscribe();
@@ -361,7 +317,6 @@ export default function Topbar({
     };
   }, [
     supabase,
-    getDbUserId,
     loadNotifications,
   ]);
 
@@ -507,10 +462,6 @@ export default function Topbar({
         .eq(
           "id",
           notificationId
-        )
-        .eq(
-          "user_id",
-          notification.user_id
         );
 
       if (error) {
@@ -518,7 +469,6 @@ export default function Topbar({
           "Mark notification read error:",
           error
         );
-
         return;
       }
 
@@ -555,10 +505,33 @@ export default function Topbar({
     setMarkingAllRead(true);
 
     try {
-      const dbUserId =
-        await getDbUserId();
+      const {
+        data: {
+          user,
+        },
+      } =
+        await supabase.auth.getUser();
 
-      if (!dbUserId) {
+      if (!user) {
+        return;
+      }
+
+      const {
+        data: dbUser,
+      } = await supabase
+        .from("users")
+        .select("id")
+        .eq(
+          "auth_user_id",
+          user.id
+        )
+        .eq(
+          "is_active",
+          true
+        )
+        .maybeSingle();
+
+      if (!dbUser) {
         return;
       }
 
@@ -571,7 +544,7 @@ export default function Topbar({
         })
         .eq(
           "user_id",
-          dbUserId
+          dbUser.id
         )
         .eq(
           "is_read",
@@ -583,7 +556,6 @@ export default function Topbar({
           "Mark all notifications read error:",
           error
         );
-
         return;
       }
 
@@ -722,9 +694,7 @@ export default function Topbar({
         dark:bg-slate-950/90
       "
     >
-      {/* =====================================================
-          Mobile Menu
-      ====================================================== */}
+      {/* Mobile Menu */}
 
       <label
         htmlFor="mobile-sidebar-toggle"
@@ -753,9 +723,7 @@ export default function Topbar({
         />
       </label>
 
-      {/* =====================================================
-          Desktop Search
-      ====================================================== */}
+      {/* Desktop Search */}
 
       <form
         onSubmit={
@@ -850,9 +818,7 @@ export default function Topbar({
         </div>
       </form>
 
-      {/* =====================================================
-          Actions
-      ====================================================== */}
+      {/* Actions */}
 
       <div
         className="
@@ -931,9 +897,7 @@ export default function Topbar({
           )}
         </button>
 
-        {/* ===================================================
-            Notifications
-        ==================================================== */}
+        {/* Notifications */}
 
         <div
           ref={
