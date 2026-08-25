@@ -216,7 +216,7 @@ export default function UsersTable({
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                   <Users size={19} />
                 </div>
 
@@ -251,7 +251,7 @@ export default function UsersTable({
                     setSearch(event.target.value)
                   }
                   placeholder="ابحث بالاسم أو البريد أو الدور..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm text-slate-700 outline-none transition-all focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm text-slate-700 outline-none transition-all focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
               </div>
 
@@ -262,7 +262,7 @@ export default function UsersTable({
                 onChange={(event) =>
                   setStatusFilter(event.target.value)
                 }
-                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
               >
                 <option value="all">جميع الحالات</option>
                 <option value="active">نشط</option>
@@ -276,7 +276,7 @@ export default function UsersTable({
                 onChange={(event) =>
                   setRoleFilter(event.target.value)
                 }
-                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
               >
                 <option value="all">جميع الأدوار</option>
 
@@ -292,7 +292,7 @@ export default function UsersTable({
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-100 transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white shadow-sm shadow-teal-100 transition-all hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-md"
               >
                 <UserPlus size={17} />
                 مستخدم جديد
@@ -379,7 +379,7 @@ export default function UsersTable({
 
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-100">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition group-hover:bg-teal-100">
                             <Users size={19} />
                           </div>
 
@@ -390,7 +390,7 @@ export default function UsersTable({
                               </p>
 
                               {isCurrentUser && (
-                                <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-600">
+                                <span className="rounded-full bg-teal-50 px-2 py-1 text-[10px] font-semibold text-teal-600">
                                   أنت
                                 </span>
                               )}
@@ -503,7 +503,7 @@ export default function UsersTable({
                               onClick={() =>
                                 setEditUser(user)
                               }
-                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-600"
                             >
                               <Pencil size={15} />
                               تعديل
@@ -517,7 +517,7 @@ export default function UsersTable({
                                 onClick={() =>
                                   setPermissionsUser(user)
                                 }
-                                className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/30 px-3 text-xs font-semibold text-blue-600 transition hover:bg-blue-50 hover:border-blue-300"
+                                className="inline-flex h-9 items-center gap-2 rounded-lg border border-teal-200 bg-teal-50/30 px-3 text-xs font-semibold text-teal-600 transition hover:bg-teal-50 hover:border-teal-300"
                               >
                                 <ShieldCheck size={15} />
                                 الصلاحيات
@@ -608,17 +608,17 @@ function StatCard({
   icon,
   label,
   value,
-  variant = "blue",
+  variant = "teal",
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
-  variant?: "blue" | "green" | "amber" | "purple";
+  variant?: "teal" | "green" | "amber" | "purple";
 }) {
   const styles = {
-    blue: {
-      icon: "bg-blue-50 text-blue-600",
-      glow: "bg-blue-100/60",
+    teal: {
+      icon: "bg-teal-50 text-teal-600",
+      glow: "bg-teal-100/60",
     },
     green: {
       icon: "bg-emerald-50 text-emerald-600",
