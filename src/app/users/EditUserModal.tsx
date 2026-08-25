@@ -132,25 +132,32 @@ export default function EditUserModal({
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] flex items-center justify-center overflow-hidden bg-slate-950/50 p-3 backdrop-blur-sm sm:p-4"
     >
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
-        {/* Header */}
+      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
 
-        <div className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+        {/* =====================================================
+            Header
+        ====================================================== */}
+
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-4 sm:px-6 sm:py-5">
+
+          <div className="flex min-w-0 items-center gap-3">
+
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <UserCog size={21} />
             </div>
 
-            <div>
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">
+            <div className="min-w-0">
+
+              <h2 className="truncate text-lg font-bold tracking-tight text-slate-900">
                 تعديل المستخدم
               </h2>
 
               <p className="mt-1 text-xs text-slate-400">
                 تحديث بيانات الحساب والصلاحيات.
               </p>
+
             </div>
           </div>
 
@@ -158,22 +165,30 @@ export default function EditUserModal({
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
           >
             <X size={20} />
           </button>
+
         </div>
 
-        {/* Form */}
+        {/* =====================================================
+            Form
+        ====================================================== */}
 
         <form
           onSubmit={handleSubmit}
-          className="overflow-y-auto p-6"
+          className="min-h-0 overflow-y-auto space-y-6 p-4 sm:p-6"
         >
-          {/* بيانات الحساب */}
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/40 p-5">
+          {/* ===================================================
+              بيانات الحساب
+          ==================================================== */}
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/40 p-4 sm:p-5">
+
             <div className="mb-4">
+
               <h3 className="text-sm font-bold text-slate-800">
                 بيانات الحساب
               </h3>
@@ -181,14 +196,17 @@ export default function EditUserModal({
               <p className="mt-1 text-xs text-slate-400">
                 المعلومات الأساسية للمستخدم.
               </p>
+
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+
               <Field
                 label="الاسم الكامل"
                 value={fullName}
                 onChange={setFullName}
                 required
+                disabled={saving}
               />
 
               <Field
@@ -196,6 +214,7 @@ export default function EditUserModal({
                 value={username}
                 onChange={setUsername}
                 placeholder="اختياري"
+                disabled={saving}
               />
 
               <Field
@@ -204,6 +223,7 @@ export default function EditUserModal({
                 value={email}
                 onChange={setEmail}
                 required
+                disabled={saving}
               />
 
               <Field
@@ -211,16 +231,19 @@ export default function EditUserModal({
                 value={phone}
                 onChange={setPhone}
                 placeholder="اختياري"
+                disabled={saving}
               />
 
               {/* كلمة المرور */}
 
-              <div className="sm:col-span-2">
+              <div className="min-w-0 sm:col-span-2">
+
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   كلمة مرور جديدة
                 </label>
 
                 <div className="relative">
+
                   <input
                     type={
                       showPassword
@@ -235,7 +258,7 @@ export default function EditUserModal({
                     }
                     disabled={saving}
                     placeholder="اتركها فارغة للإبقاء على كلمة المرور الحالية"
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 pl-11 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-50"
+                    className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-4 pl-11 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:bg-slate-50"
                   />
 
                   <button
@@ -246,7 +269,7 @@ export default function EditUserModal({
                       )
                     }
                     disabled={saving}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700 disabled:opacity-50"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-teal-600 disabled:opacity-50"
                   >
                     {showPassword ? (
                       <EyeOff size={18} />
@@ -254,19 +277,27 @@ export default function EditUserModal({
                       <Eye size={18} />
                     )}
                   </button>
+
                 </div>
 
-                <p className="mt-2 text-xs text-slate-400">
+                <p className="mt-2 text-xs leading-5 text-slate-400">
                   اترك الحقل فارغًا إذا كنت لا تريد تغيير كلمة المرور.
                 </p>
+
               </div>
+
             </div>
+
           </div>
 
-          {/* الوصول والصلاحيات */}
+          {/* ===================================================
+              الوصول والصلاحيات
+          ==================================================== */}
 
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+
             <div className="mb-4">
+
               <h3 className="text-sm font-bold text-slate-800">
                 الوصول والصلاحيات
               </h3>
@@ -274,12 +305,15 @@ export default function EditUserModal({
               <p className="mt-1 text-xs text-slate-400">
                 تحديد الدور والموقع وحالة الحساب.
               </p>
+
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+
               {/* الدور */}
 
               <SelectField label="الدور">
+
                 <select
                   value={roleId}
                   onChange={(event) =>
@@ -291,6 +325,7 @@ export default function EditUserModal({
                   disabled={saving}
                   className="select"
                 >
+
                   <option value="">
                     اختر الدور
                   </option>
@@ -303,12 +338,15 @@ export default function EditUserModal({
                       {role.name}
                     </option>
                   ))}
+
                 </select>
+
               </SelectField>
 
               {/* الموقع */}
 
               <SelectField label="الموقع">
+
                 <select
                   value={locationId}
                   onChange={(event) =>
@@ -320,6 +358,7 @@ export default function EditUserModal({
                   disabled={saving}
                   className="select"
                 >
+
                   <option value="">
                     اختر الموقع
                   </option>
@@ -335,21 +374,27 @@ export default function EditUserModal({
                       </option>
                     )
                   )}
+
                 </select>
+
               </SelectField>
 
               {/* الحالة */}
 
-              <div className="sm:col-span-2">
-                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  <div>
+              <div className="min-w-0 sm:col-span-2">
+
+                <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+
+                  <div className="min-w-0">
+
                     <p className="text-sm font-semibold text-slate-700">
                       حالة الحساب
                     </p>
 
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
                       المستخدم يستطيع تسجيل الدخول عندما يكون الحساب نشطًا.
                     </p>
+
                   </div>
 
                   <button
@@ -365,12 +410,13 @@ export default function EditUserModal({
                         ? "تعطيل الحساب"
                         : "تفعيل الحساب"
                     }
-                    className={`relative h-7 w-12 rounded-full transition ${
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition ${
                       isActive
                         ? "bg-emerald-500"
                         : "bg-slate-300"
                     }`}
                   >
+
                     <span
                       className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${
                         isActive
@@ -378,28 +424,38 @@ export default function EditUserModal({
                           : "right-6"
                       }`}
                     />
+
                   </button>
+
                 </div>
+
               </div>
+
             </div>
+
           </div>
 
-          {/* Error */}
+          {/* ===================================================
+              Error
+          ==================================================== */}
 
           {error && (
-            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">
               {error}
             </div>
           )}
 
-          {/* Footer */}
+          {/* ===================================================
+              Footer
+          ==================================================== */}
 
-          <div className="mt-6 flex gap-3 border-t border-slate-100 pt-5">
+          <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row">
+
             <button
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="flex-1 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 disabled:opacity-50"
+              className="flex-1 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               إلغاء
             </button>
@@ -407,22 +463,30 @@ export default function EditUserModal({
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-100 transition hover:bg-blue-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-100 transition hover:bg-teal-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
+
               {saving ? (
                 <span className="flex items-center justify-center gap-2">
+
                   <Loader2
                     size={17}
                     className="animate-spin"
                   />
+
                   جاري الحفظ...
+
                 </span>
               ) : (
                 "حفظ التعديلات"
               )}
+
             </button>
+
           </div>
+
         </form>
+
       </div>
     </div>
   );
@@ -439,6 +503,7 @@ function Field({
   type = "text",
   placeholder,
   required = false,
+  disabled = false,
 }: {
   label: string;
   value: string;
@@ -448,9 +513,11 @@ function Field({
   type?: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
+
       <label className="mb-2 block text-sm font-semibold text-slate-700">
         {label}
       </label>
@@ -465,8 +532,10 @@ function Field({
         }
         placeholder={placeholder}
         required={required}
-        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+        disabled={disabled}
+        className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
       />
+
     </div>
   );
 }
@@ -483,12 +552,14 @@ function SelectField({
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
+
       <label className="mb-2 block text-sm font-semibold text-slate-700">
         {label}
       </label>
 
       {children}
+
     </div>
   );
 }
