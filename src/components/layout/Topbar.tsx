@@ -44,19 +44,39 @@ type Notification = {
   created_at: string | null;
 };
 
+/* ============================================================
+   Supabase Client
+   إنشاء Client واحد فقط على مستوى الملف
+============================================================ */
+
+const supabase = createClient();
+
 export default function Topbar({
   profile,
 }: {
   profile: Profile;
 }) {
   const router = useRouter();
-  const supabase = createClient();
 
   const searchRef =
     useRef<HTMLInputElement>(null);
 
   const notificationsRef =
     useRef<HTMLDivElement>(null);
+
+  /* ==========================================================
+     معرف مستخدم النظام
+  ========================================================== */
+
+  const dbUserIdRef =
+    useRef<string | null>(null);
+
+  /* ==========================================================
+     حالة التهيئة
+  ========================================================== */
+
+  const initializedRef =
+    useRef(false);
 
   const [profileOpen, setProfileOpen] =
     useState(false);
@@ -104,9 +124,9 @@ export default function Topbar({
   const roleName =
     profile?.roles?.name ?? "مستخدم";
 
-  // ==========================================================
-  // عدد الإشعارات غير المقروءة
-  // ==========================================================
+  /* ==========================================================
+     عدد الإشعارات غير المقروءة
+  ========================================================== */
 
   const unreadCount =
     notifications.filter(
@@ -114,52 +134,21 @@ export default function Topbar({
         notification.is_read !== true
     ).length;
 
-  // ==========================================================
-  // تحميل الإشعارات
-  // ==========================================================
+  /* ==========================================================
+     تحميل الإشعارات
+     
+     مهم:
+     هذه الدالة تستقبل dbUserId مباشرة.
+     لا تستدعي auth.getUser()
+     ولا تستعلم من users.
+  ========================================================== */
 
   const loadNotifications =
     useCallback(
-      async () => {
+      async (dbUserId: string) => {
         setNotificationsLoading(true);
 
         try {
-          const {
-            data: {
-              user,
-            },
-          } =
-            await supabase.auth.getUser();
-
-          if (!user) {
-            setNotifications([]);
-            return;
-          }
-
-          const {
-            data: dbUser,
-            error: userError,
-          } = await supabase
-            .from("users")
-            .select("id")
-            .eq(
-              "auth_user_id",
-              user.id
-            )
-            .eq(
-              "is_active",
-              true
-            )
-            .maybeSingle();
-
-          if (
-            userError ||
-            !dbUser
-          ) {
-            setNotifications([]);
-            return;
-          }
-
           const {
             data,
             error,
@@ -177,7 +166,7 @@ export default function Topbar({
             )
             .eq(
               "user_id",
-              dbUser.id
+              dbUserId
             )
             .order(
               "created_at",
@@ -192,6 +181,7 @@ export default function Topbar({
               "Notifications load error:",
               error
             );
+
             return;
           }
 
@@ -204,119 +194,201 @@ export default function Topbar({
             error
           );
         } finally {
-          setNotificationsLoading(
-            false
-          );
+          setNotificationsLoading(false);
         }
       },
-      [supabase]
+      []
     );
 
-  // ==========================================================
-  // تحميل أولي + تحديث دوري
-  // ==========================================================
+  /* ==========================================================
+     التهيئة مرة واحدة
+     
+     هنا فقط:
+     
+     auth.getUser()
+        ↓
+     users.id
+        ↓
+     تحميل notifications
+        ↓
+     إنشاء Realtime
+     
+     بعد ذلك لا نعيد auth/users في كل تحديث.
+  ========================================================== */
 
   useEffect(() => {
-    void loadNotifications();
+    if (initializedRef.current) {
+      return;
+    }
 
-    const interval =
-      window.setInterval(() => {
-        void loadNotifications();
-      }, 30000);
+    initializedRef.current = true;
 
-    return () => {
-      window.clearInterval(
-        interval
-      );
-    };
-  }, [loadNotifications]);
+    let cancelled = false;
 
-  // ==========================================================
-  // Supabase Realtime
-  // ==========================================================
-
-  useEffect(() => {
     let channel:
       | ReturnType<
           typeof supabase.channel
         >
       | null = null;
 
-    let cancelled = false;
+    let interval:
+      | number
+      | null = null;
 
-    async function subscribe() {
-      const {
-        data: {
-          user,
-        },
-      } =
-        await supabase.auth.getUser();
+    async function initialize() {
+      try {
+        /* ======================================================
+           المستخدم الحالي
+        ====================================================== */
 
-      if (!user || cancelled) {
-        return;
-      }
+        const {
+          data: {
+            user,
+          },
+        } =
+          await supabase.auth.getUser();
 
-      const {
-        data: dbUser,
-      } = await supabase
-        .from("users")
-        .select("id")
-        .eq(
-          "auth_user_id",
-          user.id
-        )
-        .eq(
-          "is_active",
-          true
-        )
-        .maybeSingle();
+        if (!user || cancelled) {
+          setNotifications([]);
 
-      if (
-        !dbUser ||
-        cancelled
-      ) {
-        return;
-      }
+          return;
+        }
 
-      channel =
-        supabase
-          .channel(
-            `notifications-${dbUser.id}`
+        /* ======================================================
+           مستخدم النظام
+           
+           يتم تنفيذه مرة واحدة فقط.
+        ====================================================== */
+
+        const {
+          data: dbUser,
+          error: userError,
+        } = await supabase
+          .from("users")
+          .select("id")
+          .eq(
+            "auth_user_id",
+            user.id
           )
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "notifications",
-              filter: `user_id=eq.${dbUser.id}`,
-            },
+          .eq(
+            "is_active",
+            true
+          )
+          .maybeSingle();
+
+        if (
+          userError ||
+          !dbUser ||
+          cancelled
+        ) {
+          setNotifications([]);
+
+          return;
+        }
+
+        const dbUserId =
+          dbUser.id;
+
+        dbUserIdRef.current =
+          dbUserId;
+
+        /* ======================================================
+           تحميل الإشعارات الأولي
+        ====================================================== */
+
+        await loadNotifications(
+          dbUserId
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        /* ======================================================
+           التحديث الدوري
+           
+           لا يوجد auth.getUser()
+           ولا users query هنا.
+        ====================================================== */
+
+        interval =
+          window.setInterval(
             () => {
-              void loadNotifications();
-            }
-          )
-          .subscribe();
+              if (
+                !cancelled &&
+                dbUserIdRef.current
+              ) {
+                void loadNotifications(
+                  dbUserIdRef.current
+                );
+              }
+            },
+            30000
+          );
+
+        /* ======================================================
+           Supabase Realtime
+        ====================================================== */
+
+        channel =
+          supabase
+            .channel(
+              `notifications-${dbUserId}`
+            )
+            .on(
+              "postgres_changes",
+              {
+                event: "*",
+                schema: "public",
+                table: "notifications",
+                filter: `user_id=eq.${dbUserId}`,
+              },
+              () => {
+                if (
+                  !cancelled
+                ) {
+                  void loadNotifications(
+                    dbUserId
+                  );
+                }
+              }
+            )
+            .subscribe();
+      } catch (error) {
+        console.error(
+          "Topbar initialization error:",
+          error
+        );
+      }
     }
 
-    void subscribe();
+    void initialize();
 
     return () => {
       cancelled = true;
+
+      if (interval !== null) {
+        window.clearInterval(
+          interval
+        );
+      }
 
       if (channel) {
         void supabase.removeChannel(
           channel
         );
       }
+
+      dbUserIdRef.current =
+        null;
     };
   }, [
-    supabase,
     loadNotifications,
   ]);
 
-  // ==========================================================
-  // إغلاق القوائم عند الضغط خارجها
-  // ==========================================================
+  /* ==========================================================
+     إغلاق القوائم عند الضغط خارجها
+  ========================================================== */
 
   useEffect(() => {
     function handleOutsideClick(
@@ -350,9 +422,9 @@ export default function Topbar({
     };
   }, []);
 
-  // ==========================================================
-  // Keyboard shortcuts
-  // ==========================================================
+  /* ==========================================================
+     Keyboard shortcuts
+  ========================================================== */
 
   useEffect(() => {
     function handleKeyboardShortcut(
@@ -397,9 +469,9 @@ export default function Topbar({
     };
   }, []);
 
-  // ==========================================================
-  // Search
-  // ==========================================================
+  /* ==========================================================
+     Search
+  ========================================================== */
 
   function handleSearchSubmit(
     event: React.FormEvent<HTMLFormElement>
@@ -420,9 +492,9 @@ export default function Topbar({
     );
   }
 
-  // ==========================================================
-  // تعليم إشعار كمقروء
-  // ==========================================================
+  /* ==========================================================
+     تعليم إشعار كمقروء
+  ========================================================== */
 
   async function markNotificationAsRead(
     notificationId: string
@@ -463,6 +535,7 @@ export default function Topbar({
           "Mark notification read error:",
           error
         );
+
         return;
       }
 
@@ -484,9 +557,9 @@ export default function Topbar({
     }
   }
 
-  // ==========================================================
-  // تعليم جميع الإشعارات كمقروءة
-  // ==========================================================
+  /* ==========================================================
+     تعليم جميع الإشعارات كمقروءة
+  ========================================================== */
 
   async function markAllNotificationsAsRead() {
     if (
@@ -496,39 +569,16 @@ export default function Topbar({
       return;
     }
 
+    const dbUserId =
+      dbUserIdRef.current;
+
+    if (!dbUserId) {
+      return;
+    }
+
     setMarkingAllRead(true);
 
     try {
-      const {
-        data: {
-          user,
-        },
-      } =
-        await supabase.auth.getUser();
-
-      if (!user) {
-        return;
-      }
-
-      const {
-        data: dbUser,
-      } = await supabase
-        .from("users")
-        .select("id")
-        .eq(
-          "auth_user_id",
-          user.id
-        )
-        .eq(
-          "is_active",
-          true
-        )
-        .maybeSingle();
-
-      if (!dbUser) {
-        return;
-      }
-
       const {
         error,
       } = await supabase
@@ -538,7 +588,7 @@ export default function Topbar({
         })
         .eq(
           "user_id",
-          dbUser.id
+          dbUserId
         )
         .eq(
           "is_read",
@@ -550,6 +600,7 @@ export default function Topbar({
           "Mark all notifications read error:",
           error
         );
+
         return;
       }
 
@@ -567,9 +618,9 @@ export default function Topbar({
     }
   }
 
-  // ==========================================================
-  // تنسيق وقت الإشعار
-  // ==========================================================
+  /* ==========================================================
+     تنسيق وقت الإشعار
+  ========================================================== */
 
   function formatNotificationTime(
     createdAt: string | null
@@ -634,9 +685,9 @@ export default function Topbar({
     );
   }
 
-  // ==========================================================
-  // Logout
-  // ==========================================================
+  /* ==========================================================
+     Logout
+  ========================================================== */
 
   async function handleLogout() {
     if (loggingOut) {
@@ -949,8 +1000,6 @@ export default function Topbar({
               size={20}
               strokeWidth={1.9}
             />
-
-            {/* Unread Badge */}
 
             {unreadCount > 0 && (
               <span
@@ -1328,7 +1377,10 @@ export default function Topbar({
                   <button
                     type="button"
                     onClick={() =>
-                      void loadNotifications()
+                      dbUserIdRef.current &&
+                      void loadNotifications(
+                        dbUserIdRef.current
+                      )
                     }
                     className="
                       text-xs
