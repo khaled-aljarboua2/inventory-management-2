@@ -57,7 +57,10 @@ export default function Topbar({
 }) {
   const router = useRouter();
 
-  // مهم: إنشاء Supabase client مرة واحدة فقط
+  // ==========================================================
+  // Supabase client
+  // ==========================================================
+
   const supabase = useMemo(
     () => createClient(),
     []
@@ -105,6 +108,10 @@ export default function Topbar({
 
   const { theme, toggleTheme } =
     useTheme();
+
+  // ==========================================================
+  // بيانات المستخدم
+  // ==========================================================
 
   const displayName =
     profile?.full_name?.trim() ||
@@ -194,7 +201,7 @@ export default function Topbar({
     );
 
   // ==========================================================
-  // تحميل أولي فقط
+  // التحميل الأولي
   // ==========================================================
 
   useEffect(() => {
@@ -203,6 +210,10 @@ export default function Topbar({
 
   // ==========================================================
   // Supabase Realtime
+  //
+  // يستقبل INSERT مباشرة من جدول notifications
+  // للمستخدم الحالي فقط.
+  // لا يحتاج Refresh.
   // ==========================================================
 
   useEffect(() => {
@@ -212,26 +223,53 @@ export default function Topbar({
 
     let cancelled = false;
 
-    const channel =
-      supabase
-        .channel(
-          `notifications-${profile.id}`
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${profile.id}`,
-          },
-          () => {
-            if (!cancelled) {
-              void loadNotifications();
-            }
+    const channel = supabase
+      .channel(
+        `notifications-${profile.id}`
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${profile.id}`,
+        },
+        (payload) => {
+          if (cancelled) {
+            return;
           }
-        )
-        .subscribe();
+
+          const newNotification =
+            payload.new as Notification;
+
+          setNotifications(
+            (current) => {
+              // منع التكرار
+              if (
+                current.some(
+                  (item) =>
+                    item.id ===
+                    newNotification.id
+                )
+              ) {
+                return current;
+              }
+
+              return [
+                newNotification,
+                ...current,
+              ].slice(0, 10);
+            }
+          );
+        }
+      )
+      .subscribe((status) => {
+        console.log(
+          "Notifications realtime:",
+          status
+        );
+      });
 
     return () => {
       cancelled = true;
@@ -243,7 +281,6 @@ export default function Topbar({
   }, [
     profile?.id,
     supabase,
-    loadNotifications,
   ]);
 
   // ==========================================================
