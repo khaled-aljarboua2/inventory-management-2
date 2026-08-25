@@ -79,9 +79,11 @@ export default function UserPermissionsModal({
       }
 
       setPermissions(result.permissions ?? []);
+
       setRolePermissionIds(
         result.rolePermissionIds ?? []
       );
+
       setUserPermissions(
         result.userPermissions ?? []
       );
@@ -125,8 +127,8 @@ export default function UserPermissionsModal({
     }));
   }
 
-  const filteredPermissions = permissions.filter(
-    (permission) => {
+  const filteredPermissions =
+    permissions.filter((permission) => {
       const query = search.trim().toLowerCase();
 
       if (!query) return true;
@@ -142,8 +144,7 @@ export default function UserPermissionsModal({
           .toLowerCase()
           .includes(query)
       );
-    }
-  );
+    });
 
   async function handleSave() {
     setSaving(true);
@@ -177,30 +178,35 @@ export default function UserPermissionsModal({
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden bg-slate-950/50 p-3 backdrop-blur-sm sm:p-4"
     >
-      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+      <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+
         {/* =====================================================
             الرأس
         ====================================================== */}
 
-        <div className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-4 sm:px-6 sm:py-5">
+
+          <div className="flex min-w-0 items-center gap-3">
+
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <ShieldCheck size={21} />
             </div>
 
-            <div>
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">
+            <div className="min-w-0">
+
+              <h2 className="truncate text-lg font-bold tracking-tight text-slate-900">
                 إدارة الصلاحيات
               </h2>
 
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 truncate text-xs text-slate-400">
                 المستخدم:
                 <span className="mr-1 font-semibold text-slate-600">
                   {userName}
                 </span>
               </p>
+
             </div>
           </div>
 
@@ -208,18 +214,21 @@ export default function UserPermissionsModal({
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
           >
             <X size={20} />
           </button>
+
         </div>
 
         {/* =====================================================
             البحث
         ====================================================== */}
 
-        <div className="border-b border-slate-100 bg-white px-6 py-4">
+        <div className="shrink-0 border-b border-slate-100 bg-white px-4 py-4 sm:px-6">
+
           <div className="relative">
+
             <Search
               size={18}
               className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -231,20 +240,23 @@ export default function UserPermissionsModal({
                 setSearch(event.target.value)
               }
               placeholder="ابحث عن صلاحية..."
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+              className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
             />
+
           </div>
+
         </div>
 
         {/* =====================================================
             مفتاح الحالات
         ====================================================== */}
 
-        <div className="flex flex-wrap gap-2 border-b border-slate-100 bg-slate-50/70 px-6 py-3">
+        <div className="flex shrink-0 flex-wrap gap-2 border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-6">
+
           <Legend
             icon={<ShieldCheck size={14} />}
             label="من الدور"
-            className="bg-blue-50 text-blue-700"
+            className="bg-teal-50 text-teal-700"
           />
 
           <Legend
@@ -258,6 +270,7 @@ export default function UserPermissionsModal({
             label="منع مباشر"
             className="bg-red-50 text-red-700"
           />
+
         </div>
 
         {/* =====================================================
@@ -265,7 +278,7 @@ export default function UserPermissionsModal({
         ====================================================== */}
 
         {error && (
-          <div className="mx-6 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          <div className="mx-4 mt-4 shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700 sm:mx-6">
             {error}
           </div>
         )}
@@ -274,195 +287,274 @@ export default function UserPermissionsModal({
             المحتوى
         ====================================================== */}
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+
           {loading ? (
+
             <div className="flex min-h-60 items-center justify-center">
+
               <div className="flex flex-col items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
+
                   <Loader2
                     size={25}
                     className="animate-spin"
                   />
+
                 </div>
 
                 <p className="text-sm text-slate-400">
                   جاري تحميل الصلاحيات...
                 </p>
+
               </div>
+
             </div>
+
           ) : (
+
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <table className="w-full text-right">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/80">
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-500">
-                      الصلاحية
-                    </th>
 
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-500">
-                      صلاحية الدور
-                    </th>
+              {/* =================================================
+                  الجدول
+              ================================================== */}
 
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-500">
-                      حالة المستخدم
-                    </th>
+              <div className="overflow-x-auto">
 
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-500">
-                      الإجراء
-                    </th>
-                  </tr>
-                </thead>
+                <table className="w-full min-w-[850px] text-right">
 
-                <tbody className="divide-y divide-slate-100">
-                  {filteredPermissions.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-5 py-16 text-center"
-                      >
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
-                          <ShieldCheck size={24} />
-                        </div>
+                  <thead>
 
-                        <p className="mt-3 text-sm font-semibold text-slate-700">
-                          لا توجد صلاحيات
-                        </p>
+                    <tr className="border-b border-slate-100 bg-slate-50/80">
 
-                        <p className="mt-1 text-xs text-slate-400">
-                          لم يتم العثور على صلاحيات مطابقة للبحث.
-                        </p>
-                      </td>
+                      <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                        الصلاحية
+                      </th>
+
+                      <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                        صلاحية الدور
+                      </th>
+
+                      <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                        حالة المستخدم
+                      </th>
+
+                      <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                        الإجراء
+                      </th>
+
                     </tr>
-                  ) : (
-                    filteredPermissions.map(
-                      (permission) => {
-                        const mode = getMode(
-                          permission.id
-                        );
 
-                        const hasRole =
-                          rolePermissionIds.includes(
-                            permission.id
-                          );
+                  </thead>
 
-                        return (
-                          <tr
-                            key={permission.id}
-                            className="transition-colors hover:bg-slate-50/60"
-                          >
-                            {/* الصلاحية */}
+                  <tbody className="divide-y divide-slate-100">
 
-                            <td className="px-5 py-4">
-                              <div>
-                                <p className="font-semibold text-slate-800">
-                                  {permission.name}
-                                </p>
+                    {filteredPermissions.length === 0 ? (
 
-                                <p className="mt-1 inline-flex rounded-md bg-slate-50 px-2 py-1 font-mono text-[11px] text-slate-400">
-                                  {permission.code}
-                                </p>
+                      <tr>
 
-                                {permission.description && (
-                                  <p className="mt-2 max-w-md text-xs leading-5 text-slate-400">
-                                    {permission.description}
+                        <td
+                          colSpan={4}
+                          className="px-5 py-16 text-center"
+                        >
+
+                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
+                            <ShieldCheck size={24} />
+                          </div>
+
+                          <p className="mt-3 text-sm font-semibold text-slate-700">
+                            لا توجد صلاحيات
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-400">
+                            لم يتم العثور على صلاحيات مطابقة للبحث.
+                          </p>
+
+                        </td>
+
+                      </tr>
+
+                    ) : (
+
+                      filteredPermissions.map(
+                        (permission) => {
+
+                          const mode =
+                            getMode(
+                              permission.id
+                            );
+
+                          const hasRole =
+                            rolePermissionIds.includes(
+                              permission.id
+                            );
+
+                          return (
+
+                            <tr
+                              key={permission.id}
+                              className="transition-colors hover:bg-slate-50/60"
+                            >
+
+                              {/* الصلاحية */}
+
+                              <td className="px-5 py-4">
+
+                                <div>
+
+                                  <p className="font-semibold text-slate-800">
+                                    {permission.name}
                                   </p>
+
+                                  <p className="mt-1 inline-flex rounded-md bg-slate-50 px-2 py-1 font-mono text-[11px] text-slate-400">
+                                    {permission.code}
+                                  </p>
+
+                                  {permission.description && (
+                                    <p className="mt-2 max-w-md text-xs leading-5 text-slate-400">
+                                      {permission.description}
+                                    </p>
+                                  )}
+
+                                </div>
+
+                              </td>
+
+                              {/* صلاحية الدور */}
+
+                              <td className="px-5 py-4">
+
+                                {hasRole ? (
+
+                                  <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
+
+                                    <ShieldCheck
+                                      size={13}
+                                    />
+
+                                    موجودة
+
+                                  </span>
+
+                                ) : (
+
+                                  <span className="text-xs text-slate-400">
+                                    غير موجودة
+                                  </span>
+
                                 )}
-                              </div>
-                            </td>
 
-                            {/* صلاحية الدور */}
+                              </td>
 
-                            <td className="px-5 py-4">
-                              {hasRole ? (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
-                                  <ShieldCheck
-                                    size={13}
-                                  />
-                                  موجودة
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-400">
-                                  غير موجودة
-                                </span>
-                              )}
-                            </td>
+                              {/* حالة المستخدم */}
 
-                            {/* حالة المستخدم */}
+                              <td className="px-5 py-4">
 
-                            <td className="px-5 py-4">
-                              {mode === "allow" && (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                                  <Check size={13} />
-                                  مسموح
-                                </span>
-                              )}
+                                {mode === "allow" && (
 
-                              {mode === "deny" && (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700">
-                                  <Ban size={13} />
-                                  ممنوع
-                                </span>
-                              )}
+                                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
 
-                              {mode === "role" && (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                                  <RotateCcw
-                                    size={13}
-                                  />
-                                  حسب الدور
-                                </span>
-                              )}
-                            </td>
+                                    <Check size={13} />
 
-                            {/* الإجراء */}
+                                    مسموح
 
-                            <td className="px-5 py-4">
-                              <select
-                                value={mode}
-                                onChange={(event) =>
-                                  setMode(
-                                    permission.id,
-                                    event.target
-                                      .value as Mode
-                                  )
-                                }
-                                disabled={saving}
-                                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:bg-slate-100"
-                              >
-                                <option value="role">
-                                  حسب الدور
-                                </option>
+                                  </span>
 
-                                <option value="allow">
-                                  سماح مباشر
-                                </option>
+                                )}
 
-                                <option value="deny">
-                                  منع مباشر
-                                </option>
-                              </select>
-                            </td>
-                          </tr>
-                        );
-                      }
-                    )
-                  )}
-                </tbody>
-              </table>
+                                {mode === "deny" && (
+
+                                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700">
+
+                                    <Ban size={13} />
+
+                                    ممنوع
+
+                                  </span>
+
+                                )}
+
+                                {mode === "role" && (
+
+                                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+
+                                    <RotateCcw
+                                      size={13}
+                                    />
+
+                                    حسب الدور
+
+                                  </span>
+
+                                )}
+
+                              </td>
+
+                              {/* الإجراء */}
+
+                              <td className="px-5 py-4">
+
+                                <select
+                                  value={mode}
+                                  onChange={(event) =>
+                                    setMode(
+                                      permission.id,
+                                      event.target
+                                        .value as Mode
+                                    )
+                                  }
+                                  disabled={saving}
+                                  className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                                >
+
+                                  <option value="role">
+                                    حسب الدور
+                                  </option>
+
+                                  <option value="allow">
+                                    سماح مباشر
+                                  </option>
+
+                                  <option value="deny">
+                                    منع مباشر
+                                  </option>
+
+                                </select>
+
+                              </td>
+
+                            </tr>
+
+                          );
+                        }
+                      )
+
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
             </div>
+
           )}
+
         </div>
 
         {/* =====================================================
             الأزرار
         ====================================================== */}
 
-        <div className="flex gap-3 border-t border-slate-100 bg-white px-6 py-5">
+        <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-100 bg-white px-4 py-4 sm:flex-row sm:px-6 sm:py-5">
+
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="flex-1 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+            className="flex-1 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             إلغاء
           </button>
@@ -471,25 +563,40 @@ export default function UserPermissionsModal({
             type="button"
             onClick={handleSave}
             disabled={loading || saving}
-            className="flex-1 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-100 transition hover:bg-blue-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-100 transition hover:bg-teal-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
           >
+
             {saving ? (
+
               <span className="flex items-center justify-center gap-2">
+
                 <Loader2
                   size={17}
                   className="animate-spin"
                 />
+
                 جاري الحفظ...
+
               </span>
+
             ) : (
+
               "حفظ الصلاحيات"
+
             )}
+
           </button>
+
         </div>
+
       </div>
     </div>
   );
 }
+
+/* ============================================================
+   Legend
+============================================================ */
 
 function Legend({
   icon,
