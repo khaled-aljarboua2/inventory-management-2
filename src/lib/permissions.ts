@@ -109,26 +109,22 @@ export async function getCurrentPermissions() {
     return new Set<string>();
   }
 
-  const codes = Object.values(PERMISSIONS);
-
-  const results = await Promise.all(
-    codes.map(async (code) => {
-      const { data, error } =
-        await supabase.rpc("has_permission", {
-          permission_code: code,
-        });
-
-      return {
-        code,
-        allowed: !error && data === true,
-      };
-    })
+  const {
+    data,
+    error,
+  } = await supabase.rpc(
+    "get_current_user_permissions"
   );
 
+  if (error || !data) {
+    return new Set<string>();
+  }
+
   return new Set(
-    results
-      .filter((item) => item.allowed)
-      .map((item) => item.code)
+    data.map(
+      (item: { permission_code: string }) =>
+        item.permission_code
+    )
   );
 }
 
