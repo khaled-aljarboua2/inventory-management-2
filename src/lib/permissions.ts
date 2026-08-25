@@ -98,7 +98,7 @@ export async function getCurrentUserProfile() {
   };
 }
 
-export async function getCurrentPermissions() {
+export async function getCurrentPermissions(): Promise<Set<string>> {
   const supabase = await createClient();
 
   const {
@@ -120,10 +120,13 @@ export async function getCurrentPermissions() {
     return new Set<string>();
   }
 
-  return new Set(
-    data.map(
-      (item: { permission_code: string }) =>
-        item.permission_code
+  const rows = data as Array<{
+    permission_code: string;
+  }>;
+
+  return new Set<string>(
+    rows.map(
+      (item) => item.permission_code
     )
   );
 }
