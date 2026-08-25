@@ -1,11 +1,14 @@
 import Image from "next/image";
-import { getCurrentPermissions } from "@/lib/permissions";
 import SidebarNav from "./SidebarNav";
 import LogoutButton from "./LogoutButton";
 
-export default async function Sidebar() {
-  const permissions = await getCurrentPermissions();
+type Props = {
+  permissions: Set<string>;
+};
 
+export default function Sidebar({
+  permissions,
+}: Props) {
   return (
     <>
       {/* =====================================================
@@ -69,12 +72,9 @@ export default async function Sidebar() {
         <div
           className="
             shrink-0
-
             border-b
             border-slate-200
-
             bg-white
-
             px-4
             py-4
           "
@@ -123,12 +123,9 @@ export default async function Sidebar() {
         <div
           className="
             shrink-0
-
             border-t
             border-teal-600/30
-
             bg-teal-700
-
             p-4
           "
         >
@@ -138,11 +135,8 @@ export default async function Sidebar() {
           <div
             className="
               mb-3
-
               rounded-xl
-
               bg-teal-800/30
-
               px-4
               py-3
             "
