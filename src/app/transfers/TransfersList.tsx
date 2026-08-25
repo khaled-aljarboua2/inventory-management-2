@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
+
 import {
   ArrowLeftRight,
   CheckCircle2,
@@ -14,6 +20,8 @@ import {
   Ban,
   Trash2,
 } from "lucide-react";
+
+import { createClient } from "@/lib/supabase/client";
 
 import TransferModal from "./TransferModal";
 import { deleteTransfer } from "./actions";
@@ -123,6 +131,8 @@ export default function TransfersList({
   currentLocationId,
   isGeneralManager,
 }: Props) {
+  const router = useRouter();
+
   const [search, setSearch] =
     useState("");
 
@@ -134,6 +144,54 @@ export default function TransfersList({
 
   const [deletingId, setDeletingId] =
     useState<string | null>(null);
+
+  // ============================================================
+  // Supabase Realtime
+  // لا يغير أي صلاحية أو منطق أعمال.
+  // فقط يجعل صفحة طلبات النقل تتحدث تلقائيًا.
+  // ============================================================
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel(
+        "transfers-list-realtime"
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "transfer_requests",
+        },
+        () => {
+          router.refresh();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "transfer_items",
+        },
+        () => {
+          router.refresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(
+        channel
+      );
+    };
+  }, [router]);
+
+  // ============================================================
+  // الإحصائيات
+  // ============================================================
 
   const counts = useMemo(() => {
     return {
@@ -170,6 +228,10 @@ export default function TransfersList({
       ).length,
     };
   }, [transfers]);
+
+  // ============================================================
+  // البحث والتصفية
+  // ============================================================
 
   const filteredTransfers = useMemo(() => {
     const query =
