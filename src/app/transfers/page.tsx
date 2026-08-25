@@ -4,6 +4,10 @@ import { firstRelation } from "@/lib/supabase/relations";
 import TransfersList from "./TransfersList";
 
 export default async function TransfersPage() {
+  const pageStart = performance.now();
+
+  console.log("[TRANSFERS] page start");
+
   const supabase = await createClient();
 
   // ============================================================
@@ -13,6 +17,11 @@ export default async function TransfersPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  console.log(
+    "[TRANSFERS] auth.getUser:",
+    `${(performance.now() - pageStart).toFixed(0)}ms`
+  );
 
   if (!user) {
     return (
@@ -57,6 +66,11 @@ export default async function TransfersPage() {
       true
     )
     .single();
+
+  console.log(
+    "[TRANSFERS] users query:",
+    `${(performance.now() - pageStart).toFixed(0)}ms`
+  );
 
   if (userError || !dbUser) {
     return (
@@ -186,6 +200,11 @@ export default async function TransfersPage() {
       .order("name"),
   ]);
 
+  console.log(
+    "[TRANSFERS] data queries finished:",
+    `${(performance.now() - pageStart).toFixed(0)}ms`
+  );
+
   // ============================================================
   // أخطاء التحميل
   // ============================================================
@@ -286,16 +305,30 @@ export default async function TransfersPage() {
           ?.length ?? 0,
     }));
 
-  const normalizedProducts = (products ?? []).map(
+  const normalizedProducts = (
+    products ?? []
+  ).map(
     (product) => ({
       ...product,
+
       product_units: (
         product.product_units ?? []
       ).map((productUnit) => ({
         ...productUnit,
-        units: firstRelation(productUnit.units),
+        units: firstRelation(
+          productUnit.units
+        ),
       })),
     })
+  );
+
+  // ============================================================
+  // قياس إجمالي وقت السيرفر
+  // ============================================================
+
+  console.log(
+    "[TRANSFERS] total server time:",
+    `${(performance.now() - pageStart).toFixed(0)}ms`
   );
 
   // ============================================================
@@ -340,11 +373,9 @@ export default async function TransfersPage() {
           products={
             normalizedProducts as any
           }
-
           currentLocationId={
             currentLocationId
           }
-
           isGeneralManager={
             isGeneralManager
           }
