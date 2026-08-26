@@ -72,8 +72,8 @@ export default function Sidebar({
           className="
             shrink-0
             border-b
-            border-slate-200
-            bg-white
+            border-teal-600/30
+            bg-teal-700
             px-3
             py-3
           "
@@ -97,6 +97,7 @@ export default function Sidebar({
                 h-auto
                 w-[205px]
                 object-contain
+                mix-blend-multiply
               "
             />
           </div>
