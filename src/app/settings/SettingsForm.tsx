@@ -200,7 +200,7 @@ export default function SettingsForm({
                   )
                 }
                 disabled={!canUpdate || loading}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-4 text-sm text-slate-700 outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
               >
                 <option value="ar">
                   العربية
@@ -232,7 +232,7 @@ export default function SettingsForm({
                   )
                 }
                 disabled={!canUpdate || loading}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-4 text-sm text-slate-700 outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
               >
                 <option value="Asia/Riyadh">
                   الرياض — Asia/Riyadh
@@ -264,7 +264,7 @@ export default function SettingsForm({
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 text-sm font-semibold text-white transition hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 text-sm font-semibold text-white transition hover:bg-teal-600 hover:shadow-lg hover:shadow-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? (
               <Loader2
@@ -305,14 +305,14 @@ function ToggleRow({
       className={`flex items-center justify-between gap-5 rounded-2xl border p-4 transition ${
         disabled
           ? "cursor-not-allowed border-slate-100 bg-slate-50/70"
-          : "cursor-pointer border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/30"
+          : "cursor-pointer border-slate-200 bg-white hover:border-teal-200 hover:bg-teal-50/30"
       }`}
     >
       <div className="flex min-w-0 items-center gap-3">
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
             checked
-              ? "bg-blue-50 text-blue-600"
+              ? "bg-teal-50 text-teal-600"
               : "bg-slate-100 text-slate-400"
           }`}
         >
@@ -344,7 +344,7 @@ function ToggleRow({
         <div
           className={`h-6 w-11 rounded-full transition ${
             checked
-              ? "bg-blue-600"
+              ? "bg-teal-600"
               : "bg-slate-300"
           }`}
         />
