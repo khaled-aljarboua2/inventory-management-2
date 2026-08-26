@@ -77,34 +77,26 @@ const GROUPS = [
   },
 ] as const;
 
-function getGroup(
-  code: string
-) {
+function getGroup(code: string) {
   return (
-    GROUPS.find(
-      (group) =>
-        code.startsWith(
-          `${group.key}.`
-        )
-    )?.key ??
-    "other"
+    GROUPS.find((group) =>
+      code.startsWith(
+        `${group.key}.`
+      )
+    )?.key ?? "other"
   );
 }
 
 export default function RoleModal({
   role,
   permissions,
-  selectedPermissionIds =
-    [],
+  selectedPermissionIds = [],
   onClose,
 }: Props) {
-  const isEditing =
-    Boolean(role);
+  const isEditing = Boolean(role);
 
   const [name, setName] =
-    useState(
-      role?.name ?? ""
-    );
+    useState(role?.name ?? "");
 
   const [description, setDescription] =
     useState(
@@ -113,9 +105,7 @@ export default function RoleModal({
 
   const [selected, setSelected] =
     useState<Set<string>>(
-      new Set(
-        selectedPermissionIds
-      )
+      new Set(selectedPermissionIds)
     );
 
   const [loading, setLoading] =
@@ -131,21 +121,16 @@ export default function RoleModal({
         Permission[]
       > = {};
 
-      for (
-        const permission of permissions
-      ) {
-        const group =
-          getGroup(
-            permission.code
-          );
+      for (const permission of permissions) {
+        const group = getGroup(
+          permission.code
+        );
 
         if (!groups[group]) {
           groups[group] = [];
         }
 
-        groups[group].push(
-          permission
-        );
+        groups[group].push(permission);
       }
 
       return groups;
@@ -154,64 +139,41 @@ export default function RoleModal({
   function togglePermission(
     permissionId: string
   ) {
-    setSelected(
-      (previous) => {
-        const next =
-          new Set(previous);
+    setSelected((previous) => {
+      const next = new Set(previous);
 
-        if (
-          next.has(
-            permissionId
-          )
-        ) {
-          next.delete(
-            permissionId
-          );
-        } else {
-          next.add(
-            permissionId
-          );
-        }
-
-        return next;
+      if (next.has(permissionId)) {
+        next.delete(permissionId);
+      } else {
+        next.add(permissionId);
       }
-    );
+
+      return next;
+    });
   }
 
   function toggleGroup(
     permissionList: Permission[]
   ) {
-    setSelected(
-      (previous) => {
-        const next =
-          new Set(previous);
+    setSelected((previous) => {
+      const next = new Set(previous);
 
-        const allSelected =
-          permissionList.every(
-            (permission) =>
-              next.has(
-                permission.id
-              )
-          );
+      const allSelected =
+        permissionList.every(
+          (permission) =>
+            next.has(permission.id)
+        );
 
-        for (
-          const permission of
-            permissionList
-        ) {
-          if (allSelected) {
-            next.delete(
-              permission.id
-            );
-          } else {
-            next.add(
-              permission.id
-            );
-          }
+      for (const permission of permissionList) {
+        if (allSelected) {
+          next.delete(permission.id);
+        } else {
+          next.add(permission.id);
         }
-
-        return next;
       }
-    );
+
+      return next;
+    });
   }
 
   async function handleSubmit(
@@ -224,24 +186,20 @@ export default function RoleModal({
 
     try {
       const permissionIds =
-        Array.from(
-          selected
-        );
+        Array.from(selected);
 
-      const result =
-        isEditing
-          ? await updateRole({
-              roleId:
-                role!.id,
-              name,
-              description,
-              permissionIds,
-            })
-          : await createRole({
-              name,
-              description,
-              permissionIds,
-            });
+      const result = isEditing
+        ? await updateRole({
+            roleId: role!.id,
+            name,
+            description,
+            permissionIds,
+          })
+        : await createRole({
+            name,
+            description,
+            permissionIds,
+          });
 
       if (!result.success) {
         setError(
@@ -269,21 +227,16 @@ export default function RoleModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
     >
       <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        {/* ====================================================
-            Header
-        ===================================================== */}
+
+        {/* Header */}
 
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               {isEditing ? (
-                <ShieldCheck
-                  size={21}
-                />
+                <ShieldCheck size={21} />
               ) : (
-                <ShieldPlus
-                  size={21}
-                />
+                <ShieldPlus size={21} />
               )}
             </div>
 
@@ -312,15 +265,14 @@ export default function RoleModal({
           </button>
         </div>
 
-        {/* ====================================================
-            Body
-        ===================================================== */}
+        {/* Body */}
 
         <form
           onSubmit={handleSubmit}
           className="min-h-0 overflow-y-auto"
         >
           <div className="space-y-6 p-6">
+
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
@@ -356,7 +308,7 @@ export default function RoleModal({
                     placeholder="مثال: مدير فرع"
                     disabled={loading}
                     required
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
                   />
                 </div>
 
@@ -374,7 +326,7 @@ export default function RoleModal({
                     }
                     placeholder="وصف مختصر للدور"
                     disabled={loading}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
                   />
                 </div>
               </div>
@@ -394,7 +346,7 @@ export default function RoleModal({
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600">
+                <div className="rounded-xl bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-600">
                   {selected.size} من{" "}
                   {permissions.length}{" "}
                   صلاحية
@@ -402,157 +354,141 @@ export default function RoleModal({
               </div>
 
               <div className="space-y-4">
-                {GROUPS.map(
-                  (group) => {
-                    const groupPermissions =
-                      groupedPermissions[
-                        group.key
-                      ] ?? [];
+                {GROUPS.map((group) => {
+                  const groupPermissions =
+                    groupedPermissions[
+                      group.key
+                    ] ?? [];
 
-                    if (
-                      groupPermissions.length ===
-                      0
-                    ) {
-                      return null;
-                    }
+                  if (
+                    groupPermissions.length ===
+                    0
+                  ) {
+                    return null;
+                  }
 
-                    const allSelected =
-                      groupPermissions.every(
-                        (permission) =>
-                          selected.has(
-                            permission.id
-                          )
-                      );
+                  const allSelected =
+                    groupPermissions.every(
+                      (permission) =>
+                        selected.has(
+                          permission.id
+                        )
+                    );
 
-                    return (
-                      <div
-                        key={group.key}
-                        className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                      >
-                        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-5 py-4">
-                          <div>
-                            <h4 className="font-bold text-slate-800">
-                              {
-                                group.label
-                              }
-                            </h4>
+                  return (
+                    <div
+                      key={group.key}
+                      className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                    >
+                      <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-5 py-4">
+                        <div>
+                          <h4 className="font-bold text-slate-800">
+                            {group.label}
+                          </h4>
 
-                            <p className="mt-1 text-[11px] text-slate-400">
-                              {
-                                groupPermissions.length
-                              }{" "}
-                              صلاحيات
-                            </p>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              toggleGroup(
-                                groupPermissions
-                              )
-                            }
-                            disabled={
-                              loading
-                            }
-                            className="rounded-lg px-3 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
-                          >
-                            {allSelected
-                              ? "إلغاء الكل"
-                              : "تحديد الكل"}
-                          </button>
+                          <p className="mt-1 text-[11px] text-slate-400">
+                            {
+                              groupPermissions.length
+                            }{" "}
+                            صلاحيات
+                          </p>
                         </div>
 
-                        <div className="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-3">
-                          {groupPermissions.map(
-                            (
-                              permission
-                            ) => {
-                              const checked =
-                                selected.has(
-                                  permission.id
-                                );
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toggleGroup(
+                              groupPermissions
+                            )
+                          }
+                          disabled={loading}
+                          className="rounded-lg px-3 py-2 text-xs font-semibold text-teal-600 transition hover:bg-teal-50 disabled:opacity-50"
+                        >
+                          {allSelected
+                            ? "إلغاء الكل"
+                            : "تحديد الكل"}
+                        </button>
+                      </div>
 
-                              return (
-                                <button
-                                  key={
+                      <div className="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-3">
+                        {groupPermissions.map(
+                          (permission) => {
+                            const checked =
+                              selected.has(
+                                permission.id
+                              );
+
+                            return (
+                              <button
+                                key={
+                                  permission.id
+                                }
+                                type="button"
+                                onClick={() =>
+                                  togglePermission(
                                     permission.id
-                                  }
-                                  type="button"
-                                  onClick={() =>
-                                    togglePermission(
-                                      permission.id
-                                    )
-                                  }
-                                  disabled={
-                                    loading
-                                  }
-                                  className={`group flex items-start gap-3 rounded-xl border p-3 text-right transition ${
+                                  )
+                                }
+                                disabled={loading}
+                                className={`group flex items-start gap-3 rounded-xl border p-3 text-right transition ${
+                                  checked
+                                    ? "border-teal-200 bg-teal-50/70"
+                                    : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50"
+                                }`}
+                              >
+                                <span
+                                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
                                     checked
-                                      ? "border-blue-200 bg-blue-50/70"
-                                      : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50"
+                                      ? "border-teal-600 bg-teal-600 text-white"
+                                      : "border-slate-300 bg-white text-transparent"
                                   }`}
                                 >
+                                  <Check
+                                    size={13}
+                                    strokeWidth={3}
+                                  />
+                                </span>
+
+                                <span className="min-w-0">
                                   <span
-                                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                                    className={`block text-sm font-semibold ${
                                       checked
-                                        ? "border-blue-600 bg-blue-600 text-white"
-                                        : "border-slate-300 bg-white text-transparent"
+                                        ? "text-teal-700"
+                                        : "text-slate-700"
                                     }`}
                                   >
-                                    <Check
-                                      size={
-                                        13
-                                      }
-                                      strokeWidth={
-                                        3
-                                      }
-                                    />
+                                    {
+                                      permission.name
+                                    }
                                   </span>
 
-                                  <span className="min-w-0">
-                                    <span
-                                      className={`block text-sm font-semibold ${
-                                        checked
-                                          ? "text-blue-700"
-                                          : "text-slate-700"
-                                      }`}
-                                    >
-                                      {
-                                        permission.name
-                                      }
-                                    </span>
-
-                                    <span className="mt-1 block font-mono text-[10px] text-slate-400">
-                                      {
-                                        permission.code
-                                      }
-                                    </span>
-
-                                    {permission.description && (
-                                      <span className="mt-1 block text-[11px] leading-5 text-slate-400">
-                                        {
-                                          permission.description
-                                        }
-                                      </span>
-                                    )}
+                                  <span className="mt-1 block font-mono text-[10px] text-slate-400">
+                                    {
+                                      permission.code
+                                    }
                                   </span>
-                                </button>
-                              );
-                            }
-                          )}
-                        </div>
+
+                                  {permission.description && (
+                                    <span className="mt-1 block text-[11px] leading-5 text-slate-400">
+                                      {
+                                        permission.description
+                                      }
+                                    </span>
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          }
+                        )}
                       </div>
-                    );
-                  }
-                )}
+                    </div>
+                  );
+                })}
               </div>
             </section>
           </div>
 
-          {/* ==================================================
-              Footer
-          =================================================== */}
+          {/* Footer */}
 
           <div className="sticky bottom-0 flex gap-3 border-t border-slate-100 bg-white px-6 py-4">
             <button
@@ -570,7 +506,7 @@ export default function RoleModal({
                 loading ||
                 !name.trim()
               }
-              className="flex-1 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? (
                 <span className="inline-flex items-center justify-center gap-2">
