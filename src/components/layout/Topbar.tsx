@@ -1,5 +1,4 @@
 "use client";
-
 import {
   useCallback,
   useEffect,
@@ -7,11 +6,10 @@ import {
   useRef,
   useState,
 } from "react";
-
 import { useRouter } from "next/navigation";
-
 import {
   Bell,
+  Search,
   UserCircle2,
   ChevronDown,
   Settings,
@@ -22,10 +20,8 @@ import {
   CheckCheck,
   Loader2,
 } from "lucide-react";
-
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { createClient } from "@/lib/supabase/client";
-
 type Profile = {
   id: string;
   auth_user_id: string;
@@ -39,7 +35,6 @@ type Profile = {
     description: string | null;
   } | null;
 } | null;
-
 type Notification = {
   id: string;
   user_id: string;
@@ -48,87 +43,72 @@ type Notification = {
   is_read: boolean | null;
   created_at: string | null;
 };
-
 export default function Topbar({
   profile,
 }: {
   profile: Profile;
 }) {
   const router = useRouter();
-
   // ==========================================================
   // Supabase client
   // ==========================================================
-
   const supabase = useMemo(
     () => createClient(),
     []
   );
-
+  const searchRef =
+    useRef<HTMLInputElement>(null);
   const notificationsRef =
     useRef<HTMLDivElement>(null);
-
   const [profileOpen, setProfileOpen] =
     useState(false);
-
   const [
     notificationsOpen,
     setNotificationsOpen,
   ] = useState(false);
-
   const [loggingOut, setLoggingOut] =
     useState(false);
-
+  const [searchQuery, setSearchQuery] =
+    useState("");
   const [
     notifications,
     setNotifications,
   ] = useState<Notification[]>([]);
-
   const [
     notificationsLoading,
     setNotificationsLoading,
   ] = useState(false);
-
   const [
     markingReadId,
     setMarkingReadId,
   ] = useState<string | null>(null);
-
   const [
     markingAllRead,
     setMarkingAllRead,
   ] = useState(false);
-
   const { theme, toggleTheme } =
     useTheme();
-
   // ==========================================================
   // بيانات المستخدم
   // ==========================================================
-
   const displayName =
     profile?.full_name?.trim() ||
     profile?.username ||
     profile?.email ||
     "مستخدم النظام";
-
   const roleName =
     profile?.roles?.name ?? "مستخدم";
-
   // ==========================================================
   // عدد الإشعارات غير المقروءة
   // ==========================================================
-
   const unreadCount =
     notifications.filter(
       (notification) =>
         notification.is_read !== true
     ).length;
-
   // ==========================================================
   // تحميل الإشعارات
   // ==========================================================
-
   const loadNotifications =
     useCallback(
       async () => {
@@ -136,9 +116,7 @@ export default function Topbar({
           setNotifications([]);
           return;
         }
-
         setNotificationsLoading(true);
-
         try {
           const {
             data,
@@ -164,7 +142,6 @@ export default function Topbar({
               }
             )
             .limit(10);
-
           if (error) {
             console.error(
               "Notifications load error:",
@@ -172,7 +149,6 @@ export default function Topbar({
             );
             return;
           }
-
           setNotifications(
             (data ?? []) as Notification[]
           );
@@ -192,15 +168,12 @@ export default function Topbar({
         supabase,
       ]
     );
-
   // ==========================================================
   // التحميل الأولي
   // ==========================================================
-
   useEffect(() => {
     void loadNotifications();
   }, [loadNotifications]);
-
   // ==========================================================
   // Supabase Realtime
   //
@@ -208,14 +181,11 @@ export default function Topbar({
   // للمستخدم الحالي فقط.
   // لا يحتاج Refresh.
   // ==========================================================
-
   useEffect(() => {
     if (!profile?.id) {
       return;
     }
-
     let cancelled = false;
-
     const channel = supabase
       .channel(
         `notifications-${profile.id}`
@@ -232,10 +202,8 @@ export default function Topbar({
           if (cancelled) {
             return;
           }
-
           const newNotification =
             payload.new as Notification;
-
           setNotifications(
             (current) => {
               // منع التكرار
@@ -248,7 +216,6 @@ export default function Topbar({
               ) {
                 return current;
               }
-
               return [
                 newNotification,
                 ...current,
@@ -263,10 +230,8 @@ export default function Topbar({
           status
         );
       });
-
     return () => {
       cancelled = true;
-
       void supabase.removeChannel(
         channel
       );
@@ -275,18 +240,15 @@ export default function Topbar({
     profile?.id,
     supabase,
   ]);
-
   // ==========================================================
   // إغلاق القوائم عند الضغط خارجها
   // ==========================================================
-
   useEffect(() => {
     function handleOutsideClick(
       event: MouseEvent
     ) {
       const target =
         event.target as Node;
-
       if (
         notificationsRef.current &&
         !notificationsRef.current.contains(
@@ -298,12 +260,10 @@ export default function Topbar({
         );
       }
     }
-
     document.addEventListener(
       "mousedown",
       handleOutsideClick
     );
-
     return () => {
       document.removeEventListener(
         "mousedown",
@@ -311,31 +271,37 @@ export default function Topbar({
       );
     };
   }, []);
-
   // ==========================================================
   // Keyboard shortcuts
   // ==========================================================
-
   useEffect(() => {
     function handleKeyboardShortcut(
       event: KeyboardEvent
     ) {
       if (
+        (event.ctrlKey ||
+          event.metaKey) &&
+        event.key.toLowerCase() ===
+          "k"
+      ) {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+      if (
         event.key === "Escape"
       ) {
+        searchRef.current?.blur();
+        setSearchQuery("");
         setProfileOpen(false);
-
         setNotificationsOpen(
           false
         );
       }
     }
-
     window.addEventListener(
       "keydown",
       handleKeyboardShortcut
     );
-
     return () => {
       window.removeEventListener(
         "keydown",
@@ -343,11 +309,27 @@ export default function Topbar({
       );
     };
   }, []);
-
+  // ==========================================================
+  // Search
+  // ==========================================================
+  function handleSearchSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+    const query =
+      searchQuery.trim();
+    if (!query) {
+      return;
+    }
+    router.push(
+      `/search?q=${encodeURIComponent(
+        query
+      )}`
+    );
+  }
   // ==========================================================
   // تعليم إشعار كمقروء
   // ==========================================================
-
   async function markNotificationAsRead(
     notificationId: string
   ) {
@@ -357,18 +339,15 @@ export default function Topbar({
           item.id ===
           notificationId
       );
-
     if (
       !notification ||
       notification.is_read === true
     ) {
       return;
     }
-
     setMarkingReadId(
       notificationId
     );
-
     try {
       const {
         error,
@@ -381,7 +360,6 @@ export default function Topbar({
           "id",
           notificationId
         );
-
       if (error) {
         console.error(
           "Mark notification read error:",
@@ -389,7 +367,6 @@ export default function Topbar({
         );
         return;
       }
-
       setNotifications(
         (current) =>
           current.map(
@@ -407,11 +384,9 @@ export default function Topbar({
       setMarkingReadId(null);
     }
   }
-
   // ==========================================================
   // تعليم جميع الإشعارات كمقروءة
   // ==========================================================
-
   async function markAllNotificationsAsRead() {
     if (
       unreadCount === 0 ||
@@ -420,9 +395,7 @@ export default function Topbar({
     ) {
       return;
     }
-
     setMarkingAllRead(true);
-
     try {
       const {
         error,
@@ -439,7 +412,6 @@ export default function Topbar({
           "is_read",
           false
         );
-
       if (error) {
         console.error(
           "Mark all notifications read error:",
@@ -447,7 +419,6 @@ export default function Topbar({
         );
         return;
       }
-
       setNotifications(
         (current) =>
           current.map(
@@ -461,21 +432,17 @@ export default function Topbar({
       setMarkingAllRead(false);
     }
   }
-
   // ==========================================================
   // تنسيق وقت الإشعار
   // ==========================================================
-
   function formatNotificationTime(
     createdAt: string | null
   ) {
     if (!createdAt) {
       return "";
     }
-
     const date =
       new Date(createdAt);
-
     if (
       Number.isNaN(
         date.getTime()
@@ -483,43 +450,33 @@ export default function Topbar({
     ) {
       return "";
     }
-
     const now =
       new Date();
-
     const difference =
       now.getTime() -
       date.getTime();
-
     const minutes = Math.floor(
       difference /
         (1000 * 60)
     );
-
     if (minutes < 1) {
       return "الآن";
     }
-
     if (minutes < 60) {
       return `منذ ${minutes} دقيقة`;
     }
-
     const hours = Math.floor(
       minutes / 60
     );
-
     if (hours < 24) {
       return `منذ ${hours} ساعة`;
     }
-
     const days = Math.floor(
       hours / 24
     );
-
     if (days < 7) {
       return `منذ ${days} يوم`;
     }
-
     return date.toLocaleDateString(
       "ar-SA",
       {
@@ -528,41 +485,31 @@ export default function Topbar({
       }
     );
   }
-
   // ==========================================================
   // Logout
   // ==========================================================
-
   async function handleLogout() {
     if (loggingOut) {
       return;
     }
-
     setLoggingOut(true);
-
     const {
       error,
     } =
       await supabase.auth.signOut();
-
     if (error) {
       console.error(
         "Logout error:",
         error
       );
-
       setLoggingOut(false);
-
       return;
     }
-
     router.replace(
       "/login"
     );
-
     router.refresh();
   }
-
   return (
     <header
       dir="rtl"
@@ -584,7 +531,6 @@ export default function Topbar({
       "
     >
       {/* Mobile Menu */}
-
       <label
         htmlFor="mobile-sidebar-toggle"
         className="
@@ -611,9 +557,98 @@ export default function Topbar({
           strokeWidth={1.9}
         />
       </label>
-
+      {/* Desktop Search */}
+      <form
+        onSubmit={
+          handleSearchSubmit
+        }
+        className="
+          relative
+          hidden
+          w-full
+          max-w-xl
+          md:block
+        "
+      >
+        <Search
+          size={20}
+          strokeWidth={1.8}
+          className="
+            pointer-events-none
+            absolute
+            right-4 top-1/2
+            -translate-y-1/2
+            text-slate-400
+            dark:text-slate-500
+          "
+        />
+        <input
+          ref={searchRef}
+          type="search"
+          value={searchQuery}
+          onChange={(event) =>
+            setSearchQuery(
+              event.target.value
+            )
+          }
+          placeholder="ابحث عن منتج، SKU، باركود أو مستودع..."
+          aria-label="البحث في النظام"
+          className="
+            h-11 w-full
+            rounded-xl
+            border
+            border-slate-200
+            bg-slate-50/70
+            pr-11 pl-20
+            text-sm
+            text-slate-700
+            outline-none
+            transition-all duration-200
+            placeholder:text-slate-400
+            hover:border-slate-300
+            hover:bg-white
+            focus:border-teal-400
+            focus:bg-white
+            focus:ring-4
+            focus:ring-teal-50
+            dark:border-slate-700
+            dark:bg-slate-900
+            dark:text-slate-200
+            dark:hover:border-slate-600
+            dark:focus:border-teal-500
+            dark:focus:bg-slate-900
+            dark:focus:ring-teal-950/40
+          "
+        />
+        <div
+          className="
+            pointer-events-none
+            absolute
+            left-3 top-1/2
+            hidden
+            -translate-y-1/2
+            items-center
+            gap-1
+            rounded-md
+            border
+            border-slate-200
+            bg-white
+            px-2 py-1
+            text-[10px]
+            text-slate-400
+            shadow-sm
+            sm:flex
+            dark:border-slate-700
+            dark:bg-slate-800
+            dark:text-slate-500
+          "
+        >
+          <span>Ctrl</span>
+          <span>+</span>
+          <span>K</span>
+        </div>
+      </form>
       {/* Actions */}
-
       <div
         className="
           mr-0
@@ -624,8 +659,34 @@ export default function Topbar({
           sm:gap-2
         "
       >
+        {/* Mobile Search */}
+        <button
+          type="button"
+          onClick={() =>
+            searchRef.current?.focus()
+          }
+          className="
+            flex h-11 w-11
+            items-center
+            justify-center
+            rounded-xl
+            text-slate-500
+            transition-all duration-200
+            hover:bg-teal-50
+            hover:text-teal-700
+            md:hidden
+            dark:text-slate-400
+            dark:hover:bg-teal-950/40
+            dark:hover:text-teal-400
+          "
+          aria-label="البحث"
+        >
+          <Search
+            size={20}
+            strokeWidth={1.9}
+          />
+        </button>
         {/* Theme */}
-
         <button
           type="button"
           onClick={toggleTheme}
@@ -661,9 +722,7 @@ export default function Topbar({
             />
           )}
         </button>
-
         {/* Notifications */}
-
         <div
           ref={
             notificationsRef
@@ -712,7 +771,6 @@ export default function Topbar({
               size={20}
               strokeWidth={1.9}
             />
-
             {unreadCount > 0 && (
               <span
                 className="
@@ -742,7 +800,6 @@ export default function Topbar({
               </span>
             )}
           </button>
-
           {notificationsOpen && (
             <div
               className="
@@ -763,7 +820,6 @@ export default function Topbar({
               "
             >
               {/* Header */}
-
               <div
                 className="
                   flex
@@ -786,7 +842,6 @@ export default function Topbar({
                   >
                     الإشعارات
                   </h3>
-
                   <p
                     className="
                       mt-1
@@ -799,7 +854,6 @@ export default function Topbar({
                       : "لا توجد إشعارات غير مقروءة"}
                   </p>
                 </div>
-
                 {unreadCount >
                   0 && (
                   <button
@@ -837,14 +891,11 @@ export default function Topbar({
                         size={14}
                       />
                     )}
-
                     قراءة الكل
                   </button>
                 )}
               </div>
-
               {/* Notifications List */}
-
               <div
                 className="
                   max-h-[420px]
@@ -872,7 +923,6 @@ export default function Topbar({
                         text-slate-400
                       "
                     />
-
                     <p
                       className="
                         mt-3
@@ -902,7 +952,6 @@ export default function Topbar({
                         dark:text-slate-600
                       "
                     />
-
                     <p
                       className="
                         text-sm
@@ -913,7 +962,6 @@ export default function Topbar({
                     >
                       لا توجد إشعارات
                     </p>
-
                     <p
                       className="
                         mt-1
@@ -932,11 +980,9 @@ export default function Topbar({
                       const isUnread =
                         notification.is_read !==
                         true;
-
                       const isMarking =
                         markingReadId ===
                         notification.id;
-
                       return (
                         <button
                           key={
@@ -980,7 +1026,6 @@ export default function Topbar({
                           `}
                         >
                           {/* Status dot */}
-
                           <div className="pt-1">
                             <span
                               className={`
@@ -996,9 +1041,7 @@ export default function Topbar({
                               `}
                             />
                           </div>
-
                           {/* Content */}
-
                           <div className="min-w-0 flex-1">
                             <div
                               className="
@@ -1021,7 +1064,6 @@ export default function Topbar({
                                 {notification.title ||
                                   "إشعار"}
                               </p>
-
                               {isMarking && (
                                 <Loader2
                                   size={
@@ -1035,7 +1077,6 @@ export default function Topbar({
                                 />
                               )}
                             </div>
-
                             {notification.message && (
                               <p
                                 className="
@@ -1052,7 +1093,6 @@ export default function Topbar({
                                 }
                               </p>
                             )}
-
                             <p
                               className="
                                 mt-2
@@ -1071,9 +1111,7 @@ export default function Topbar({
                   )
                 )}
               </div>
-
               {/* Footer */}
-
               {notifications.length >
                 0 && (
                 <div
@@ -1107,9 +1145,7 @@ export default function Topbar({
             </div>
           )}
         </div>
-
         {/* Divider */}
-
         <div
           className="
             mx-1
@@ -1120,9 +1156,7 @@ export default function Topbar({
             dark:bg-slate-700
           "
         />
-
         {/* Profile */}
-
         <div className="relative">
           <button
             type="button"
@@ -1161,7 +1195,6 @@ export default function Topbar({
                 strokeWidth={1.8}
               />
             </div>
-
             <div className="hidden text-right sm:block">
               <p
                 className="
@@ -1175,7 +1208,6 @@ export default function Topbar({
               >
                 {displayName}
               </p>
-
               <p
                 className="
                   text-[11px]
@@ -1185,7 +1217,6 @@ export default function Topbar({
                 {roleName}
               </p>
             </div>
-
             <ChevronDown
               size={16}
               className={`
@@ -1202,9 +1233,7 @@ export default function Topbar({
               `}
             />
           </button>
-
           {/* Profile Menu */}
-
           {profileOpen && (
             <div
               className="
@@ -1243,7 +1272,6 @@ export default function Topbar({
                 >
                   {displayName}
                 </p>
-
                 <p
                   className="
                     mt-1
@@ -1255,9 +1283,7 @@ export default function Topbar({
                   {roleName}
                 </p>
               </div>
-
               {/* Account Settings */}
-
               <button
                 type="button"
                 className="
@@ -1280,14 +1306,11 @@ export default function Topbar({
                 <Settings
                   size={17}
                 />
-
                 <span>
                   إعدادات الحساب
                 </span>
               </button>
-
               {/* Logout */}
-
               <button
                 type="button"
                 onClick={
@@ -1315,7 +1338,6 @@ export default function Topbar({
                 <LogOut
                   size={17}
                 />
-
                 <span>
                   {loggingOut
                     ? "جاري تسجيل الخروج..."
