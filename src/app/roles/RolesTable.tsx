@@ -51,8 +51,7 @@ export default function RolesTable({
   permissions,
   rolePermissions,
 }: Props) {
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
   const [modalOpen, setModalOpen] =
     useState(false);
@@ -63,65 +62,48 @@ export default function RolesTable({
   const [deletingRoleId, setDeletingRoleId] =
     useState<string | null>(null);
 
-  const filteredRoles =
-    useMemo(() => {
-      const query =
-        search
-          .trim()
-          .toLowerCase();
+  const filteredRoles = useMemo(() => {
+    const query = search
+      .trim()
+      .toLowerCase();
 
-      if (!query) {
-        return roles;
-      }
+    if (!query) {
+      return roles;
+    }
 
-      return roles.filter(
-        (role) =>
-          role.name
-            .toLowerCase()
-            .includes(query) ||
-          (
-            role.description ??
-            ""
-          )
-            .toLowerCase()
-            .includes(query)
-      );
-    }, [
-      roles,
-      search,
-    ]);
-
-  const totalRoles =
-    roles.length;
-
-  const usedRoles =
-    roles.filter(
+    return roles.filter(
       (role) =>
-        role.userCount > 0
-    ).length;
+        role.name
+          .toLowerCase()
+          .includes(query) ||
+        (role.description ?? "")
+          .toLowerCase()
+          .includes(query)
+    );
+  }, [roles, search]);
+
+  const totalRoles = roles.length;
+
+  const usedRoles = roles.filter(
+    (role) => role.userCount > 0
+  ).length;
 
   const totalPermissions =
     permissions.length;
 
-  const assignedPermissions =
-    new Set(
-      rolePermissions.map(
-        (item) =>
-          item.permission_id
-      )
-    ).size;
+  const assignedPermissions = new Set(
+    rolePermissions.map(
+      (item) => item.permission_id
+    )
+  ).size;
 
-  function formatDate(
-    value: string
-  ) {
+  function formatDate(value: string) {
     return new Intl.DateTimeFormat(
       "ar-SA",
       {
         dateStyle: "medium",
       }
-    ).format(
-      new Date(value)
-    );
+    ).format(new Date(value));
   }
 
   function openCreateModal() {
@@ -129,9 +111,7 @@ export default function RolesTable({
     setModalOpen(true);
   }
 
-  function openEditModal(
-    role: Role
-  ) {
+  function openEditModal(role: Role) {
     setEditingRole(role);
     setModalOpen(true);
   }
@@ -142,8 +122,7 @@ export default function RolesTable({
     return rolePermissions
       .filter(
         (item) =>
-          item.role_id ===
-          roleId
+          item.role_id === roleId
       )
       .map(
         (item) =>
@@ -154,9 +133,7 @@ export default function RolesTable({
   async function handleDelete(
     role: Role
   ) {
-    if (
-      deletingRoleId !== null
-    ) {
+    if (deletingRoleId !== null) {
       return;
     }
 
@@ -186,15 +163,11 @@ export default function RolesTable({
       return;
     }
 
-    setDeletingRoleId(
-      role.id
-    );
+    setDeletingRoleId(role.id);
 
     try {
       const result =
-        await deleteRole(
-          role.id
-        );
+        await deleteRole(role.id);
 
       if (!result.success) {
         window.alert(
@@ -212,9 +185,7 @@ export default function RolesTable({
           : "تعذر حذف الدور."
       );
     } finally {
-      setDeletingRoleId(
-        null
-      );
+      setDeletingRoleId(null);
     }
   }
 
@@ -227,37 +198,27 @@ export default function RolesTable({
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={
-            <ShieldCheck
-              size={20}
-            />
+            <ShieldCheck size={20} />
           }
           label="إجمالي الأدوار"
           value={totalRoles}
         />
 
         <StatCard
-          icon={
-            <Users size={20} />
-          }
+          icon={<Users size={20} />}
           label="أدوار مستخدمة"
           value={usedRoles}
         />
 
         <StatCard
-          icon={
-            <KeyRound
-              size={20}
-            />
-          }
+          icon={<KeyRound size={20} />}
           label="إجمالي الصلاحيات"
           value={totalPermissions}
         />
 
         <StatCard
           icon={
-            <ShieldPlus
-              size={20}
-            />
+            <ShieldPlus size={20} />
           }
           label="صلاحيات مستخدمة"
           value={assignedPermissions}
@@ -277,8 +238,7 @@ export default function RolesTable({
               </h2>
 
               <p className="mt-1 text-sm text-slate-400">
-                {filteredRoles.length}{" "}
-                دور
+                {filteredRoles.length} دور
               </p>
             </div>
 
@@ -293,15 +253,13 @@ export default function RolesTable({
 
                 <input
                   value={search}
-                  onChange={(
-                    event
-                  ) =>
+                  onChange={(event) =>
                     setSearch(
                       event.target.value
                     )
                   }
                   placeholder="ابحث عن دور..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm text-slate-700 outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
               </div>
 
@@ -309,14 +267,10 @@ export default function RolesTable({
 
               <button
                 type="button"
-                onClick={
-                  openCreateModal
-                }
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100"
+                onClick={openCreateModal}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-teal-600 hover:shadow-lg hover:shadow-teal-100"
               >
-                <ShieldPlus
-                  size={17}
-                />
+                <ShieldPlus size={17} />
 
                 دور جديد
               </button>
@@ -389,33 +343,27 @@ export default function RolesTable({
 
                     return (
                       <tr
-                        key={
-                          role.id
-                        }
-                        className="transition hover:bg-slate-50/70"
+                        key={role.id}
+                        className="transition hover:bg-teal-50/30"
                       >
                         {/* الدور */}
 
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                               <ShieldCheck
-                                size={
-                                  19
-                                }
+                                size={19}
                               />
                             </div>
 
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="font-semibold text-slate-800">
-                                  {
-                                    role.name
-                                  }
+                                  {role.name}
                                 </p>
 
                                 {isGeneralManager && (
-                                  <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-600">
+                                  <span className="rounded-full bg-teal-50 px-2 py-1 text-[10px] font-semibold text-teal-600">
                                     أساسي
                                   </span>
                                 )}
@@ -432,18 +380,16 @@ export default function RolesTable({
                         {/* الصلاحيات */}
 
                         <td className="px-6 py-5">
-                          <div className="inline-flex items-center gap-2 rounded-xl bg-violet-50 px-3 py-2 text-sm font-semibold text-violet-700">
+                          <div className="inline-flex items-center gap-2 rounded-xl bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-700">
                             <KeyRound
-                              size={
-                                15
-                              }
+                              size={15}
                             />
 
                             {
                               role.permissionCount
                             }
 
-                            <span className="text-xs font-normal text-violet-500">
+                            <span className="text-xs font-normal text-teal-500">
                               صلاحية
                             </span>
                           </div>
@@ -454,14 +400,10 @@ export default function RolesTable({
                         <td className="px-6 py-5">
                           <div className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
                             <Users
-                              size={
-                                15
-                              }
+                              size={15}
                             />
 
-                            {
-                              role.userCount
-                            }
+                            {role.userCount}
 
                             <span className="text-xs font-normal text-slate-400">
                               مستخدم
@@ -488,12 +430,10 @@ export default function RolesTable({
                                   role
                                 )
                               }
-                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-600"
                             >
                               <Pencil
-                                size={
-                                  15
-                                }
+                                size={15}
                               />
 
                               تعديل
@@ -520,16 +460,12 @@ export default function RolesTable({
                               >
                                 {isDeleting ? (
                                   <Loader2
-                                    size={
-                                      15
-                                    }
+                                    size={15}
                                     className="animate-spin"
                                   />
                                 ) : (
                                   <Trash2
-                                    size={
-                                      15
-                                    }
+                                    size={15}
                                   />
                                 )}
 
@@ -556,12 +492,8 @@ export default function RolesTable({
 
       {modalOpen && (
         <RoleModal
-          role={
-            editingRole
-          }
-          permissions={
-            permissions
-          }
+          role={editingRole}
+          permissions={permissions}
           selectedPermissionIds={
             editingRole
               ? getRolePermissionIds(
@@ -570,9 +502,7 @@ export default function RolesTable({
               : []
           }
           onClose={() =>
-            setModalOpen(
-              false
-            )
+            setModalOpen(false)
           }
         />
       )}
@@ -590,8 +520,8 @@ function StatCard({
   value: number;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg hover:shadow-slate-200/60">
-      <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-blue-100/60 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-teal-200 hover:shadow-lg hover:shadow-slate-200/60">
+      <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-teal-100/60 blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
       <div className="relative flex items-start justify-between">
         <div>
@@ -604,7 +534,7 @@ function StatCard({
           </p>
         </div>
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-300 group-hover:scale-110">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-transform duration-300 group-hover:scale-110">
           {icon}
         </div>
       </div>
