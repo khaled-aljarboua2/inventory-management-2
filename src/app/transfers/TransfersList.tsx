@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-
 import {
   ArrowLeftRight,
   CheckCircle2,
@@ -70,50 +69,43 @@ const statusConfig: Record<
 > = {
   draft: {
     label: "مسودة",
-    className:
-      "bg-slate-100 text-slate-600",
+    className: "bg-slate-100 text-slate-600",
     icon: FileText,
   },
 
   pending: {
     label: "معلقة",
-    className:
-      "bg-amber-50 text-amber-700",
+    className: "bg-amber-50 text-amber-700",
     icon: Clock3,
   },
 
   approved: {
     label: "معتمدة",
-    className:
-      "bg-teal-50 text-teal-700",
+    className: "bg-teal-50 text-teal-700",
     icon: CheckCircle2,
   },
 
   preparing: {
     label: "قيد التجهيز",
-    className:
-      "bg-purple-50 text-purple-700",
+    className: "bg-purple-50 text-purple-700",
     icon: PackageCheck,
   },
 
   shipped: {
     label: "تم الشحن",
-    className:
-      "bg-indigo-50 text-indigo-700",
+    className: "bg-indigo-50 text-indigo-700",
     icon: Truck,
   },
 
   received: {
     label: "تم الاستلام",
-    className:
-      "bg-emerald-50 text-emerald-700",
+    className: "bg-emerald-50 text-emerald-700",
     icon: CheckCircle2,
   },
 
   cancelled: {
     label: "ملغي",
-    className:
-      "bg-red-50 text-red-700",
+    className: "bg-red-50 text-red-700",
     icon: Ban,
   },
 };
@@ -125,8 +117,7 @@ export default function TransfersList({
   currentLocationId,
   isGeneralManager,
 }: Props) {
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
   const [statusFilter, setStatusFilter] =
     useState("all");
@@ -142,33 +133,27 @@ export default function TransfersList({
       all: transfers.length,
 
       pending: transfers.filter(
-        (item) =>
-          item.status === "pending"
+        (item) => item.status === "pending"
       ).length,
 
       approved: transfers.filter(
-        (item) =>
-          item.status === "approved"
+        (item) => item.status === "approved"
       ).length,
 
       preparing: transfers.filter(
-        (item) =>
-          item.status === "preparing"
+        (item) => item.status === "preparing"
       ).length,
 
       shipped: transfers.filter(
-        (item) =>
-          item.status === "shipped"
+        (item) => item.status === "shipped"
       ).length,
 
       received: transfers.filter(
-        (item) =>
-          item.status === "received"
+        (item) => item.status === "received"
       ).length,
 
       cancelled: transfers.filter(
-        (item) =>
-          item.status === "cancelled"
+        (item) => item.status === "cancelled"
       ).length,
     };
   }, [transfers]);
@@ -193,8 +178,7 @@ export default function TransfersList({
 
         const matchesStatus =
           statusFilter === "all" ||
-          transfer.status ===
-            statusFilter;
+          transfer.status === statusFilter;
 
         return (
           matchesSearch &&
@@ -264,7 +248,20 @@ export default function TransfersList({
 
   return (
     <>
-      <RealtimeRefresh />
+      {/* ============================================================
+          REALTIME
+          تحديث صفحة طلبات النقل عند أي تغيير في الطلبات أو الأصناف
+      ============================================================ */}
+
+      <RealtimeRefresh
+        table="transfer_requests"
+        channelName="transfers-list-requests"
+      />
+
+      <RealtimeRefresh
+        table="transfer_items"
+        channelName="transfers-list-items"
+      />
 
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-4 border-b border-slate-100 bg-slate-50/50 p-5 md:grid-cols-3 xl:grid-cols-7">
@@ -288,8 +285,7 @@ export default function TransfersList({
             label="معلقة"
             count={counts.pending}
             active={
-              statusFilter ===
-              "pending"
+              statusFilter === "pending"
             }
             onClick={() =>
               setStatusFilter(
@@ -305,8 +301,7 @@ export default function TransfersList({
             label="معتمدة"
             count={counts.approved}
             active={
-              statusFilter ===
-              "approved"
+              statusFilter === "approved"
             }
             onClick={() =>
               setStatusFilter(
