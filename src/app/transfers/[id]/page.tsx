@@ -3,6 +3,8 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
 import { firstRelation } from "@/lib/supabase/relations";
 import TransferActions from "./TransferActions";
+import RealtimeRefresh from "@/components/realtime/RealtimeRefresh";
+
 import {
   ArrowRight,
   ArrowLeftRight,
@@ -108,50 +110,43 @@ const statusConfig: Record<
 > = {
   pending: {
     label: "معلقة",
-    className:
-      "bg-amber-50 text-amber-700",
+    className: "bg-amber-50 text-amber-700",
     icon: Clock3,
   },
 
   approved: {
     label: "معتمدة",
-    className:
-      "bg-teal-50 text-teal-700",
+    className: "bg-teal-50 text-teal-700",
     icon: CheckCircle2,
   },
 
   preparing: {
     label: "قيد التجهيز",
-    className:
-      "bg-purple-50 text-purple-700",
+    className: "bg-purple-50 text-purple-700",
     icon: PackageCheck,
   },
 
   shipped: {
     label: "تم الشحن",
-    className:
-      "bg-indigo-50 text-indigo-700",
+    className: "bg-indigo-50 text-indigo-700",
     icon: Truck,
   },
 
   received: {
     label: "تم الاستلام",
-    className:
-      "bg-emerald-50 text-emerald-700",
+    className: "bg-emerald-50 text-emerald-700",
     icon: CheckCircle2,
   },
 
   cancelled: {
     label: "ملغي",
-    className:
-      "bg-red-50 text-red-700",
+    className: "bg-red-50 text-red-700",
     icon: Ban,
   },
 
   draft: {
     label: "مسودة",
-    className:
-      "bg-slate-100 text-slate-600",
+    className: "bg-slate-100 text-slate-600",
     icon: Package,
   },
 };
@@ -165,8 +160,7 @@ export default async function TransferDetailsPage({
 }) {
   const { id } = await params;
 
-  const supabase =
-    await createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -377,8 +371,12 @@ export default async function TransferDetailsPage({
       transfer.transfer_items ?? []
     ).map((item) => ({
       ...item,
-      products: firstRelation(item.products),
-      units: firstRelation(item.units),
+      products: firstRelation(
+        item.products
+      ),
+      units: firstRelation(
+        item.units
+      ),
     })),
   };
 
@@ -390,7 +388,9 @@ export default async function TransferDetailsPage({
       product.product_units ?? []
     ).map((productUnit) => ({
       ...productUnit,
-      units: firstRelation(productUnit.units),
+      units: firstRelation(
+        productUnit.units
+      ),
     })),
   }));
 
@@ -460,6 +460,12 @@ export default async function TransferDetailsPage({
 
   return (
     <DashboardLayout>
+      <RealtimeRefresh
+        transferId={
+          normalizedTransfer.id
+        }
+      />
+
       <div
         dir="rtl"
         className="mx-auto w-full max-w-[1600px] space-y-7"
