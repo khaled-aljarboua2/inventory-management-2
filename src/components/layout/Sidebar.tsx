@@ -36,6 +36,7 @@ export default function Sidebar({
           fixed
           right-0
           top-0
+          bottom-0
           z-50
 
           flex
@@ -59,10 +60,8 @@ export default function Sidebar({
 
           peer-checked:translate-x-0
 
-          md:static
-          md:h-screen
-          md:w-64
           md:translate-x-0
+          md:w-64
           md:shadow-none
         "
       >
