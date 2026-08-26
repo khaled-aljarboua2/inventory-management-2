@@ -2,7 +2,7 @@ import Link from "next/link";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
 import { firstRelation } from "@/lib/supabase/relations";
-import TransferActions from "./TransferActions";
+import TransferActions from "../TransferActions";
 import RealtimeRefresh from "@/components/realtime/RealtimeRefresh";
 
 import {
@@ -110,43 +110,50 @@ const statusConfig: Record<
 > = {
   pending: {
     label: "معلقة",
-    className: "bg-amber-50 text-amber-700",
+    className:
+      "bg-amber-50 text-amber-700",
     icon: Clock3,
   },
 
   approved: {
     label: "معتمدة",
-    className: "bg-teal-50 text-teal-700",
+    className:
+      "bg-teal-50 text-teal-700",
     icon: CheckCircle2,
   },
 
   preparing: {
     label: "قيد التجهيز",
-    className: "bg-purple-50 text-purple-700",
+    className:
+      "bg-purple-50 text-purple-700",
     icon: PackageCheck,
   },
 
   shipped: {
     label: "تم الشحن",
-    className: "bg-indigo-50 text-indigo-700",
+    className:
+      "bg-indigo-50 text-indigo-700",
     icon: Truck,
   },
 
   received: {
     label: "تم الاستلام",
-    className: "bg-emerald-50 text-emerald-700",
+    className:
+      "bg-emerald-50 text-emerald-700",
     icon: CheckCircle2,
   },
 
   cancelled: {
     label: "ملغي",
-    className: "bg-red-50 text-red-700",
+    className:
+      "bg-red-50 text-red-700",
     icon: Ban,
   },
 
   draft: {
     label: "مسودة",
-    className: "bg-slate-100 text-slate-600",
+    className:
+      "bg-slate-100 text-slate-600",
     icon: Package,
   },
 };
@@ -160,7 +167,8 @@ export default async function TransferDetailsPage({
 }) {
   const { id } = await params;
 
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
   const {
     data: { user },
@@ -395,11 +403,13 @@ export default async function TransferDetailsPage({
   }));
 
   const fromCompanyId =
-    normalizedTransfer.from_location
+    normalizedTransfer
+      .from_location
       ?.company_id;
 
   const toCompanyId =
-    normalizedTransfer.to_location
+    normalizedTransfer
+      .to_location
       ?.company_id;
 
   if (
@@ -460,10 +470,19 @@ export default async function TransferDetailsPage({
 
   return (
     <DashboardLayout>
+      {/* ============================================================
+          REALTIME
+          تحديث صفحة الطلب عند تغير الطلب أو الأصناف
+      ============================================================ */}
+
       <RealtimeRefresh
-        transferId={
-          normalizedTransfer.id
-        }
+        table="transfer_requests"
+        channelName={`transfer-detail-request-${normalizedTransfer.id}`}
+      />
+
+      <RealtimeRefresh
+        table="transfer_items"
+        channelName={`transfer-detail-items-${normalizedTransfer.id}`}
       />
 
       <div
