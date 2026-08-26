@@ -74,15 +74,17 @@ export default function Sidebar({
             border-b
             border-slate-200
             bg-white
-            px-4
-            py-4
+            px-3
+            py-3
           "
         >
           <div
             className="
               flex
+              h-[92px]
               items-center
               justify-center
+              overflow-hidden
             "
           >
             <Image
@@ -93,7 +95,8 @@ export default function Sidebar({
               priority
               className="
                 h-auto
-                w-[190px]
+                w-[220px]
+                scale-[1.35]
                 object-contain
               "
             />
