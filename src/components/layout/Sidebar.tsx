@@ -95,8 +95,7 @@ export default function Sidebar({
               priority
               className="
                 h-auto
-                w-[220px]
-                scale-[1.35]
+                w-[205px]
                 object-contain
               "
             />
