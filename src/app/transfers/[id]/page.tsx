@@ -2,7 +2,7 @@ import Link from "next/link";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
 import { firstRelation } from "@/lib/supabase/relations";
-import TransferActions from "../TransferActions";
+import TransferActions from "./TransferActions";
 import RealtimeRefresh from "@/components/realtime/RealtimeRefresh";
 import {
   ArrowRight,
