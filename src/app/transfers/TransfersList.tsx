@@ -1,12 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import {
   ArrowLeftRight,
@@ -21,10 +16,9 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/client";
-
 import TransferModal from "./TransferModal";
 import { deleteTransfer } from "./actions";
+import RealtimeRefresh from "@/components/realtime/RealtimeRefresh";
 
 type Location = {
   id: string;
@@ -131,8 +125,6 @@ export default function TransfersList({
   currentLocationId,
   isGeneralManager,
 }: Props) {
-  const router = useRouter();
-
   const [search, setSearch] =
     useState("");
 
@@ -144,54 +136,6 @@ export default function TransfersList({
 
   const [deletingId, setDeletingId] =
     useState<string | null>(null);
-
-  // ============================================================
-  // Supabase Realtime
-  // لا يغير أي صلاحية أو منطق أعمال.
-  // فقط يجعل صفحة طلبات النقل تتحدث تلقائيًا.
-  // ============================================================
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    const channel = supabase
-      .channel(
-        "transfers-list-realtime"
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "transfer_requests",
-        },
-        () => {
-          router.refresh();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "transfer_items",
-        },
-        () => {
-          router.refresh();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(
-        channel
-      );
-    };
-  }, [router]);
-
-  // ============================================================
-  // الإحصائيات
-  // ============================================================
 
   const counts = useMemo(() => {
     return {
@@ -228,10 +172,6 @@ export default function TransfersList({
       ).length,
     };
   }, [transfers]);
-
-  // ============================================================
-  // البحث والتصفية
-  // ============================================================
 
   const filteredTransfers = useMemo(() => {
     const query =
@@ -324,6 +264,8 @@ export default function TransfersList({
 
   return (
     <>
+      <RealtimeRefresh />
+
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-4 border-b border-slate-100 bg-slate-50/50 p-5 md:grid-cols-3 xl:grid-cols-7">
           <StatusCard
