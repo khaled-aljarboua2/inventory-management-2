@@ -245,7 +245,10 @@ export default async function SettingsPage() {
           <InfoCard
             icon={<Clock3 size={20} />}
             title="المنطقة الزمنية"
-            value={settingsData.timezone ?? "Asia/Riyadh"}
+            value={
+              settingsData.timezone ??
+              "Asia/Riyadh"
+            }
           />
         </div>
 
@@ -256,7 +259,7 @@ export default async function SettingsPage() {
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 px-6 py-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                 <Settings size={21} />
               </div>
 
@@ -293,7 +296,7 @@ function InfoCard({
 }) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
-      <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-blue-100/50 blur-2xl opacity-0 transition group-hover:opacity-100" />
+      <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-teal-100/50 blur-2xl opacity-0 transition group-hover:opacity-100" />
 
       <div className="relative flex items-center justify-between gap-4">
         <div>
@@ -306,7 +309,7 @@ function InfoCard({
           </p>
         </div>
 
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition group-hover:bg-blue-50 group-hover:text-blue-600">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition group-hover:bg-teal-50 group-hover:text-teal-600">
           {icon}
         </div>
       </div>
