@@ -26,7 +26,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="relative flex min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background">
       <input
         id="mobile-sidebar-toggle"
         type="checkbox"
@@ -37,12 +37,12 @@ export default async function DashboardLayout({
         permissions={permissions}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-col md:mr-64">
         <Topbar
           profile={profile}
         />
 
-        <main className="min-w-0 p-3 sm:p-4 lg:p-6">
+        <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
           {children}
         </main>
       </div>
