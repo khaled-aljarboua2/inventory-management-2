@@ -252,11 +252,7 @@ export default function TransfersList({
           REALTIME
           تحديث صفحة طلبات النقل عند أي تغيير في الطلبات أو الأصناف
       ============================================================ */}
-
-      <RealtimeRefresh
-        table="transfer_requests"
-        channelName="transfers-list-requests"
-      />
+<RealtimeRefresh table="transfer_requests" />
 
       <RealtimeRefresh
         table="transfer_items"
