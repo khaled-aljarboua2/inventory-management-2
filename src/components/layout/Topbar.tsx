@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 
 import {
   Bell,
-  Search,
   UserCircle2,
   ChevronDown,
   Settings,
@@ -66,9 +65,6 @@ export default function Topbar({
     []
   );
 
-  const searchRef =
-    useRef<HTMLInputElement>(null);
-
   const notificationsRef =
     useRef<HTMLDivElement>(null);
 
@@ -82,9 +78,6 @@ export default function Topbar({
 
   const [loggingOut, setLoggingOut] =
     useState(false);
-
-  const [searchQuery, setSearchQuery] =
-    useState("");
 
   const [
     notifications,
@@ -328,23 +321,8 @@ export default function Topbar({
       event: KeyboardEvent
     ) {
       if (
-        (event.ctrlKey ||
-          event.metaKey) &&
-        event.key.toLowerCase() ===
-          "k"
-      ) {
-        event.preventDefault();
-
-        searchRef.current?.focus();
-      }
-
-      if (
         event.key === "Escape"
       ) {
-        searchRef.current?.blur();
-
-        setSearchQuery("");
-
         setProfileOpen(false);
 
         setNotificationsOpen(
@@ -365,29 +343,6 @@ export default function Topbar({
       );
     };
   }, []);
-
-  // ==========================================================
-  // Search
-  // ==========================================================
-
-  function handleSearchSubmit(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
-
-    const query =
-      searchQuery.trim();
-
-    if (!query) {
-      return;
-    }
-
-    router.push(
-      `/search?q=${encodeURIComponent(
-        query
-      )}`
-    );
-  }
 
   // ==========================================================
   // تعليم إشعار كمقروء
@@ -657,101 +612,6 @@ export default function Topbar({
         />
       </label>
 
-      {/* Desktop Search */}
-
-      <form
-        onSubmit={
-          handleSearchSubmit
-        }
-        className="
-          relative
-          hidden
-          w-full
-          max-w-xl
-          md:block
-        "
-      >
-        <Search
-          size={20}
-          strokeWidth={1.8}
-          className="
-            pointer-events-none
-            absolute
-            right-4 top-1/2
-            -translate-y-1/2
-            text-slate-400
-            dark:text-slate-500
-          "
-        />
-
-        <input
-          ref={searchRef}
-          type="search"
-          value={searchQuery}
-          onChange={(event) =>
-            setSearchQuery(
-              event.target.value
-            )
-          }
-          placeholder="ابحث عن منتج، SKU، باركود أو مستودع..."
-          aria-label="البحث في النظام"
-          className="
-            h-11 w-full
-            rounded-xl
-            border
-            border-slate-200
-            bg-slate-50/70
-            pr-11 pl-20
-            text-sm
-            text-slate-700
-            outline-none
-            transition-all duration-200
-            placeholder:text-slate-400
-            hover:border-slate-300
-            hover:bg-white
-            focus:border-teal-400
-            focus:bg-white
-            focus:ring-4
-            focus:ring-teal-50
-            dark:border-slate-700
-            dark:bg-slate-900
-            dark:text-slate-200
-            dark:hover:border-slate-600
-            dark:focus:border-teal-500
-            dark:focus:bg-slate-900
-            dark:focus:ring-teal-950/40
-          "
-        />
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            left-3 top-1/2
-            hidden
-            -translate-y-1/2
-            items-center
-            gap-1
-            rounded-md
-            border
-            border-slate-200
-            bg-white
-            px-2 py-1
-            text-[10px]
-            text-slate-400
-            shadow-sm
-            sm:flex
-            dark:border-slate-700
-            dark:bg-slate-800
-            dark:text-slate-500
-          "
-        >
-          <span>Ctrl</span>
-          <span>+</span>
-          <span>K</span>
-        </div>
-      </form>
-
       {/* Actions */}
 
       <div
@@ -764,35 +624,6 @@ export default function Topbar({
           sm:gap-2
         "
       >
-        {/* Mobile Search */}
-
-        <button
-          type="button"
-          onClick={() =>
-            searchRef.current?.focus()
-          }
-          className="
-            flex h-11 w-11
-            items-center
-            justify-center
-            rounded-xl
-            text-slate-500
-            transition-all duration-200
-            hover:bg-teal-50
-            hover:text-teal-700
-            md:hidden
-            dark:text-slate-400
-            dark:hover:bg-teal-950/40
-            dark:hover:text-teal-400
-          "
-          aria-label="البحث"
-        >
-          <Search
-            size={20}
-            strokeWidth={1.9}
-          />
-        </button>
-
         {/* Theme */}
 
         <button
