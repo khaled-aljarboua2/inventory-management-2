@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import {
   Boxes,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   CircleOff,
   Filter,
   Pencil,
@@ -33,12 +35,16 @@ type FilterType =
   | "active"
   | "inactive";
 
+const PRODUCTS_PER_PAGE = 100;
+
 export default function ProductsList({
   products,
 }: Props) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] =
     useState<FilterType>("all");
+  const [currentPage, setCurrentPage] =
+    useState(1);
 
   const totalProducts = products.length;
 
@@ -81,6 +87,49 @@ export default function ProductsList({
     });
   }, [products, search, filter]);
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      filteredProducts.length /
+        PRODUCTS_PER_PAGE
+    )
+  );
+
+  const safeCurrentPage = Math.min(
+    currentPage,
+    totalPages
+  );
+
+  const startIndex =
+    (safeCurrentPage - 1) *
+    PRODUCTS_PER_PAGE;
+
+  const paginatedProducts =
+    filteredProducts.slice(
+      startIndex,
+      startIndex + PRODUCTS_PER_PAGE
+    );
+
+  const firstProductNumber =
+    filteredProducts.length === 0
+      ? 0
+      : startIndex + 1;
+
+  const lastProductNumber =
+    startIndex + paginatedProducts.length;
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    setCurrentPage(1);
+  }
+
+  function handleFilterChange(
+    nextFilter: FilterType
+  ) {
+    setFilter(nextFilter);
+    setCurrentPage(1);
+  }
+
   return (
     <section
       className="
@@ -114,7 +163,7 @@ export default function ProductsList({
 
         <button
           type="button"
-          onClick={() => setFilter("all")}
+          onClick={() => handleFilterChange("all")}
           className={`
             group
             relative
@@ -127,8 +176,8 @@ export default function ProductsList({
             duration-200
             ${
               filter === "all"
-                ? "border-blue-200 bg-blue-50/70 shadow-sm"
-                : "border-slate-200 bg-white hover:border-blue-200 hover:shadow-md"
+                ? "border-teal-200 bg-teal-50/70 shadow-sm"
+                : "border-slate-200 bg-white hover:border-teal-200 hover:shadow-md"
             }
           `}
         >
@@ -151,8 +200,8 @@ export default function ProductsList({
                 items-center
                 justify-center
                 rounded-xl
-                bg-blue-50
-                text-blue-600
+                bg-teal-50
+                text-teal-600
                 transition-transform
                 duration-200
                 group-hover:scale-105
@@ -169,7 +218,7 @@ export default function ProductsList({
 
         <button
           type="button"
-          onClick={() => setFilter("active")}
+          onClick={() => handleFilterChange("active")}
           className={`
             group
             relative
@@ -224,7 +273,7 @@ export default function ProductsList({
 
         <button
           type="button"
-          onClick={() => setFilter("inactive")}
+          onClick={() => handleFilterChange("inactive")}
           className={`
             group
             relative
@@ -327,7 +376,7 @@ export default function ProductsList({
                 type="text"
                 value={search}
                 onChange={(event) =>
-                  setSearch(
+                  handleSearchChange(
                     event.target.value
                   )
                 }
@@ -348,17 +397,17 @@ export default function ProductsList({
                   placeholder:text-slate-400
                   hover:border-slate-300
                   hover:bg-white
-                  focus:border-blue-400
+                  focus:border-teal-400
                   focus:bg-white
                   focus:ring-4
-                  focus:ring-blue-50
+                  focus:ring-teal-50
                 "
               />
 
               {search && (
                 <button
                   type="button"
-                  onClick={() => setSearch("")}
+                  onClick={() => handleSearchChange("")}
                   className="
                     absolute
                     left-3
@@ -399,7 +448,7 @@ export default function ProductsList({
               <button
                 type="button"
                 onClick={() =>
-                  setFilter("all")
+                  handleFilterChange("all")
                 }
                 className={`
                   rounded-lg
@@ -410,7 +459,7 @@ export default function ProductsList({
                   transition-all
                   ${
                     filter === "all"
-                      ? "bg-white text-blue-600 shadow-sm"
+                      ? "bg-white text-teal-600 shadow-sm"
                       : "text-slate-500 hover:text-slate-800"
                   }
                 `}
@@ -421,7 +470,7 @@ export default function ProductsList({
               <button
                 type="button"
                 onClick={() =>
-                  setFilter("active")
+                  handleFilterChange("active")
                 }
                 className={`
                   rounded-lg
@@ -443,7 +492,7 @@ export default function ProductsList({
               <button
                 type="button"
                 onClick={() =>
-                  setFilter("inactive")
+                  handleFilterChange("inactive")
                 }
                 className={`
                   rounded-lg
@@ -482,11 +531,15 @@ export default function ProductsList({
 
           <span>
             عرض{" "}
-            {filteredProducts.length.toLocaleString(
+            {firstProductNumber.toLocaleString(
+              "ar-SA"
+            )}{" "}
+            إلى{" "}
+            {lastProductNumber.toLocaleString(
               "ar-SA"
             )}{" "}
             من{" "}
-            {totalProducts.toLocaleString(
+            {filteredProducts.length.toLocaleString(
               "ar-SA"
             )}{" "}
             منتج
@@ -496,11 +549,11 @@ export default function ProductsList({
             <span
               className="
                 rounded-full
-                bg-blue-50
+                bg-teal-50
                 px-2
                 py-1
                 font-medium
-                text-blue-600
+                text-teal-600
               "
             >
               البحث: {search}
@@ -593,7 +646,7 @@ export default function ProductsList({
                       <button
                         type="button"
                         onClick={() =>
-                          setSearch("")
+                          handleSearchChange("")
                         }
                         className="
                           mt-4
@@ -605,7 +658,7 @@ export default function ProductsList({
                           font-semibold
                           text-white
                           transition
-                          hover:bg-blue-600
+                          hover:bg-teal-600
                         "
                       >
                         مسح البحث
@@ -615,7 +668,7 @@ export default function ProductsList({
                 </td>
               </tr>
             ) : (
-              filteredProducts.map(
+              paginatedProducts.map(
                 (product) => (
                   <tr
                     key={product.id}
@@ -623,7 +676,7 @@ export default function ProductsList({
                       group
                       transition-colors
                       duration-200
-                      hover:bg-blue-50/30
+                      hover:bg-teal-50/30
                     "
                   >
                     {/* SKU */}
@@ -640,8 +693,8 @@ export default function ProductsList({
                           font-semibold
                           text-slate-600
                           transition-colors
-                          group-hover:bg-blue-50
-                          group-hover:text-blue-600
+                          group-hover:bg-teal-50
+                          group-hover:text-teal-600
                         "
                       >
                         {product.sku}
@@ -664,12 +717,12 @@ export default function ProductsList({
                             items-center
                             justify-center
                             rounded-xl
-                            bg-blue-50
-                            text-blue-600
+                            bg-teal-50
+                            text-teal-600
                             transition-all
                             duration-200
                             group-hover/product:scale-105
-                            group-hover/product:bg-blue-100
+                            group-hover/product:bg-teal-100
                           "
                         >
                           <Boxes size={19} />
@@ -681,7 +734,7 @@ export default function ProductsList({
                               font-semibold
                               text-slate-800
                               transition-colors
-                              group-hover/product:text-blue-600
+                              group-hover/product:text-teal-600
                             "
                           >
                             {product.name}
@@ -770,9 +823,9 @@ export default function ProductsList({
                             transition-all
                             duration-200
                             hover:-translate-y-0.5
-                            hover:border-blue-200
-                            hover:bg-blue-50
-                            hover:text-blue-600
+                            hover:border-teal-200
+                            hover:bg-teal-50
+                            hover:text-teal-600
                             hover:shadow-sm
                           "
                         >
@@ -818,7 +871,7 @@ export default function ProductsList({
           className="
             flex
             flex-col
-            gap-2
+            gap-4
             border-t
             border-slate-100
             bg-slate-50/40
@@ -826,23 +879,109 @@ export default function ProductsList({
             py-4
             text-xs
             text-slate-400
-            sm:flex-row
-            sm:items-center
-            sm:justify-between
+            lg:flex-row
+            lg:items-center
+            lg:justify-between
           "
         >
           <span>
-            إجمالي المنتجات المعروضة:{" "}
+            عرض من{" "}
+            <strong className="text-slate-600">
+              {firstProductNumber.toLocaleString(
+                "ar-SA"
+              )}
+            </strong>
+            {" "}إلى{" "}
+            <strong className="text-slate-600">
+              {lastProductNumber.toLocaleString(
+                "ar-SA"
+              )}
+            </strong>
+            {" "}من أصل{" "}
             <strong className="text-slate-600">
               {filteredProducts.length.toLocaleString(
                 "ar-SA"
               )}
             </strong>
+            {" "}منتج
           </span>
 
-          <span>
-            آخر تحديث عند تحميل الصفحة
-          </span>
+          <div className="flex items-center gap-2 self-end lg:self-auto">
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentPage(
+                  safeCurrentPage - 1
+                )
+              }
+              disabled={safeCurrentPage === 1}
+              className="
+                inline-flex
+                items-center
+                gap-1.5
+                rounded-lg
+                border
+                border-slate-200
+                bg-white
+                px-3
+                py-2
+                font-semibold
+                text-slate-600
+                transition
+                hover:border-teal-200
+                hover:bg-teal-50
+                hover:text-teal-700
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              <ChevronRight size={15} />
+              السابق
+            </button>
+
+            <span className="rounded-lg bg-teal-50 px-3 py-2 font-semibold text-teal-700">
+              صفحة{" "}
+              {safeCurrentPage.toLocaleString(
+                "ar-SA"
+              )}
+              {" "}من{" "}
+              {totalPages.toLocaleString("ar-SA")}
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentPage(
+                  safeCurrentPage + 1
+                )
+              }
+              disabled={
+                safeCurrentPage === totalPages
+              }
+              className="
+                inline-flex
+                items-center
+                gap-1.5
+                rounded-lg
+                border
+                border-slate-200
+                bg-white
+                px-3
+                py-2
+                font-semibold
+                text-slate-600
+                transition
+                hover:border-teal-200
+                hover:bg-teal-50
+                hover:text-teal-700
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              التالي
+              <ChevronLeft size={15} />
+            </button>
+          </div>
         </div>
       )}
     </section>
