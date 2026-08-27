@@ -281,9 +281,9 @@ function TotalsPill({
 
   return (
     <div
-      className={\`flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl px-3 py-2 \${
+      className={`flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl px-3 py-2 ${
         muted ? "bg-slate-100 text-slate-600" : "bg-teal-50 text-teal-700"
-      }\`}
+      }`}
     >
       <span className="text-[11px] font-semibold">{label}</span>
       <span className="h-3.5 w-px bg-current opacity-20" />
@@ -444,7 +444,7 @@ function Quantity({
   return (
     <span
       dir="ltr"
-      className={\`inline-flex items-center gap-1.5 whitespace-nowrap font-mono text-sm font-bold tabular-nums \${textClass}\`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap font-mono text-sm font-bold tabular-nums ${textClass}`}
     >
       {formatNumber(value)}
       <span
