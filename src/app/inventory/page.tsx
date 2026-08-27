@@ -40,12 +40,6 @@ type InventoryBalance = {
     | null;
 };
 
-type ProductBarcode = {
-  product_id: string;
-  barcode: string;
-  is_default: boolean | null;
-};
-
 type Location = {
   id: string;
   name: string;
@@ -116,9 +110,7 @@ export default async function InventoryPage({
     );
   }
 
-  const companyId = dbUser.company_id;
-
-  if (!companyId) {
+  if (!dbUser.company_id) {
     return (
       <DashboardLayout>
         <div
@@ -131,41 +123,63 @@ export default async function InventoryPage({
     );
   }
 
+  const companyId = dbUser.company_id;
+
+  // ============================================================
+  // صلاحية عرض المخزون
+  // ============================================================
+
+  const {
+    data: canViewStock,
+    error: permissionError,
+  } = await supabase.rpc("has_permission", {
+    permission_code: "stock.view",
+  });
+
+  if (
+    permissionError ||
+    canViewStock !== true
+  ) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="mx-auto w-full max-w-[1600px]"
+        >
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
+            <h1 className="text-lg font-bold text-amber-800">
+              ليس لديك صلاحية الوصول
+            </h1>
+
+            <p className="mt-2 text-sm text-amber-700">
+              لا تملك الصلاحية اللازمة لعرض أرصدة المخزون.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   // ============================================================
   // الدور
   // ============================================================
 
   const {
     data: role,
-    error: roleError,
   } = await supabase
     .from("roles")
     .select("id, name")
     .eq("id", dbUser.role_id)
     .maybeSingle();
 
-  if (roleError) {
-    return (
-      <DashboardLayout>
-        <div
-          dir="rtl"
-          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
-        >
-          تعذر التحقق من دور المستخدم.
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   const roleName =
     role?.name?.toLowerCase() ?? "";
 
   const canViewAllLocations =
-    roleName === "admin" ||
-    roleName === "warehouse manager";
+    roleName === "admin";
 
   // ============================================================
-  // Parameters
+  // معاملات URL
   // ============================================================
 
   const params = await searchParams;
@@ -181,9 +195,9 @@ export default async function InventoryPage({
       : 1;
 
   const search =
-    params.search?.trim() ?? "";
+    (params.search ?? "").trim();
 
-  const requestedLocation =
+  const locationFilter =
     params.location ?? "all";
 
   const statusFilter =
@@ -226,156 +240,296 @@ export default async function InventoryPage({
     locationsData ?? [];
 
   // ============================================================
-  // تحديد الموقع المسموح به
+  // المواقع المسموح بها
+  //
+  // Admin:
+  // جميع مواقع الشركة.
+  //
+  // باقي المستخدمين:
+  // موقع المستخدم فقط.
   // ============================================================
 
-  let effectiveLocation =
-    requestedLocation;
+  let allowedLocationIds =
+    locations.map(
+      (location) => location.id
+    );
 
   if (!canViewAllLocations) {
-    effectiveLocation =
-      dbUser.location_id ?? "none";
+    allowedLocationIds =
+      dbUser.location_id
+        ? [dbUser.location_id]
+        : [];
   }
 
   // ============================================================
-  // البحث عن المنتجات بالباركود
+  // تحديد فلتر الموقع
   // ============================================================
 
-  let barcodeProductIds: string[] = [];
+  let selectedLocationIds =
+    allowedLocationIds;
+
+  if (
+    canViewAllLocations &&
+    locationFilter !== "all" &&
+    locationFilter !== "other"
+  ) {
+    selectedLocationIds =
+      allowedLocationIds.filter(
+        (id) =>
+          id === locationFilter
+      );
+  }
+
+  // الفروع الأخرى = كل المواقع عدا موقع الـAdmin
+  if (
+    canViewAllLocations &&
+    locationFilter === "other"
+  ) {
+    selectedLocationIds =
+      dbUser.location_id
+        ? allowedLocationIds.filter(
+            (id) =>
+              id !==
+              dbUser.location_id
+          )
+        : allowedLocationIds;
+  }
+
+  // ============================================================
+  // لا يوجد موقع مسموح
+  // ============================================================
+
+  if (
+    selectedLocationIds.length === 0
+  ) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="mx-auto w-full max-w-[1600px] space-y-7"
+        >
+          <PageHeader
+            locationsCount={
+              locations.length
+            }
+            balancesCount={0}
+          />
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <Warehouse
+              size={40}
+              className="mx-auto mb-4 text-slate-300"
+            />
+
+            <p className="font-semibold text-slate-700">
+              لا يوجد موقع مرتبط بالمستخدم
+            </p>
+
+            <p className="mt-1 text-sm text-slate-400">
+              تواصل مع مسؤول النظام لربط حسابك بموقع.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ============================================================
+  // البحث عن المنتجات
+  //
+  // نبحث في products أولًا.
+  // ثم نبحث في product_barcodes.
+  //
+  // هذا يتجنب مشكلة Bad Request الناتجة
+  // عن البحث داخل العلاقة مباشرة.
+  // ============================================================
+
+  let productIdsForSearch: string[] | null =
+    null;
 
   if (search) {
-    const {
-      data: barcodeRows,
-    } = await supabase
-      .from("product_barcodes")
-      .select("product_id")
-      .ilike(
-        "barcode",
-        `%${search}%`
-      );
+    const escapedSearch =
+      search
+        .replace(/\\/g, "\\\\")
+        .replace(/%/g, "\\%")
+        .replace(/_/g, "\\_");
 
-    barcodeProductIds =
-      (barcodeRows ?? []).map(
-        (row) => row.product_id
+    const [
+      { data: productsByName },
+      { data: productsBySku },
+      { data: barcodesBySearch },
+    ] = await Promise.all([
+      supabase
+        .from("products")
+        .select("id")
+        .eq(
+          "company_id",
+          companyId
+        )
+        .ilike(
+          "name",
+          `%${escapedSearch}%`
+        ),
+
+      supabase
+        .from("products")
+        .select("id")
+        .eq(
+          "company_id",
+          companyId
+        )
+        .ilike(
+          "sku",
+          `%${escapedSearch}%`
+        ),
+
+      supabase
+        .from("product_barcodes")
+        .select(
+          "product_id"
+        )
+        .ilike(
+          "barcode",
+          `%${escapedSearch}%`
+        ),
+    ]);
+
+    const ids = new Set<string>();
+
+    for (
+      const product of
+        productsByName ?? []
+    ) {
+      ids.add(product.id);
+    }
+
+    for (
+      const product of
+        productsBySku ?? []
+    ) {
+      ids.add(product.id);
+    }
+
+    for (
+      const barcode of
+        barcodesBySearch ?? []
+    ) {
+      ids.add(barcode.product_id);
+    }
+
+    productIdsForSearch =
+      Array.from(ids);
+
+    // لا توجد منتجات مطابقة
+    if (
+      productIdsForSearch.length ===
+      0
+    ) {
+      return (
+        <DashboardLayout>
+          <div
+            dir="rtl"
+            className="mx-auto w-full max-w-[1600px] space-y-7"
+          >
+            <PageHeader
+              locationsCount={
+                locations.length
+              }
+              balancesCount={0}
+            />
+
+            <InventoryTable
+              inventory={[]}
+              locations={locations}
+              barcodeMap={
+                new Map()
+              }
+              currentPage={1}
+              totalPages={1}
+              totalResults={0}
+              pageSize={PAGE_SIZE}
+              search={search}
+              locationFilter={
+                locationFilter
+              }
+              statusFilter={
+                statusFilter
+              }
+              canViewAllLocations={
+                canViewAllLocations
+              }
+              currentLocationId={
+                dbUser.location_id
+              }
+            />
+          </div>
+        </DashboardLayout>
       );
+    }
   }
 
   // ============================================================
   // استعلام أرصدة المخزون
   // ============================================================
 
-  let balanceQuery = supabase
-    .from("stock_balances")
-    .select(
-      `
-        id,
-        product_id,
-        location_id,
-        available_quantity,
-        reserved_quantity,
-        minimum_quantity,
-        maximum_quantity,
-        last_count_date,
-        updated_at,
-
-        products!inner (
+  let balanceQuery =
+    supabase
+      .from("stock_balances")
+      .select(
+        `
           id,
-          name,
-          sku,
-          company_id
-        ),
+          product_id,
+          location_id,
+          available_quantity,
+          reserved_quantity,
+          minimum_quantity,
+          maximum_quantity,
+          last_count_date,
+          updated_at,
 
-        locations!inner (
-          id,
-          name,
-          code,
-          company_id
-        )
-      `,
-      {
-        count: "exact",
-      }
-    )
-    .eq(
-      "products.company_id",
-      companyId
-    )
-    .eq(
-      "locations.company_id",
-      companyId
-    );
+          products!inner (
+            id,
+            name,
+            sku,
+            company_id
+          ),
+
+          locations!inner (
+            id,
+            name,
+            code,
+            company_id
+          )
+        `,
+        {
+          count: "exact",
+        }
+      )
+      .eq(
+        "products.company_id",
+        companyId
+      )
+      .eq(
+        "locations.company_id",
+        companyId
+      )
+      .in(
+        "location_id",
+        selectedLocationIds
+      );
 
   // ============================================================
-  // فلترة الفرع
+  // فلتر المنتجات من البحث
   // ============================================================
 
   if (
-    effectiveLocation !== "all"
+    productIdsForSearch !== null
   ) {
     balanceQuery =
-      balanceQuery.eq(
-        "location_id",
-        effectiveLocation
+      balanceQuery.in(
+        "product_id",
+        productIdsForSearch
       );
-  }
-
-  // ============================================================
-  // البحث
-  //
-  // الاسم + SKU + الباركود
-  // ============================================================
-
-  if (search) {
-    const searchConditions = [
-      `name.ilike.%${search}%`,
-      `sku.ilike.%${search}%`,
-    ];
-
-    if (
-      barcodeProductIds.length > 0
-    ) {
-      searchConditions.push(
-        `id.in.(${barcodeProductIds.join(",")})`
-      );
-    }
-
-    balanceQuery =
-      balanceQuery.or(
-        searchConditions.join(","),
-        {
-          foreignTable:
-            "products",
-        }
-      );
-  }
-
-  // ============================================================
-  // فلترة الحالة
-  // ============================================================
-
-  if (statusFilter === "out") {
-    balanceQuery =
-      balanceQuery.lte(
-        "available_quantity",
-        0
-      );
-  }
-
-  if (statusFilter === "low") {
-    balanceQuery =
-      balanceQuery
-        .gt(
-          "available_quantity",
-          0
-        )
-        .gt(
-          "minimum_quantity",
-          0
-        )
-        .lte(
-          "available_quantity",
-          999999999999
-        );
   }
 
   // ============================================================
@@ -387,17 +541,25 @@ export default async function InventoryPage({
     PAGE_SIZE;
 
   const to =
-    from + PAGE_SIZE - 1;
+    from +
+    PAGE_SIZE -
+    1;
 
   const {
     data: balances,
     error: balancesError,
     count,
   } = await balanceQuery
-    .order("updated_at", {
-      ascending: false,
-    })
-    .range(from, to);
+    .order(
+      "updated_at",
+      {
+        ascending: false,
+      }
+    )
+    .range(
+      from,
+      to
+    );
 
   if (balancesError) {
     return (
@@ -419,63 +581,19 @@ export default async function InventoryPage({
   }
 
   // ============================================================
-  // باركودات المنتجات الموجودة في الصفحة
-  // ============================================================
-
-  const productIds =
-    (balances ?? []).map(
-      (balance) =>
-        balance.product_id
-    );
-
-  const barcodeMap =
-    new Map<string, string>();
-
-  if (productIds.length > 0) {
-    const {
-      data: barcodeRows,
-    } = await supabase
-      .from("product_barcodes")
-      .select(
-        "product_id, barcode, is_default"
-      )
-      .in(
-        "product_id",
-        productIds
-      );
-
-    for (
-      const row of barcodeRows ?? []
-    ) {
-      const existing =
-        barcodeMap.get(
-          row.product_id
-        );
-
-      if (
-        !existing ||
-        row.is_default === true
-      ) {
-        barcodeMap.set(
-          row.product_id,
-          row.barcode
-        );
-      }
-    }
-  }
-
-  // ============================================================
-  // تجهيز البيانات
+  // تجهيز الأرصدة
   // ============================================================
 
   const inventory: InventoryBalance[] =
     (balances ?? []).map(
       (balance) => ({
         ...balance,
+
         products:
           firstRelation(
             balance.products
           ),
+
         locations:
           firstRelation(
             balance.locations
@@ -484,66 +602,17 @@ export default async function InventoryPage({
     );
 
   // ============================================================
-  // الإحصائيات
+  // Pagination totals
   // ============================================================
 
-  const totalRows =
+  const totalResults =
     count ?? 0;
-
-  const totalAvailable =
-    inventory.reduce(
-      (sum, item) =>
-        sum +
-        Number(
-          item.available_quantity ?? 0
-        ),
-      0
-    );
-
-  const totalReserved =
-    inventory.reduce(
-      (sum, item) =>
-        sum +
-        Number(
-          item.reserved_quantity ?? 0
-        ),
-      0
-    );
-
-  const lowStockCount =
-    inventory.filter(
-      (item) => {
-        const available =
-          Number(
-            item.available_quantity ?? 0
-          );
-
-        const minimum =
-          Number(
-            item.minimum_quantity ?? 0
-          );
-
-        return (
-          available > 0 &&
-          minimum > 0 &&
-          available <= minimum
-        );
-      }
-    ).length;
-
-  const outOfStockCount =
-    inventory.filter(
-      (item) =>
-        Number(
-          item.available_quantity ?? 0
-        ) <= 0
-    ).length;
 
   const totalPages =
     Math.max(
       1,
       Math.ceil(
-        totalRows /
+        totalResults /
           PAGE_SIZE
       )
     );
@@ -553,6 +622,122 @@ export default async function InventoryPage({
       currentPage,
       totalPages
     );
+
+  // ============================================================
+  // IDs الموجودة في الصفحة الحالية
+  // ============================================================
+
+  const pageProductIds =
+    inventory.map(
+      (item) =>
+        item.product_id
+    );
+
+  // ============================================================
+  // جلب الباركود للمنتجات الحالية فقط
+  // ============================================================
+
+  const barcodeMap =
+    new Map<
+      string,
+      string
+    >();
+
+  if (
+    pageProductIds.length > 0
+  ) {
+    const {
+      data: barcodes,
+    } = await supabase
+      .from("product_barcodes")
+      .select(
+        "product_id, barcode, is_default"
+      )
+      .in(
+        "product_id",
+        pageProductIds
+      )
+      .order(
+        "is_default",
+        {
+          ascending: false,
+        }
+      );
+
+    for (
+      const barcode of
+        barcodes ?? []
+    ) {
+      if (
+        !barcodeMap.has(
+          barcode.product_id
+        )
+      ) {
+        barcodeMap.set(
+          barcode.product_id,
+          barcode.barcode
+        );
+      }
+    }
+  }
+
+  // ============================================================
+  // إحصائيات الصفحة الحالية
+  // ============================================================
+
+  const totalAvailable =
+    inventory.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.available_quantity ??
+            0
+        ),
+      0
+    );
+
+  const totalReserved =
+    inventory.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.reserved_quantity ??
+            0
+        ),
+      0
+    );
+
+  const lowStockCount =
+    inventory.filter(
+      (item) => {
+        const available =
+          Number(
+            item.available_quantity ??
+              0
+          );
+
+        const minimum =
+          Number(
+            item.minimum_quantity ??
+              0
+          );
+
+        return (
+          minimum > 0 &&
+          available > 0 &&
+          available <= minimum
+        );
+      }
+    ).length;
+
+  const outOfStockCount =
+    inventory.filter(
+      (item) =>
+        Number(
+          item.available_quantity ??
+            0
+        ) <= 0
+    ).length;
 
   // ============================================================
   // الصفحة
@@ -565,65 +750,17 @@ export default async function InventoryPage({
         className="mx-auto w-full max-w-[1600px] space-y-7"
       >
         {/* ======================================================
-            الرأس
+            رأس الصفحة
         ======================================================= */}
 
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
-              <Boxes
-                size={16}
-                className="text-teal-600"
-              />
-
-              <span>
-                إدارة المخزون
-              </span>
-
-              <span>/</span>
-
-              <span className="text-slate-500">
-                أرصدة المخزون
-              </span>
-            </div>
-
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              أرصدة المخزون
-            </h1>
-
-            <p className="mt-2 text-sm text-slate-500">
-              متابعة الكميات المتاحة والمحجوزة
-              حسب المنتجات والمواقع.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
-              <Warehouse
-                size={17}
-                className="text-teal-600"
-              />
-
-              <span>
-                {locations.length} موقع
-              </span>
-            </div>
-
-            <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
-              <Package
-                size={17}
-                className="text-teal-600"
-              />
-
-              <span>
-                {totalRows.toLocaleString(
-                  "ar-SA"
-                )}{" "}
-                رصيد
-              </span>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          locationsCount={
+            locations.length
+          }
+          balancesCount={
+            totalResults
+          }
+        />
 
         {/* ======================================================
             الإحصائيات
@@ -631,20 +768,16 @@ export default async function InventoryPage({
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            icon={
-              <Boxes size={20} />
-            }
+            icon={<Boxes size={20} />}
             label="أرصدة المخزون"
-            value={totalRows.toLocaleString(
+            value={totalResults.toLocaleString(
               "ar-SA"
             )}
-            description="عدد النتائج"
+            description="إجمالي سجلات المنتجات والمواقع"
           />
 
           <StatCard
-            icon={
-              <Package size={20} />
-            }
+            icon={<Package size={20} />}
             label="الكمية المتاحة"
             value={totalAvailable.toLocaleString(
               "ar-SA",
@@ -652,13 +785,11 @@ export default async function InventoryPage({
                 maximumFractionDigits: 2,
               }
             )}
-            description="إجمالي الصفحة الحالية"
+            description="إجمالي الكمية في الصفحة الحالية"
           />
 
           <StatCard
-            icon={
-              <Warehouse size={20} />
-            }
+            icon={<Warehouse size={20} />}
             label="الكمية المحجوزة"
             value={totalReserved.toLocaleString(
               "ar-SA",
@@ -666,15 +797,11 @@ export default async function InventoryPage({
                 maximumFractionDigits: 2,
               }
             )}
-            description="إجمالي الصفحة الحالية"
+            description="إجمالي الكمية المحجوزة في الصفحة"
           />
 
           <StatCard
-            icon={
-              <AlertTriangle
-                size={20}
-              />
-            }
+            icon={<AlertTriangle size={20} />}
             label="تنبيهات المخزون"
             value={(
               lowStockCount +
@@ -701,18 +828,14 @@ export default async function InventoryPage({
           currentPage={
             safeCurrentPage
           }
-          totalPages={
-            totalPages
-          }
+          totalPages={totalPages}
           totalResults={
-            totalRows
+            totalResults
           }
-          pageSize={
-            PAGE_SIZE
-          }
+          pageSize={PAGE_SIZE}
           search={search}
           locationFilter={
-            effectiveLocation
+            locationFilter
           }
           statusFilter={
             statusFilter
@@ -726,6 +849,76 @@ export default async function InventoryPage({
         />
       </div>
     </DashboardLayout>
+  );
+}
+
+/* ==============================================================
+   Page Header
+================================================================ */
+
+function PageHeader({
+  locationsCount,
+  balancesCount,
+}: {
+  locationsCount: number;
+  balancesCount: number;
+}) {
+  return (
+    <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+      <div>
+        <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
+          <Boxes size={16} />
+
+          <span>
+            إدارة المخزون
+          </span>
+
+          <span>/</span>
+
+          <span className="text-slate-500">
+            أرصدة المخزون
+          </span>
+        </div>
+
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          أرصدة المخزون
+        </h1>
+
+        <p className="mt-2 text-sm text-slate-500">
+          متابعة الكميات المتاحة والمحجوزة حسب المنتجات والمواقع.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
+          <Warehouse
+            size={17}
+            className="text-teal-600"
+          />
+
+          <span>
+            {locationsCount.toLocaleString(
+              "ar-SA"
+            )}{" "}
+            موقع
+          </span>
+        </div>
+
+        <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
+          <Package
+            size={17}
+            className="text-teal-600"
+          />
+
+          <span>
+            {balancesCount.toLocaleString(
+              "ar-SA"
+            )}{" "}
+            رصيد
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
