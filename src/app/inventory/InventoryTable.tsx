@@ -52,10 +52,7 @@ type Location = {
 type Props = {
   inventory: InventoryBalance[];
   locations: Location[];
-  barcodeMap: Record<
-    string,
-    string
-  >;
+  barcodeMap: Record<string, string>;
   canViewAllLocations: boolean;
 };
 
@@ -65,8 +62,7 @@ export default function InventoryTable({
   barcodeMap,
   canViewAllLocations,
 }: Props) {
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
   const [
     locationFilter,
@@ -81,119 +77,106 @@ export default function InventoryTable({
   /* ============================================================
      البحث والفلاتر
      
-     لا توجد Pagination هنا.
      البحث يعمل على كامل inventory المرسل من السيرفر.
+     لا توجد Pagination.
   ============================================================ */
 
-  const filteredInventory =
-    useMemo(() => {
-      const query =
-        search
-          .trim()
-          .toLocaleLowerCase();
+  const filteredInventory = useMemo(() => {
+    const query =
+      search
+        .trim()
+        .toLocaleLowerCase();
 
-      return inventory.filter(
-        (item) => {
-          const name =
-            item.products?.name?.toLocaleLowerCase() ??
-            "";
+    return inventory.filter((item) => {
+      const name =
+        item.products?.name
+          ?.toLocaleLowerCase() ?? "";
 
-          const sku =
-            item.products?.sku?.toLocaleLowerCase() ??
-            "";
+      const sku =
+        item.products?.sku
+          ?.toLocaleLowerCase() ?? "";
 
-          const barcode =
-            barcodeMap[
-              item.product_id
-            ]?.toLocaleLowerCase() ??
-            "";
+      const barcode =
+        barcodeMap[item.product_id]
+          ?.toLocaleLowerCase() ?? "";
 
-          const locationName =
-            item.locations?.name?.toLocaleLowerCase() ??
-            "";
+      const locationName =
+        item.locations?.name
+          ?.toLocaleLowerCase() ?? "";
 
-          const locationCode =
-            item.locations?.code?.toLocaleLowerCase() ??
-            "";
+      const locationCode =
+        item.locations?.code
+          ?.toLocaleLowerCase() ?? "";
 
-          const matchesSearch =
-            !query ||
-            name.includes(query) ||
-            sku.includes(query) ||
-            barcode.includes(query) ||
-            locationName.includes(query) ||
-            locationCode.includes(query);
+      const matchesSearch =
+        !query ||
+        name.includes(query) ||
+        sku.includes(query) ||
+        barcode.includes(query) ||
+        locationName.includes(query) ||
+        locationCode.includes(query);
 
-          const matchesLocation =
-            !canViewAllLocations ||
-            locationFilter ===
-              "all" ||
-            item.location_id ===
-              locationFilter;
+      const matchesLocation =
+        !canViewAllLocations ||
+        locationFilter === "all" ||
+        item.location_id ===
+          locationFilter;
 
-          const available =
-            Number(
-              item.available_quantity ??
-                0
-            );
+      const available =
+        Number(
+          item.available_quantity ?? 0
+        );
 
-          const minimum =
-            Number(
-              item.minimum_quantity ??
-                0
-            );
+      const minimum =
+        Number(
+          item.minimum_quantity ?? 0
+        );
 
-          const isOut =
-            available <= 0;
+      const isOut =
+        available <= 0;
 
-          const isLow =
-            !isOut &&
-            minimum > 0 &&
-            available <= minimum;
+      const isLow =
+        !isOut &&
+        minimum > 0 &&
+        available <= minimum;
 
-          const matchesStatus =
-            statusFilter ===
-              "all" ||
-            (
-              statusFilter ===
-                "available" &&
-              !isOut &&
-              !isLow
-            ) ||
-            (
-              statusFilter ===
-                "low" &&
-              isLow
-            ) ||
-            (
-              statusFilter ===
-                "out" &&
-              isOut
-            );
+      const matchesStatus =
+        statusFilter === "all" ||
+        (
+          statusFilter === "available" &&
+          !isOut &&
+          !isLow
+        ) ||
+        (
+          statusFilter === "low" &&
+          isLow
+        ) ||
+        (
+          statusFilter === "out" &&
+          isOut
+        );
 
-          return (
-            matchesSearch &&
-            matchesLocation &&
-            matchesStatus
-          );
-        }
+      return (
+        matchesSearch &&
+        matchesLocation &&
+        matchesStatus
       );
-    }, [
-      inventory,
-      barcodeMap,
-      search,
-      locationFilter,
-      statusFilter,
-      canViewAllLocations,
-    ]);
+    });
+  }, [
+    inventory,
+    barcodeMap,
+    search,
+    locationFilter,
+    statusFilter,
+    canViewAllLocations,
+  ]);
 
   const totalAvailable =
     filteredInventory.reduce(
       (sum, item) =>
         sum +
         Number(
-          item.available_quantity ??
-            0
+          item.available_quantity ?? 0
         ),
       0
     );
@@ -203,8 +186,7 @@ export default function InventoryTable({
       (sum, item) =>
         sum +
         Number(
-          item.reserved_quantity ??
-            0
+          item.reserved_quantity ?? 0
         ),
       0
     );
@@ -232,16 +214,12 @@ export default function InventoryTable({
       {
         dateStyle: "medium",
       }
-    ).format(
-      new Date(value)
-    );
+    ).format(new Date(value));
   }
 
   function clearFilters() {
     setSearch("");
-    setLocationFilter(
-      "all"
-    );
+    setLocationFilter("all");
     setStatusFilter("all");
   }
 
@@ -278,12 +256,9 @@ export default function InventoryTable({
               <input
                 type="search"
                 value={search}
-                onChange={(
-                  event
-                ) =>
+                onChange={(event) =>
                   setSearch(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="ابحث بالمنتج أو SKU أو الباركود..."
@@ -299,9 +274,7 @@ export default function InventoryTable({
                   className="absolute left-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                   aria-label="مسح البحث"
                 >
-                  <X
-                    size={15}
-                  />
+                  <X size={15} />
                 </button>
               )}
             </div>
@@ -310,15 +283,10 @@ export default function InventoryTable({
 
             {canViewAllLocations && (
               <select
-                value={
-                  locationFilter
-                }
-                onChange={(
-                  event
-                ) =>
+                value={locationFilter}
+                onChange={(event) =>
                   setLocationFilter(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
@@ -328,25 +296,13 @@ export default function InventoryTable({
                 </option>
 
                 {locations.map(
-                  (
-                    location
-                  ) => (
+                  (location) => (
                     <option
-                      key={
-                        location.id
-                      }
-                      value={
-                        location.id
-                      }
+                      key={location.id}
+                      value={location.id}
                     >
-                      {
-                        location.name
-                      }{" "}
-                      (
-                      {
-                        location.code
-                      }
-                      )
+                      {location.name} (
+                      {location.code})
                     </option>
                   )
                 )}
@@ -356,15 +312,10 @@ export default function InventoryTable({
             {/* الحالة */}
 
             <select
-              value={
-                statusFilter
-              }
-              onChange={(
-                event
-              ) =>
+              value={statusFilter}
+              onChange={(event) =>
                 setStatusFilter(
-                  event.target
-                    .value
+                  event.target.value
                 )
               }
               className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
@@ -413,15 +364,11 @@ export default function InventoryTable({
           </span>
 
           {(search ||
-            locationFilter !==
-              "all" ||
-            statusFilter !==
-              "all") && (
+            locationFilter !== "all" ||
+            statusFilter !== "all") && (
             <button
               type="button"
-              onClick={
-                clearFilters
-              }
+              onClick={clearFilters}
               className="mr-auto inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
             >
               <X size={13} />
@@ -435,8 +382,7 @@ export default function InventoryTable({
           لا توجد نتائج
       ========================================================= */}
 
-      {filteredInventory.length ===
-      0 ? (
+      {filteredInventory.length === 0 ? (
         <div className="px-6 py-20 text-center">
           <Package
             size={38}
@@ -508,31 +454,26 @@ export default function InventoryTable({
                   (item) => {
                     const available =
                       Number(
-                        item.available_quantity ??
-                          0
+                        item.available_quantity ?? 0
                       );
 
                     const reserved =
                       Number(
-                        item.reserved_quantity ??
-                          0
+                        item.reserved_quantity ?? 0
                       );
 
                     const minimum =
                       Number(
-                        item.minimum_quantity ??
-                          0
+                        item.minimum_quantity ?? 0
                       );
 
                     const isOut =
-                      available <=
-                      0;
+                      available <= 0;
 
                     const isLow =
                       !isOut &&
                       minimum > 0 &&
-                      available <=
-                        minimum;
+                      available <= minimum;
 
                     const barcode =
                       barcodeMap[
@@ -541,25 +482,17 @@ export default function InventoryTable({
 
                     return (
                       <tr
-                        key={
-                          item.id
-                        }
+                        key={item.id}
                         className="transition-colors hover:bg-teal-50/30"
                       >
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                              <Package
-                                size={
-                                  17
-                                }
-                              />
+                              <Package size={17} />
                             </div>
 
                             <p className="max-w-[260px] truncate font-semibold text-slate-800">
-                              {item
-                                .products
-                                ?.name ??
+                              {item.products?.name ??
                                 "—"}
                             </p>
                           </div>
@@ -567,30 +500,23 @@ export default function InventoryTable({
 
                         <td className="px-5 py-4">
                           <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-xs font-semibold text-slate-600">
-                            {item
-                              .products
-                              ?.sku ??
+                            {item.products?.sku ??
                               "—"}
                           </span>
                         </td>
 
                         <td className="px-5 py-4 font-mono text-xs text-slate-500">
-                          {barcode ??
-                            "—"}
+                          {barcode ?? "—"}
                         </td>
 
                         <td className="px-5 py-4">
                           <p className="font-medium text-slate-700">
-                            {item
-                              .locations
-                              ?.name ??
+                            {item.locations?.name ??
                               "—"}
                           </p>
 
                           <p className="mt-0.5 text-xs text-slate-400">
-                            {item
-                              .locations
-                              ?.code ??
+                            {item.locations?.code ??
                               ""}
                           </p>
                         </td>
@@ -646,9 +572,7 @@ export default function InventoryTable({
                               danger
                               icon={
                                 <AlertTriangle
-                                  size={
-                                    13
-                                  }
+                                  size={13}
                                 />
                               }
                               text="نافد"
@@ -658,9 +582,7 @@ export default function InventoryTable({
                               warning
                               icon={
                                 <AlertTriangle
-                                  size={
-                                    13
-                                  }
+                                  size={13}
                                 />
                               }
                               text="منخفض"
@@ -669,9 +591,7 @@ export default function InventoryTable({
                             <StatusBadge
                               icon={
                                 <CheckCircle2
-                                  size={
-                                    13
-                                  }
+                                  size={13}
                                 />
                               }
                               text="متوفر"
@@ -688,9 +608,6 @@ export default function InventoryTable({
 
           {/* ======================================================
               كروت الجوال
-              
-              نفس filteredInventory بالكامل.
-              لا يوجد Pagination.
           ======================================================= */}
 
           <div className="divide-y divide-slate-100 lg:hidden">
@@ -698,31 +615,26 @@ export default function InventoryTable({
               (item) => {
                 const available =
                   Number(
-                    item.available_quantity ??
-                      0
+                    item.available_quantity ?? 0
                   );
 
                 const reserved =
                   Number(
-                    item.reserved_quantity ??
-                      0
+                    item.reserved_quantity ?? 0
                   );
 
                 const minimum =
                   Number(
-                    item.minimum_quantity ??
-                      0
+                    item.minimum_quantity ?? 0
                   );
 
                 const isOut =
-                  available <=
-                  0;
+                  available <= 0;
 
                 const isLow =
                   !isOut &&
                   minimum > 0 &&
-                  available <=
-                    minimum;
+                  available <= minimum;
 
                 const barcode =
                   barcodeMap[
@@ -731,43 +643,30 @@ export default function InventoryTable({
 
                 return (
                   <div
-                    key={
-                      item.id
-                    }
+                    key={item.id}
                     className="p-4"
                   >
                     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                       <div className="flex items-start gap-3">
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                          <Package
-                            size={
-                              20
-                            }
-                          />
+                          <Package size={20} />
                         </div>
 
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-bold text-slate-800">
-                            {item
-                              .products
-                              ?.name ??
+                            {item.products?.name ??
                               "—"}
                           </p>
 
                           <p className="mt-1 font-mono text-xs text-slate-400">
                             SKU:{" "}
-                            {item
-                              .products
-                              ?.sku ??
+                            {item.products?.sku ??
                               "—"}
                           </p>
 
                           {barcode && (
                             <p className="mt-1 font-mono text-xs text-slate-400">
-                              باركود:{" "}
-                              {
-                                barcode
-                              }
+                              باركود: {barcode}
                             </p>
                           )}
                         </div>
@@ -793,9 +692,7 @@ export default function InventoryTable({
                         <InfoBox
                           label="الموقع"
                           value={
-                            item
-                              .locations
-                              ?.name ??
+                            item.locations?.name ??
                             "—"
                           }
                         />
