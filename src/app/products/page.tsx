@@ -3,6 +3,66 @@ import { createClient } from "@/lib/supabase/server";
 import ProductForm from "./ProductForm";
 import ProductsList from "./ProductsList";
 
+
+type Product = {
+  id: string;
+  sku: string;
+  name: string;
+  description: string | null;
+  minimum_quantity: number | null;
+  is_active: boolean | null;
+  created_at: string;
+};
+
+const PRODUCT_BATCH_SIZE = 1000;
+
+async function getAllProducts(
+  supabase: Awaited<ReturnType<typeof createClient>>
+) {
+  const products: Product[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("products")
+      .select(`
+        id,
+        sku,
+        name,
+        description,
+        minimum_quantity,
+        is_active,
+        created_at
+      `)
+      .order("created_at", {
+        ascending: false,
+      })
+      .range(
+        from,
+        from + PRODUCT_BATCH_SIZE - 1
+      );
+
+    if (error) {
+      return {
+        data: products,
+        error,
+      };
+    }
+
+    const batch = data ?? [];
+    products.push(...batch);
+
+    if (batch.length < PRODUCT_BATCH_SIZE) {
+      return {
+        data: products,
+        error: null,
+      };
+    }
+
+    from += PRODUCT_BATCH_SIZE;
+  }
+}
+
 export default async function ProductsPage() {
   const supabase = await createClient();
 
@@ -79,20 +139,7 @@ export default async function ProductsPage() {
     { data: categories, error: categoriesError },
     { data: brands, error: brandsError },
   ] = await Promise.all([
-    supabase
-      .from("products")
-      .select(`
-        id,
-        sku,
-        name,
-        description,
-        minimum_quantity,
-        is_active,
-        created_at
-      `)
-      .order("created_at", {
-        ascending: false,
-      }),
+    getAllProducts(supabase),
 
     supabase
       .from("categories")
