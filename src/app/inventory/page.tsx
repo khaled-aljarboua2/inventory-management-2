@@ -21,23 +21,19 @@ type InventoryBalance = {
   last_count_date: string | null;
   updated_at: string;
 
-  products:
-    | {
-        id: string;
-        name: string;
-        sku: string;
-        company_id: string;
-      }
-    | null;
+  products: {
+    id: string;
+    name: string;
+    sku: string;
+    company_id: string;
+  } | null;
 
-  locations:
-    | {
-        id: string;
-        name: string;
-        code: string;
-        company_id: string;
-      }
-    | null;
+  locations: {
+    id: string;
+    name: string;
+    code: string;
+    company_id: string;
+  } | null;
 };
 
 type Location = {
@@ -46,97 +42,19 @@ type Location = {
   code: string;
 };
 
-export default async function InventoryPage() {
-  const supabase = await createClient();
+const BATCH_SIZE = 1000;
 
-  // ============================================================
-  // المستخدم الحالي
-  // ============================================================
+async function loadAllBalances(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  companyId: string,
+  locationId: string | null,
+) {
+  const all: InventoryBalance[] = [];
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return (
-      <DashboardLayout>
-        <div
-          dir="rtl"
-          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
-        >
-          يجب تسجيل الدخول أولًا.
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  // ============================================================
-  // مستخدم النظام
-  // ============================================================
-
-  const {
-    data: dbUser,
-    error: userError,
-  } = await supabase
-    .from("users")
-    .select(
-      "id, company_id, role_id, location_id, is_active"
-    )
-    .eq("auth_user_id", user.id)
-    .eq("is_active", true)
-    .single();
-
-  if (userError || !dbUser) {
-    return (
-      <DashboardLayout>
-        <div
-          dir="rtl"
-          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
-        >
-          لم يتم العثور على المستخدم في النظام.
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  const companyId = dbUser.company_id;
-
-  if (!companyId) {
-    return (
-      <DashboardLayout>
-        <div
-          dir="rtl"
-          className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-700"
-        >
-          المستخدم غير مرتبط بشركة.
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  // ============================================================
-  // تحديد نطاق المواقع
-  //
-  // المستخدم الذي لا يملك location_id يعتبر مستخدمًا مركزيًا
-  // ويمكنه مشاهدة جميع مواقع الشركة.
-  //
-  // المستخدم المرتبط بموقع يشاهد موقعه فقط.
-  // ============================================================
-
-  const canViewAllLocations =
-    !dbUser.location_id;
-
-  // ============================================================
-  // تحميل الأرصدة
-  //
-  // لا يوجد Pagination هنا.
-  // يتم تحميل جميع أرصدة الشركة في استعلام واحد.
-  // ============================================================
-
-  let balancesQuery = supabase
-    .from("stock_balances")
-    .select(
-      `
+  for (let from = 0; ; from += BATCH_SIZE) {
+    let query = supabase
+      .from("stock_balances")
+      .select(`
         id,
         product_id,
         location_id,
@@ -160,32 +78,194 @@ export default async function InventoryPage() {
           code,
           company_id
         )
-      `
-    )
-    .eq("products.company_id", companyId)
-    .eq("locations.company_id", companyId)
-    .order("updated_at", {
-      ascending: false,
-    });
+      `)
+      .eq("products.company_id", companyId)
+      .eq("locations.company_id", companyId)
+      .order("updated_at", {
+        ascending: false,
+      })
+      .range(
+        from,
+        from + BATCH_SIZE - 1,
+      );
 
-  // المستخدم العادي يرى موقعه فقط
-  if (!canViewAllLocations) {
-    balancesQuery = balancesQuery.eq(
-      "location_id",
-      dbUser.location_id
+    if (locationId) {
+      query = query.eq(
+        "location_id",
+        locationId,
+      );
+    }
+
+    const {
+      data,
+      error,
+    } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    const batch =
+      (data ?? []).map((row) => ({
+        ...row,
+        products: firstRelation(
+          row.products,
+        ),
+        locations: firstRelation(
+          row.locations,
+        ),
+      })) as InventoryBalance[];
+
+    all.push(...batch);
+
+    if (
+      batch.length <
+      BATCH_SIZE
+    ) {
+      break;
+    }
+  }
+
+  return all;
+}
+
+async function loadBarcodes(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  productIds: string[],
+) {
+  const map = new Map<
+    string,
+    string
+  >();
+
+  const ids = [
+    ...new Set(productIds),
+  ];
+
+  for (
+    let i = 0;
+    i < ids.length;
+    i += 500
+  ) {
+    const chunk = ids.slice(
+      i,
+      i + 500,
+    );
+
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("product_barcodes")
+      .select(
+        "product_id, barcode, is_default",
+      )
+      .in(
+        "product_id",
+        chunk,
+      )
+      .order(
+        "is_default",
+        {
+          ascending: false,
+        },
+      );
+
+    if (error) {
+      throw error;
+    }
+
+    for (
+      const row of data ?? []
+    ) {
+      if (
+        !map.has(
+          row.product_id,
+        )
+      ) {
+        map.set(
+          row.product_id,
+          row.barcode,
+        );
+      }
+    }
+  }
+
+  return map;
+}
+
+export default async function InventoryPage() {
+  const supabase =
+    await createClient();
+
+  const {
+    data: { user },
+  } =
+    await supabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <ErrorBox text="يجب تسجيل الدخول أولًا." />
+      </DashboardLayout>
     );
   }
 
   const {
-    data: balances,
-    error: balancesError,
-  } = await balancesQuery;
+    data: dbUser,
+    error: userError,
+  } = await supabase
+    .from("users")
+    .select(
+      "id, company_id, role_id, location_id, is_active",
+    )
+    .eq(
+      "auth_user_id",
+      user.id,
+    )
+    .eq(
+      "is_active",
+      true,
+    )
+    .single();
 
-  // ============================================================
-  // التحقق من الخطأ
-  // ============================================================
+  if (
+    userError ||
+    !dbUser
+  ) {
+    return (
+      <DashboardLayout>
+        <ErrorBox text="لم يتم العثور على المستخدم في النظام." />
+      </DashboardLayout>
+    );
+  }
 
-  if (balancesError) {
+  if (!dbUser.company_id) {
+    return (
+      <DashboardLayout>
+        <ErrorBox text="المستخدم غير مرتبط بشركة." />
+      </DashboardLayout>
+    );
+  }
+
+  const companyId =
+    dbUser.company_id;
+
+  const canViewAllLocations =
+    !dbUser.location_id;
+
+  let inventory: InventoryBalance[];
+
+  try {
+    inventory =
+      await loadAllBalances(
+        supabase,
+        companyId,
+        canViewAllLocations
+          ? null
+          : dbUser.location_id,
+      );
+  } catch (error) {
     return (
       <DashboardLayout>
         <div
@@ -197,255 +277,227 @@ export default async function InventoryPage() {
           </p>
 
           <p className="mt-2 text-sm text-red-600">
-            {balancesError.message}
+            {error instanceof Error
+              ? error.message
+              : "حدث خطأ غير متوقع."}
           </p>
         </div>
       </DashboardLayout>
     );
   }
 
-  // ============================================================
-  // تجهيز البيانات
-  // ============================================================
-
-  const inventory: InventoryBalance[] =
-    (balances ?? []).map((balance) => ({
-      ...balance,
-      products: firstRelation(
-        balance.products
+  const barcodeMap =
+    await loadBarcodes(
+      supabase,
+      inventory.map(
+        (item) =>
+          item.product_id,
       ),
-      locations: firstRelation(
-        balance.locations
-      ),
-    }));
-
-  // حماية إضافية للشركة
-  const companyInventory =
-    inventory.filter(
-      (item) =>
-        item.products?.company_id ===
-          companyId &&
-        item.locations?.company_id ===
-          companyId
     );
 
-  // ============================================================
-  // الإحصائيات
-  //
-  // محسوبة على كامل النتائج وليس على صفحة.
-  // ============================================================
-
   const totalRows =
-    companyInventory.length;
+    inventory.length;
+
+  const uniqueProducts =
+    new Set(
+      inventory.map(
+        (item) =>
+          item.product_id,
+      ),
+    ).size;
 
   const totalAvailable =
-    companyInventory.reduce(
+    inventory.reduce(
       (sum, item) =>
         sum +
         Number(
-          item.available_quantity ?? 0
+          item.available_quantity ??
+            0,
         ),
-      0
+      0,
     );
 
   const totalReserved =
-    companyInventory.reduce(
+    inventory.reduce(
       (sum, item) =>
         sum +
         Number(
-          item.reserved_quantity ?? 0
+          item.reserved_quantity ??
+            0,
         ),
-      0
+      0,
     );
 
   const lowStockCount =
-    companyInventory.filter(
+    inventory.filter(
       (item) => {
-        const available = Number(
-          item.available_quantity ?? 0
-        );
+        const available =
+          Number(
+            item.available_quantity ??
+              0,
+          );
 
-        const minimum = Number(
-          item.minimum_quantity ?? 0
-        );
+        const minimum =
+          Number(
+            item.minimum_quantity ??
+              0,
+          );
 
         return (
           available > 0 &&
           minimum > 0 &&
-          available <= minimum
+          available <=
+            minimum
         );
-      }
+      },
     ).length;
 
   const outOfStockCount =
-    companyInventory.filter(
+    inventory.filter(
       (item) =>
         Number(
-          item.available_quantity ?? 0
-        ) <= 0
+          item.available_quantity ??
+            0,
+        ) <= 0,
     ).length;
 
-  // ============================================================
-  // المواقع
-  // ============================================================
+  const locationMap =
+    new Map<
+      string,
+      Location
+    >();
 
-  const locationMap = new Map<
-    string,
-    Location
-  >();
-
-  companyInventory.forEach(
-    (item) => {
-      if (
-        item.locations &&
-        !locationMap.has(
-          item.locations.id
-        )
-      ) {
-        locationMap.set(
-          item.locations.id,
-          {
-            id: item.locations.id,
-            name: item.locations.name,
-            code: item.locations.code,
-          }
-        );
-      }
+  for (
+    const item of inventory
+  ) {
+    if (
+      item.locations &&
+      !locationMap.has(
+        item.locations.id,
+      )
+    ) {
+      locationMap.set(
+        item.locations.id,
+        {
+          id:
+            item.locations.id,
+          name:
+            item.locations.name,
+          code:
+            item.locations.code,
+        },
+      );
     }
-  );
+  }
 
   const locations =
-    Array.from(
-      locationMap.values()
-    );
-
-  // ============================================================
-  // الصفحة
-  // ============================================================
+    [...locationMap.values()];
 
   return (
     <DashboardLayout>
       <div
         dir="rtl"
-        className="mx-auto w-full max-w-[1600px] space-y-7"
+        className="mx-auto w-full max-w-[1600px] space-y-5 sm:space-y-6"
       >
-        {/* ======================================================
-            رأس الصفحة
-        ======================================================= */}
+        <header className="rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-400 sm:text-sm">
+                <Boxes size={15} />
 
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
-              <Boxes size={16} />
+                <span>
+                  إدارة المخزون
+                </span>
 
-              <span>
-                إدارة المخزون
-              </span>
+                <span>/</span>
 
-              <span>/</span>
+                <span>
+                  أرصدة المخزون
+                </span>
+              </div>
 
-              <span className="text-slate-500">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 أرصدة المخزون
-              </span>
+              </h1>
+
+              <p className="mt-1.5 text-sm text-slate-500">
+                متابعة الكميات المتاحة
+                والمحجوزة حسب المنتجات
+                والمواقع.
+              </p>
             </div>
 
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              أرصدة المخزون
-            </h1>
-
-            <p className="mt-2 text-sm text-slate-500">
-              متابعة الكميات المتاحة والمحجوزة
-              حسب المنتجات والمواقع.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
+            <div className="hidden shrink-0 items-center gap-2 rounded-xl bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-700 sm:flex">
               <Warehouse
                 size={17}
-                className="text-teal-600"
               />
 
-              <span>
-                {locations.length} موقع
-              </span>
-            </div>
-
-            <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm sm:flex">
-              <Package
-                size={17}
-                className="text-teal-600"
-              />
-
-              <span>
-                {totalRows} رصيد
-              </span>
+              {locations.length.toLocaleString(
+                "ar-SA",
+              )}{" "}
+              مواقع
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* ======================================================
-            الإحصائيات
-        ======================================================= */}
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard
-            icon={<Boxes size={20} />}
-            label="أرصدة المخزون"
-            value={totalRows.toLocaleString(
-              "ar-SA"
-            )}
-            description="عدد سجلات المنتجات والمواقع"
+            icon={
+              <Boxes size={18} />
+            }
+            label="المنتجات"
+            value={uniqueProducts}
+            description={`${totalRows.toLocaleString(
+              "ar-SA",
+            )} رصيد حسب المواقع`}
           />
 
           <StatCard
-            icon={<Package size={20} />}
+            icon={
+              <Package size={18} />
+            }
             label="الكمية المتاحة"
-            value={totalAvailable.toLocaleString(
-              "ar-SA",
-              {
-                maximumFractionDigits: 2,
-              }
-            )}
+            value={totalAvailable}
             description="إجمالي الكمية المتاحة"
           />
 
           <StatCard
-            icon={<Warehouse size={20} />}
+            icon={
+              <Warehouse size={18} />
+            }
             label="الكمية المحجوزة"
-            value={totalReserved.toLocaleString(
-              "ar-SA",
-              {
-                maximumFractionDigits: 2,
-              }
-            )}
+            value={totalReserved}
             description="إجمالي الكمية المحجوزة"
           />
 
           <StatCard
-            icon={<AlertTriangle size={20} />}
+            icon={
+              <AlertTriangle
+                size={18}
+              />
+            }
             label="تنبيهات المخزون"
-            value={(
+            value={
               lowStockCount +
               outOfStockCount
-            ).toLocaleString(
-              "ar-SA"
-            )}
-            description={`${outOfStockCount} نافد · ${lowStockCount} منخفض`}
+            }
+            description={`${outOfStockCount.toLocaleString(
+              "ar-SA",
+            )} نافد · ${lowStockCount.toLocaleString(
+              "ar-SA",
+            )} منخفض`}
             danger={
-              lowStockCount > 0 ||
-              outOfStockCount > 0
+              lowStockCount +
+                outOfStockCount >
+              0
             }
           />
         </div>
 
-        {/* ======================================================
-            الجدول
-        ======================================================= */}
-
         <InventoryTable
-          inventory={companyInventory}
+          inventory={inventory}
           locations={locations}
+          barcodeMap={barcodeMap}
           canViewAllLocations={
             canViewAllLocations
           }
@@ -454,10 +506,6 @@ export default async function InventoryPage() {
     </DashboardLayout>
   );
 }
-
-/* ==============================================================
-   Stat Card
-================================================================ */
 
 function StatCard({
   icon,
@@ -468,35 +516,15 @@ function StatCard({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: number;
   description: string;
   danger?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">
-            {label}
-          </p>
-
-          <p
-            className={`mt-2 text-2xl font-bold ${
-              danger
-                ? "text-red-600"
-                : "text-slate-900"
-            }`}
-          >
-            {value}
-          </p>
-
-          <p className="mt-1 text-xs text-slate-400">
-            {description}
-          </p>
-        </div>
-
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex items-start gap-3">
         <div
-          className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
             danger
               ? "bg-red-50 text-red-500"
               : "bg-teal-50 text-teal-600"
@@ -504,7 +532,47 @@ function StatCard({
         >
           {icon}
         </div>
+
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium text-slate-500 sm:text-sm">
+            {label}
+          </p>
+
+          <p
+            className={`mt-1 text-xl font-bold leading-tight sm:text-2xl ${
+              danger
+                ? "text-red-600"
+                : "text-slate-900"
+            }`}
+          >
+            {value.toLocaleString(
+              "ar-SA",
+              {
+                maximumFractionDigits: 2,
+              },
+            )}
+          </p>
+
+          <p className="mt-1 hidden truncate text-[11px] text-slate-400 sm:block">
+            {description}
+          </p>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function ErrorBox({
+  text,
+}: {
+  text: string;
+}) {
+  return (
+    <div
+      dir="rtl"
+      className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
+    >
+      {text}
     </div>
   );
 }
