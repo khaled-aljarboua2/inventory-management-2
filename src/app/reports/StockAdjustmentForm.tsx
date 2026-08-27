@@ -4,7 +4,7 @@ import { AlertCircle, CheckCircle2, LoaderCircle, Search, SlidersHorizontal } fr
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState, useTransition } from "react";
 
-import { adjustProductStock } from "../actions";
+import { adjustProductStock } from "@/app/inventory/actions";
 
 type Product = { id: string; sku: string; name: string };
 type Location = { id: string; name: string; code: string };
@@ -86,7 +86,7 @@ export default function StockAdjustmentForm({ products, locations }: { products:
             <option value="">{visibleProducts.length ? "اختر المنتج" : "لا توجد نتائج"}</option>
             {visibleProducts.map((product) => <option key={product.id} value={product.id}>{product.name} — {product.sku}</option>)}
           </select>
-          {query && visibleProducts.length === 100 ? <p className="mt-1 text-[11px] text-slate-400">اعرض أول 100 نتيجة فقط؛ أكمل البحث لتضييق القائمة.</p> : null}
+          {query && visibleProducts.length === 100 ? <p className="mt-1 text-[11px] text-slate-400">تظهر أول 100 نتيجة فقط؛ أكمل البحث لتضييق القائمة.</p> : null}
         </label>
 
         <label className="block">
@@ -111,7 +111,7 @@ export default function StockAdjustmentForm({ products, locations }: { products:
             placeholder="مثال: 5 أو -2"
             className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm tabular-nums outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
           />
-          <p className="mt-1 text-[11px] text-slate-400">اكتب موجبًا للزيادة وسالبًا للنقصان.</p>
+          <p className="mt-1 text-[11px] text-slate-400">الرقم الموجب يزيد المخزون والسالب يخصمه.</p>
         </label>
 
         <label className="block md:col-span-2">

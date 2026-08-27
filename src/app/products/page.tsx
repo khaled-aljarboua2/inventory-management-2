@@ -1,7 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
 import ProductForm from "./ProductForm";
-import ProductImportExport from "./ProductImportExport";
 import ProductsList from "./ProductsList";
 
 type Product = {
@@ -285,8 +284,6 @@ export default async function ProductsPage() {
             حدث خطأ أثناء تحميل بيانات المنتجات.
           </div>
         )}
-
-        <ProductImportExport />
 
         {/* =====================================================
             Add Product

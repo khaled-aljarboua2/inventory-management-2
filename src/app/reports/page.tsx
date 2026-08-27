@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 
 import ReportExportPanel from "./ReportExportPanel";
+import StockAdjustmentForm from "./StockAdjustmentForm";
+import ProductImportExport from "../products/ProductImportExport";
 import {
   formatReportDate,
   formatReportNumber,
@@ -114,7 +116,10 @@ export default async function ReportsPage() {
   }
 
   try {
-    const { balances, transactions } = await loadReportData(session.supabase, session.access);
+    const [{ data: canAdjustStock }, { balances, transactions }] = await Promise.all([
+      session.supabase.rpc("has_permission", { permission_code: "stock.adjust" }),
+      loadReportData(session.supabase, session.access),
+    ]);
     const availableTotals = new Map<string, number>();
     const reservedTotals = new Map<string, number>();
     const productIds = new Set<string>();
@@ -147,6 +152,34 @@ export default async function ReportsPage() {
       }))
       .sort((left, right) => right.count - left.count);
     const highestMovementCount = movementTypes[0]?.count ?? 1;
+    const adjustmentProducts = Array.from(
+      new Map(
+        balances
+          .filter((balance) => balance.products !== null)
+          .map((balance) => [
+            balance.product_id,
+            {
+              id: balance.product_id,
+              sku: balance.products?.sku ?? "",
+              name: balance.products?.name ?? "",
+            },
+          ])
+      ).values()
+    );
+    const adjustmentLocations = Array.from(
+      new Map(
+        balances
+          .filter((balance) => balance.locations !== null)
+          .map((balance) => [
+            balance.location_id,
+            {
+              id: balance.location_id,
+              name: balance.locations?.name ?? "",
+              code: balance.locations?.code ?? "",
+            },
+          ])
+      ).values()
+    );
 
     return (
       <DashboardLayout>
@@ -172,6 +205,31 @@ export default async function ReportsPage() {
           </section>
 
           <ReportExportPanel />
+
+          <section className="space-y-4 rounded-2xl border border-teal-100 bg-teal-50/40 p-4 sm:p-5">
+            <div>
+              <h2 className="font-bold text-slate-900">استيراد وتسوية المخزون</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                عند استيراد ورقة المخزون تُقارن الكمية الواردة بالرصيد الحالي، ثم يُسجل فرق الزيادة أو النقصان كتسوية في قاعدة البيانات.
+              </p>
+            </div>
+
+            <ProductImportExport showExport={false} />
+
+            {canAdjustStock === true ? (
+              <div className="space-y-3 border-t border-teal-100 pt-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">تسوية يدوية</h3>
+                  <p className="mt-1 text-xs text-slate-500">زيادة أو خصم المخزون مباشرة مع سبب إلزامي وتسجيل الحركة.</p>
+                </div>
+                <StockAdjustmentForm products={adjustmentProducts} locations={adjustmentLocations} />
+              </div>
+            ) : (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+                ليس لديك صلاحية تسوية المخزون يدويًا. يمكنك عرض التقارير فقط.
+              </p>
+            )}
+          </section>
 
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <StatCard

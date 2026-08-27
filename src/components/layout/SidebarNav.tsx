@@ -18,7 +18,6 @@ import {
   Building2,
   Warehouse,
   ShieldCheck,
-  SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -130,17 +129,6 @@ export default function SidebarNav({
                   <ClipboardCheck size={17} />
                 }
                 label="الجرد"
-                sub
-              />
-            )}
-
-            {allowed("stock.adjust") && (
-              <NavLink
-                href="/inventory/adjustments"
-                icon={
-                  <SlidersHorizontal size={17} />
-                }
-                label="تسوية المخزون"
                 sub
               />
             )}

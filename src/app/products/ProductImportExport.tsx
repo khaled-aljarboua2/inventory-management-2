@@ -19,7 +19,7 @@ type ImportSummary = {
   errors: string[];
 };
 
-export default function ProductImportExport() {
+export default function ProductImportExport({ showExport = true }: { showExport?: boolean }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -96,7 +96,7 @@ export default function ProductImportExport() {
             <FileSpreadsheet size={20} />
           </div>
           <div>
-            <h2 className="font-bold text-slate-900">استيراد وتصدير Excel</h2>
+            <h2 className="font-bold text-slate-900">استيراد المنتجات والمخزون</h2>
             <p className="mt-1 text-xs leading-5 text-slate-500">
               يحدّث المنتجات والمخزون حسب SKU، ويضيف أي SKU جديد مع وحدته وباركوده.
             </p>
@@ -112,14 +112,16 @@ export default function ProductImportExport() {
             <Download size={15} />
             نموذج Excel
           </button>
-          <button
-            type="button"
-            onClick={downloadExport}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-teal-200 bg-white px-3 text-xs font-semibold text-teal-700 transition hover:bg-teal-50"
-          >
-            <Download size={15} />
-            تصدير البيانات
-          </button>
+          {showExport ? (
+            <button
+              type="button"
+              onClick={downloadExport}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-teal-200 bg-white px-3 text-xs font-semibold text-teal-700 transition hover:bg-teal-50"
+            >
+              <Download size={15} />
+              تصدير البيانات
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
