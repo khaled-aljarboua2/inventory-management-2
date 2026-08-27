@@ -19,6 +19,7 @@ import ProductStatusButton from "./ProductStatusButton";
 type Product = {
   id: string;
   sku: string;
+  barcode: string | null;
   name: string;
   description: string | null;
   minimum_quantity: number | null;
@@ -68,6 +69,9 @@ export default function ProductsList({
           .includes(query) ||
         product.sku
           .toLowerCase()
+          .includes(query) ||
+        product.barcode
+          ?.toLowerCase()
           .includes(query) ||
         product.description
           ?.toLowerCase()
@@ -157,9 +161,7 @@ export default function ProductsList({
           sm:grid-cols-3
         "
       >
-        {/* ===================================================
-            Total
-        ==================================================== */}
+        {/* Total */}
 
         <button
           type="button"
@@ -212,9 +214,7 @@ export default function ProductsList({
           </div>
         </button>
 
-        {/* ===================================================
-            Active
-        ==================================================== */}
+        {/* Active */}
 
         <button
           type="button"
@@ -267,9 +267,7 @@ export default function ProductsList({
           </div>
         </button>
 
-        {/* ===================================================
-            Inactive
-        ==================================================== */}
+        {/* Inactive */}
 
         <button
           type="button"
@@ -380,7 +378,7 @@ export default function ProductsList({
                     event.target.value
                   )
                 }
-                placeholder="البحث عن منتج أو SKU..."
+                placeholder="البحث بالاسم أو SKU أو الباركود..."
                 className="
                   h-11
                   w-full
@@ -407,7 +405,9 @@ export default function ProductsList({
               {search && (
                 <button
                   type="button"
-                  onClick={() => handleSearchChange("")}
+                  onClick={() =>
+                    handleSearchChange("")
+                  }
                   className="
                     absolute
                     left-3
@@ -570,7 +570,7 @@ export default function ProductsList({
         <table
           className="
             w-full
-            min-w-[850px]
+            min-w-[900px]
             text-right
           "
         >
@@ -578,6 +578,10 @@ export default function ProductsList({
             <tr className="border-b border-slate-100 bg-slate-50/70">
               <th className="px-6 py-4 text-xs font-semibold text-slate-500">
                 SKU
+              </th>
+
+              <th className="px-6 py-4 text-xs font-semibold text-slate-500">
+                الباركود
               </th>
 
               <th className="px-6 py-4 text-xs font-semibold text-slate-500">
@@ -602,7 +606,7 @@ export default function ProductsList({
             {filteredProducts.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-6 py-20 text-center"
                 >
                   <div className="mx-auto flex max-w-sm flex-col items-center">
@@ -638,7 +642,7 @@ export default function ProductsList({
 
                     <p className="mt-1 text-sm text-slate-400">
                       {search
-                        ? "جرّب البحث باستخدام اسم أو SKU مختلف."
+                        ? "جرّب البحث باستخدام الاسم أو SKU أو الباركود."
                         : "ابدأ بإضافة منتج إلى النظام."}
                     </p>
 
@@ -699,6 +703,31 @@ export default function ProductsList({
                       >
                         {product.sku}
                       </span>
+                    </td>
+
+                    {/* Barcode */}
+
+                    <td className="px-6 py-5">
+                      {product.barcode ? (
+                        <span
+                          className="
+                            rounded-lg
+                            bg-slate-50
+                            px-2.5
+                            py-1.5
+                            font-mono
+                            text-xs
+                            font-medium
+                            text-slate-500
+                          "
+                        >
+                          {product.barcode}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-300">
+                          —
+                        </span>
+                      )}
                     </td>
 
                     {/* Product */}
