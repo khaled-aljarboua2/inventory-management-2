@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
 
 import {
   AlertTriangle,
@@ -14,24 +17,30 @@ type InventoryBalance = {
   id: string;
   product_id: string;
   location_id: string;
+
   available_quantity: number;
   reserved_quantity: number;
   minimum_quantity: number;
   maximum_quantity: number | null;
+
   last_count_date: string | null;
   updated_at: string;
 
-  products: {
-    id: string;
-    name: string;
-    sku: string;
-  } | null;
+  products:
+    | {
+        id: string;
+        name: string;
+        sku: string;
+      }
+    | null;
 
-  locations: {
-    id: string;
-    name: string;
-    code: string;
-  } | null;
+  locations:
+    | {
+        id: string;
+        name: string;
+        code: string;
+      }
+    | null;
 };
 
 type Location = {
@@ -43,7 +52,7 @@ type Location = {
 type Props = {
   inventory: InventoryBalance[];
   locations: Location[];
-  barcodeMap: Map<
+  barcodeMap: Record<
     string,
     string
   >;
@@ -69,6 +78,13 @@ export default function InventoryTable({
     setStatusFilter,
   ] = useState("all");
 
+  /* ============================================================
+     البحث والفلاتر
+     
+     لا توجد Pagination هنا.
+     البحث يعمل على كامل inventory المرسل من السيرفر.
+  ============================================================ */
+
   const filteredInventory =
     useMemo(() => {
       const query =
@@ -87,11 +103,9 @@ export default function InventoryTable({
             "";
 
           const barcode =
-            barcodeMap
-              .get(
-                item.product_id,
-              )
-              ?.toLocaleLowerCase() ??
+            barcodeMap[
+              item.product_id
+            ]?.toLocaleLowerCase() ??
             "";
 
           const locationName =
@@ -106,15 +120,9 @@ export default function InventoryTable({
             !query ||
             name.includes(query) ||
             sku.includes(query) ||
-            barcode.includes(
-              query,
-            ) ||
-            locationName.includes(
-              query,
-            ) ||
-            locationCode.includes(
-              query,
-            );
+            barcode.includes(query) ||
+            locationName.includes(query) ||
+            locationCode.includes(query);
 
           const matchesLocation =
             !canViewAllLocations ||
@@ -126,13 +134,13 @@ export default function InventoryTable({
           const available =
             Number(
               item.available_quantity ??
-                0,
+                0
             );
 
           const minimum =
             Number(
               item.minimum_quantity ??
-                0,
+                0
             );
 
           const isOut =
@@ -146,23 +154,29 @@ export default function InventoryTable({
           const matchesStatus =
             statusFilter ===
               "all" ||
-            (statusFilter ===
-              "available" &&
+            (
+              statusFilter ===
+                "available" &&
               !isOut &&
-              !isLow) ||
-            (statusFilter ===
-              "low" &&
-              isLow) ||
-            (statusFilter ===
-              "out" &&
-              isOut);
+              !isLow
+            ) ||
+            (
+              statusFilter ===
+                "low" &&
+              isLow
+            ) ||
+            (
+              statusFilter ===
+                "out" &&
+              isOut
+            );
 
           return (
             matchesSearch &&
             matchesLocation &&
             matchesStatus
           );
-        },
+        }
       );
     }, [
       inventory,
@@ -179,9 +193,9 @@ export default function InventoryTable({
         sum +
         Number(
           item.available_quantity ??
-            0,
+            0
         ),
-      0,
+      0
     );
 
   const totalReserved =
@@ -190,24 +204,24 @@ export default function InventoryTable({
         sum +
         Number(
           item.reserved_quantity ??
-            0,
+            0
         ),
-      0,
+      0
     );
 
   function formatNumber(
-    value: number,
+    value: number
   ) {
     return new Intl.NumberFormat(
       "ar-SA",
       {
         maximumFractionDigits: 2,
-      },
+      }
     ).format(value);
   }
 
   function formatDate(
-    value: string | null,
+    value: string | null
   ) {
     if (!value) {
       return "لم يتم الجرد";
@@ -217,38 +231,45 @@ export default function InventoryTable({
       "ar-SA",
       {
         dateStyle: "medium",
-      },
+      }
     ).format(
-      new Date(value),
+      new Date(value)
     );
   }
 
   function clearFilters() {
     setSearch("");
     setLocationFilter(
-      "all",
+      "all"
     );
     setStatusFilter("all");
   }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {/* ========================================================
+          رأس الجدول
+      ========================================================= */}
+
       <div className="border-b border-slate-100 p-4 sm:p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="min-w-0">
+          <div>
             <h2 className="text-lg font-bold text-slate-900">
               أرصدة المنتجات
             </h2>
 
             <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-              يعرض جميع النتائج،
-              والبحث يتم على كامل
-              المخزون وليس على صفحة.
+              {formatNumber(
+                filteredInventory.length
+              )}{" "}
+              رصيد — البحث يشمل جميع المنتجات المحملة.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(260px,1fr)_auto_auto]">
-            <div className="relative min-w-0 sm:w-80">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {/* البحث */}
+
+            <div className="relative sm:w-80">
               <Search
                 size={18}
                 className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -258,15 +279,15 @@ export default function InventoryTable({
                 type="search"
                 value={search}
                 onChange={(
-                  event,
+                  event
                 ) =>
                   setSearch(
                     event.target
-                      .value,
+                      .value
                   )
                 }
                 placeholder="ابحث بالمنتج أو SKU أو الباركود..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-10 text-sm text-slate-700 outline-none transition hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-10 text-sm text-slate-700 outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
               />
 
               {search && (
@@ -278,10 +299,14 @@ export default function InventoryTable({
                   className="absolute left-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                   aria-label="مسح البحث"
                 >
-                  <X size={15} />
+                  <X
+                    size={15}
+                  />
                 </button>
               )}
             </div>
+
+            {/* المواقع — للأدمن فقط */}
 
             {canViewAllLocations && (
               <select
@@ -289,11 +314,11 @@ export default function InventoryTable({
                   locationFilter
                 }
                 onChange={(
-                  event,
+                  event
                 ) =>
                   setLocationFilter(
                     event.target
-                      .value,
+                      .value
                   )
                 }
                 className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
@@ -303,7 +328,9 @@ export default function InventoryTable({
                 </option>
 
                 {locations.map(
-                  (location) => (
+                  (
+                    location
+                  ) => (
                     <option
                       key={
                         location.id
@@ -321,21 +348,23 @@ export default function InventoryTable({
                       }
                       )
                     </option>
-                  ),
+                  )
                 )}
               </select>
             )}
+
+            {/* الحالة */}
 
             <select
               value={
                 statusFilter
               }
               onChange={(
-                event,
+                event
               ) =>
                 setStatusFilter(
                   event.target
-                    .value,
+                    .value
                 )
               }
               className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
@@ -359,24 +388,26 @@ export default function InventoryTable({
           </div>
         </div>
 
+        {/* الإحصائيات */}
+
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
             {formatNumber(
-              filteredInventory.length,
+              filteredInventory.length
             )}{" "}
             رصيد
           </span>
 
           <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
             {formatNumber(
-              totalAvailable,
+              totalAvailable
             )}{" "}
             متاح
           </span>
 
           <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
             {formatNumber(
-              totalReserved,
+              totalReserved
             )}{" "}
             محجوز
           </span>
@@ -400,11 +431,15 @@ export default function InventoryTable({
         </div>
       </div>
 
+      {/* ========================================================
+          لا توجد نتائج
+      ========================================================= */}
+
       {filteredInventory.length ===
       0 ? (
-        <div className="px-6 py-16 text-center sm:py-20">
+        <div className="px-6 py-20 text-center">
           <Package
-            size={36}
+            size={38}
             className="mx-auto mb-3 text-slate-300"
           />
 
@@ -413,39 +448,58 @@ export default function InventoryTable({
           </p>
 
           <p className="mt-1 text-sm text-slate-400">
-            جرّب تغيير البحث أو
-            الفلاتر.
+            جرّب تغيير البحث أو الفلاتر.
           </p>
         </div>
       ) : (
         <>
+          {/* ======================================================
+              جدول الكمبيوتر
+          ======================================================= */}
+
           <div className="hidden overflow-x-auto lg:block">
-            <table className="w-full min-w-[1150px] text-right">
+            <table className="w-full min-w-[1200px] text-right">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/70">
-                  {[
-                    "المنتج",
-                    "SKU",
-                    "الباركود",
-                    "الموقع",
-                    "المتاح",
-                    "المحجوز",
-                    "الحد الأدنى",
-                    "الحد الأعلى",
-                    "آخر جرد",
-                    "الحالة",
-                  ].map(
-                    (title) => (
-                      <th
-                        key={
-                          title
-                        }
-                        className="px-5 py-4 text-xs font-semibold text-slate-500"
-                      >
-                        {title}
-                      </th>
-                    ),
-                  )}
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    المنتج
+                  </th>
+
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    SKU
+                  </th>
+
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    الباركود
+                  </th>
+
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    الموقع
+                  </th>
+
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    المتاح
+                  </th>
+
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    المحجوز
+                  </th>
+
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    الحد الأدنى
+                  </th>
+
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    الحد الأعلى
+                  </th>
+
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    آخر جرد
+                  </th>
+
+                  <th className="px-5 py-4 text-xs font-semibold text-slate-500">
+                    الحالة
+                  </th>
                 </tr>
               </thead>
 
@@ -455,19 +509,19 @@ export default function InventoryTable({
                     const available =
                       Number(
                         item.available_quantity ??
-                          0,
+                          0
                       );
 
                     const reserved =
                       Number(
                         item.reserved_quantity ??
-                          0,
+                          0
                       );
 
                     const minimum =
                       Number(
                         item.minimum_quantity ??
-                          0,
+                          0
                       );
 
                     const isOut =
@@ -481,9 +535,9 @@ export default function InventoryTable({
                         minimum;
 
                     const barcode =
-                      barcodeMap.get(
-                        item.product_id,
-                      );
+                      barcodeMap[
+                        item.product_id
+                      ] ?? null;
 
                     return (
                       <tr
@@ -502,7 +556,7 @@ export default function InventoryTable({
                               />
                             </div>
 
-                            <p className="max-w-[240px] truncate font-semibold text-slate-800">
+                            <p className="max-w-[260px] truncate font-semibold text-slate-800">
                               {item
                                 .products
                                 ?.name ??
@@ -552,37 +606,37 @@ export default function InventoryTable({
                             }`}
                           >
                             {formatNumber(
-                              available,
+                              available
                             )}
                           </span>
                         </td>
 
                         <td className="px-5 py-4 font-medium text-slate-600">
                           {formatNumber(
-                            reserved,
+                            reserved
                           )}
                         </td>
 
                         <td className="px-5 py-4 text-slate-600">
                           {formatNumber(
-                            minimum,
+                            minimum
                           )}
                         </td>
 
                         <td className="px-5 py-4 text-slate-600">
-                          {item.maximum_quantity ==
+                          {item.maximum_quantity ===
                           null
                             ? "غير محدد"
                             : formatNumber(
                                 Number(
-                                  item.maximum_quantity,
-                                ),
+                                  item.maximum_quantity
+                                )
                               )}
                         </td>
 
                         <td className="px-5 py-4 text-sm text-slate-500">
                           {formatDate(
-                            item.last_count_date,
+                            item.last_count_date
                           )}
                         </td>
 
@@ -626,11 +680,18 @@ export default function InventoryTable({
                         </td>
                       </tr>
                     );
-                  },
+                  }
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* ======================================================
+              كروت الجوال
+              
+              نفس filteredInventory بالكامل.
+              لا يوجد Pagination.
+          ======================================================= */}
 
           <div className="divide-y divide-slate-100 lg:hidden">
             {filteredInventory.map(
@@ -638,19 +699,19 @@ export default function InventoryTable({
                 const available =
                   Number(
                     item.available_quantity ??
-                      0,
+                      0
                   );
 
                 const reserved =
                   Number(
                     item.reserved_quantity ??
-                      0,
+                      0
                   );
 
                 const minimum =
                   Number(
                     item.minimum_quantity ??
-                      0,
+                      0
                   );
 
                 const isOut =
@@ -663,146 +724,128 @@ export default function InventoryTable({
                   available <=
                     minimum;
 
+                const barcode =
+                  barcodeMap[
+                    item.product_id
+                  ] ?? null;
+
                 return (
-                  <article
+                  <div
                     key={
                       item.id
                     }
-                    className="p-4 sm:p-5"
+                    className="p-4"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                        <Package
-                          size={18}
-                        />
-                      </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                          <Package
+                            size={
+                              20
+                            }
+                          />
+                        </div>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h3 className="truncate font-bold text-slate-800">
-                              {item
-                                .products
-                                ?.name ??
-                                "—"}
-                            </h3>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-bold text-slate-800">
+                            {item
+                              .products
+                              ?.name ??
+                              "—"}
+                          </p>
 
-                            <p className="mt-1 text-xs text-slate-400">
-                              SKU:{" "}
-                              {item
-                                .products
-                                ?.sku ??
-                                "—"}
+                          <p className="mt-1 font-mono text-xs text-slate-400">
+                            SKU:{" "}
+                            {item
+                              .products
+                              ?.sku ??
+                              "—"}
+                          </p>
+
+                          {barcode && (
+                            <p className="mt-1 font-mono text-xs text-slate-400">
+                              باركود:{" "}
+                              {
+                                barcode
+                              }
                             </p>
-                          </div>
-
-                          {isOut ? (
-                            <StatusBadge
-                              danger
-                              icon={
-                                <AlertTriangle
-                                  size={
-                                    13
-                                  }
-                                />
-                              }
-                              text="نافد"
-                            />
-                          ) : isLow ? (
-                            <StatusBadge
-                              warning
-                              icon={
-                                <AlertTriangle
-                                  size={
-                                    13
-                                  }
-                                />
-                              }
-                              text="منخفض"
-                            />
-                          ) : (
-                            <StatusBadge
-                              icon={
-                                <CheckCircle2
-                                  size={
-                                    13
-                                  }
-                                />
-                              }
-                              text="متوفر"
-                            />
                           )}
                         </div>
 
-                        <div className="mt-4 grid grid-cols-2 gap-2">
-                          <Info
-                            label="المتاح"
-                            value={formatNumber(
-                              available,
-                            )}
-                            strong
+                        {isOut ? (
+                          <StatusBadge
+                            danger
+                            text="نافد"
                           />
-
-                          <Info
-                            label="المحجوز"
-                            value={formatNumber(
-                              reserved,
-                            )}
+                        ) : isLow ? (
+                          <StatusBadge
+                            warning
+                            text="منخفض"
                           />
-
-                          <Info
-                            label="الموقع"
-                            value={
-                              item
-                                .locations
-                                ?.name ??
-                              "—"
-                            }
+                        ) : (
+                          <StatusBadge
+                            text="متوفر"
                           />
+                        )}
+                      </div>
 
-                          <Info
-                            label="الباركود"
-                            value={
-                              barcodeMap.get(
-                                item.product_id,
-                              ) ??
-                              "—"
-                            }
-                          />
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <InfoBox
+                          label="الموقع"
+                          value={
+                            item
+                              .locations
+                              ?.name ??
+                            "—"
+                          }
+                        />
 
-                          <Info
-                            label="الحد الأدنى"
-                            value={formatNumber(
-                              minimum,
-                            )}
-                          />
+                        <InfoBox
+                          label="المتاح"
+                          value={formatNumber(
+                            available
+                          )}
+                        />
 
-                          <Info
-                            label="الحد الأعلى"
-                            value={
-                              item.maximum_quantity ==
-                              null
-                                ? "غير محدد"
-                                : formatNumber(
-                                    Number(
-                                      item.maximum_quantity,
-                                    ),
+                        <InfoBox
+                          label="المحجوز"
+                          value={formatNumber(
+                            reserved
+                          )}
+                        />
+
+                        <InfoBox
+                          label="الحد الأدنى"
+                          value={formatNumber(
+                            minimum
+                          )}
+                        />
+
+                        <InfoBox
+                          label="الحد الأعلى"
+                          value={
+                            item.maximum_quantity ===
+                            null
+                              ? "غير محدد"
+                              : formatNumber(
+                                  Number(
+                                    item.maximum_quantity
                                   )
-                            }
-                          />
+                                )
+                          }
+                        />
 
-                          <Info
-                            label="آخر جرد"
-                            value={formatDate(
-                              item.last_count_date,
-                            )}
-                          />
-                        </div>
+                        <InfoBox
+                          label="آخر جرد"
+                          value={formatDate(
+                            item.last_count_date
+                          )}
+                        />
                       </div>
                     </div>
-                  </article>
+                  </div>
                 );
-              },
+              }
             )}
           </div>
         </>
@@ -811,25 +854,29 @@ export default function InventoryTable({
   );
 }
 
+/* ==============================================================
+   Status Badge
+================================================================ */
+
 function StatusBadge({
   icon,
   text,
   danger = false,
   warning = false,
 }: {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   text: string;
   danger?: boolean;
   warning?: boolean;
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold ${
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
         danger
           ? "bg-red-50 text-red-700"
           : warning
             ? "bg-orange-50 text-orange-700"
-            : "bg-teal-50 text-teal-700"
+            : "bg-emerald-50 text-emerald-700"
       }`}
     >
       {icon}
@@ -838,28 +885,24 @@ function StatusBadge({
   );
 }
 
-function Info({
+/* ==============================================================
+   Mobile Info
+================================================================ */
+
+function InfoBox({
   label,
   value,
-  strong = false,
 }: {
   label: string;
   value: string;
-  strong?: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-slate-50 px-3 py-2.5">
-      <p className="text-[10px] text-slate-400">
+    <div className="rounded-xl bg-slate-50 p-3">
+      <p className="text-[11px] text-slate-400">
         {label}
       </p>
 
-      <p
-        className={`mt-0.5 truncate text-sm ${
-          strong
-            ? "font-bold text-slate-900"
-            : "font-medium text-slate-600"
-        }`}
-      >
+      <p className="mt-1 truncate text-sm font-semibold text-slate-700">
         {value}
       </p>
     </div>
