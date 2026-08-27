@@ -26,6 +26,7 @@ type InventoryBalance = {
         id: string;
         name: string;
         sku: string;
+        company_id: string;
       }
     | null;
 
@@ -34,6 +35,7 @@ type InventoryBalance = {
         id: string;
         name: string;
         code: string;
+        company_id: string;
       }
     | null;
 };
@@ -63,64 +65,18 @@ export default async function InventoryPage() {
   }
 
   // ============================================================
-  // مستخدم النظام + أرصدة المخزون
-  //
-  // الاستعلامان مستقلان، لذلك يتم تنفيذهما بالتوازي.
-  // لا يوجد تغيير في البيانات أو الصلاحيات.
+  // مستخدم النظام
   // ============================================================
 
-  const [
-    {
-      data: dbUser,
-      error: userError,
-    },
-    {
-      data: balances,
-      error: balancesError,
-    },
-  ] = await Promise.all([
-    supabase
-      .from("users")
-      .select("id, company_id, is_active")
-      .eq("auth_user_id", user.id)
-      .eq("is_active", true)
-      .single(),
-
-    supabase
-      .from("stock_balances")
-      .select(
-        `
-          id,
-          product_id,
-          location_id,
-          available_quantity,
-          reserved_quantity,
-          minimum_quantity,
-          maximum_quantity,
-          last_count_date,
-          updated_at,
-
-          products (
-            id,
-            name,
-            sku
-          ),
-
-          locations (
-            id,
-            name,
-            code
-          )
-        `
-      )
-      .order("updated_at", {
-        ascending: false,
-      }),
-  ]);
-
-  // ============================================================
-  // التحقق من المستخدم
-  // ============================================================
+  const {
+    data: dbUser,
+    error: userError,
+  } = await supabase
+    .from("users")
+    .select("id, company_id, is_active")
+    .eq("auth_user_id", user.id)
+    .eq("is_active", true)
+    .single();
 
   if (userError || !dbUser) {
     return (
@@ -134,6 +90,67 @@ export default async function InventoryPage() {
       </DashboardLayout>
     );
   }
+
+  const companyId = dbUser.company_id;
+
+  if (!companyId) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-700"
+        >
+          المستخدم غير مرتبط بشركة.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ============================================================
+  // أرصدة المخزون
+  //
+  // لا نستخدم .in() مع product IDs أو location IDs.
+  // يتم فلترة المنتجات والمواقع التابعة للشركة مباشرة
+  // داخل نفس الاستعلام باستخدام inner joins.
+  // ============================================================
+
+  const {
+    data: balances,
+    error: balancesError,
+  } = await supabase
+    .from("stock_balances")
+    .select(
+      `
+        id,
+        product_id,
+        location_id,
+        available_quantity,
+        reserved_quantity,
+        minimum_quantity,
+        maximum_quantity,
+        last_count_date,
+        updated_at,
+
+        products!inner (
+          id,
+          name,
+          sku,
+          company_id
+        ),
+
+        locations!inner (
+          id,
+          name,
+          code,
+          company_id
+        )
+      `
+    )
+    .eq("products.company_id", companyId)
+    .eq("locations.company_id", companyId)
+    .order("updated_at", {
+      ascending: false,
+    });
 
   // ============================================================
   // التحقق من أرصدة المخزون
@@ -158,195 +175,58 @@ export default async function InventoryPage() {
     );
   }
 
-  const companyId = dbUser.company_id;
-
   // ============================================================
-  // تجهيز بيانات المخزون
+  // تجهيز البيانات
   // ============================================================
 
   const inventory: InventoryBalance[] =
     (balances ?? []).map((balance) => ({
       ...balance,
-      products: firstRelation(
-        balance.products
-      ),
-      locations: firstRelation(
-        balance.locations
-      ),
+      products: firstRelation(balance.products),
+      locations: firstRelation(balance.locations),
     }));
 
-  const locationIds = [
-    ...new Set(
-      inventory
-        .map(
-          (item) =>
-            item.locations?.id
-        )
-        .filter(Boolean) as string[]
-    ),
-  ];
-
-  const productIds = [
-    ...new Set(
-      inventory
-        .map(
-          (item) =>
-            item.products?.id
-        )
-        .filter(Boolean) as string[]
-    ),
-  ];
-
-  // ============================================================
-  // التحقق من ملكية المواقع والمنتجات للشركة
-  //
-  // الاستعلامان متوازيان أصلًا.
-  // ============================================================
-
-  const [
-    {
-      data: companyLocations,
-      error: locationsError,
-    },
-    {
-      data: companyProducts,
-      error: productsError,
-    },
-  ] = await Promise.all([
-    locationIds.length
-      ? supabase
-          .from("locations")
-          .select("id")
-          .eq("company_id", companyId)
-          .in("id", locationIds)
-      : Promise.resolve({
-          data: [],
-          error: null,
-        }),
-
-    productIds.length
-      ? supabase
-          .from("products")
-          .select("id")
-          .eq("company_id", companyId)
-          .in("id", productIds)
-      : Promise.resolve({
-          data: [],
-          error: null,
-        }),
-  ]);
-
-  // ============================================================
-  // أخطاء التحقق
-  // ============================================================
-
-  if (locationsError) {
-    return (
-      <DashboardLayout>
-        <div
-          dir="rtl"
-          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
-        >
-          تعذر التحقق من مواقع المخزون:
-          <span className="mr-1">
-            {locationsError.message}
-          </span>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (productsError) {
-    return (
-      <DashboardLayout>
-        <div
-          dir="rtl"
-          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
-        >
-          تعذر التحقق من منتجات المخزون:
-          <span className="mr-1">
-            {productsError.message}
-          </span>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  // ============================================================
-  // التحقق من الشركة
-  // ============================================================
-
-  const validLocationIds = new Set(
-    (companyLocations ?? []).map(
-      (location) => location.id
-    )
+  // حماية إضافية على مستوى التطبيق
+  const companyInventory = inventory.filter(
+    (item) =>
+      item.products?.company_id === companyId &&
+      item.locations?.company_id === companyId
   );
-
-  const validProductIds = new Set(
-    (companyProducts ?? []).map(
-      (product) => product.id
-    )
-  );
-
-  const companyInventory =
-    inventory.filter(
-      (item) =>
-        item.products &&
-        item.locations &&
-        validLocationIds.has(
-          item.locations.id
-        ) &&
-        validProductIds.has(
-          item.products.id
-        )
-    );
 
   // ============================================================
   // الإحصائيات
   // ============================================================
 
-  const totalRows =
-    companyInventory.length;
+  const totalRows = companyInventory.length;
 
-  const totalAvailable =
-    companyInventory.reduce(
-      (sum, item) =>
-        sum +
-        Number(
-          item.available_quantity ?? 0
-        ),
-      0
-    );
+  const totalAvailable = companyInventory.reduce(
+    (sum, item) =>
+      sum + Number(item.available_quantity ?? 0),
+    0
+  );
 
-  const totalReserved =
-    companyInventory.reduce(
-      (sum, item) =>
-        sum +
-        Number(
-          item.reserved_quantity ?? 0
-        ),
-      0
-    );
+  const totalReserved = companyInventory.reduce(
+    (sum, item) =>
+      sum + Number(item.reserved_quantity ?? 0),
+    0
+  );
 
-  const lowStockCount =
-    companyInventory.filter(
-      (item) => {
-        const available =
-          Number(
-            item.available_quantity ?? 0
-          );
+  const lowStockCount = companyInventory.filter(
+    (item) => {
+      const available = Number(
+        item.available_quantity ?? 0
+      );
 
-        const minimum =
-          Number(
-            item.minimum_quantity ?? 0
-          );
+      const minimum = Number(
+        item.minimum_quantity ?? 0
+      );
 
-        return (
-          minimum > 0 &&
-          available <= minimum
-        );
-      }
-    ).length;
+      return (
+        minimum > 0 &&
+        available <= minimum
+      );
+    }
+  ).length;
 
   const outOfStockCount =
     companyInventory.filter(
@@ -369,21 +249,21 @@ export default async function InventoryPage() {
     }
   >();
 
-  companyInventory.forEach(
-    (item) => {
-      if (
-        item.locations &&
-        !locationMap.has(
-          item.locations.id
-        )
-      ) {
-        locationMap.set(
-          item.locations.id,
-          item.locations
-        );
-      }
+  companyInventory.forEach((item) => {
+    if (
+      item.locations &&
+      !locationMap.has(item.locations.id)
+    ) {
+      locationMap.set(
+        item.locations.id,
+        {
+          id: item.locations.id,
+          name: item.locations.name,
+          code: item.locations.code,
+        }
+      );
     }
-  );
+  });
 
   const locations = Array.from(
     locationMap.values()
@@ -460,9 +340,7 @@ export default async function InventoryPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            icon={
-              <Boxes size={20} />
-            }
+            icon={<Boxes size={20} />}
             label="أرصدة المخزون"
             value={totalRows.toLocaleString(
               "ar-SA"
@@ -471,9 +349,7 @@ export default async function InventoryPage() {
           />
 
           <StatCard
-            icon={
-              <Package size={20} />
-            }
+            icon={<Package size={20} />}
             label="الكمية المتاحة"
             value={totalAvailable.toLocaleString(
               "ar-SA",
@@ -485,9 +361,7 @@ export default async function InventoryPage() {
           />
 
           <StatCard
-            icon={
-              <Warehouse size={20} />
-            }
+            icon={<Warehouse size={20} />}
             label="الكمية المحجوزة"
             value={totalReserved.toLocaleString(
               "ar-SA",
@@ -499,9 +373,7 @@ export default async function InventoryPage() {
           />
 
           <StatCard
-            icon={
-              <AlertTriangle size={20} />
-            }
+            icon={<AlertTriangle size={20} />}
             label="تنبيهات المخزون"
             value={(
               lowStockCount +
