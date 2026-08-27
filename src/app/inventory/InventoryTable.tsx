@@ -1,6 +1,10 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import {
+  useMemo,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -8,11 +12,13 @@ import {
   ChevronRight,
   Package,
   Search,
+  X,
 } from "lucide-react";
 
 type InventoryBalance = {
   id: string;
   product_id: string;
+  location_id: string;
   available_quantity: number;
   reserved_quantity: number;
   minimum_quantity: number;
@@ -46,7 +52,11 @@ type Location = {
 type Props = {
   inventory: InventoryBalance[];
   locations: Location[];
-  barcodeMap: Map<string, string>;
+
+  barcodeMap: Map<
+    string,
+    string
+  >;
 
   currentPage: number;
   totalPages: number;
@@ -69,14 +79,90 @@ export default function InventoryTable({
   totalPages,
   totalResults,
   pageSize,
-  search,
-  locationFilter,
-  statusFilter,
+  search: initialSearch,
+  locationFilter:
+    initialLocationFilter,
+  statusFilter:
+    initialStatusFilter,
   canViewAllLocations,
   currentLocationId,
 }: Props) {
   const router = useRouter();
-  const pathname = usePathname();
+
+  const [search, setSearch] =
+    useState(initialSearch);
+
+  const [locationFilter, setLocationFilter] =
+    useState(
+      initialLocationFilter
+    );
+
+  const [statusFilter, setStatusFilter] =
+    useState(
+      initialStatusFilter
+    );
+
+  // ============================================================
+  // Status filter
+  //
+  // يتم تطبيقه على الصفحة الحالية.
+  // ============================================================
+
+  const filteredInventory =
+    useMemo(() => {
+      return inventory.filter(
+        (item) => {
+          const available =
+            Number(
+              item.available_quantity ??
+                0
+            );
+
+          const minimum =
+            Number(
+              item.minimum_quantity ??
+                0
+            );
+
+          const isOut =
+            available <= 0;
+
+          const isLow =
+            !isOut &&
+            minimum > 0 &&
+            available <= minimum;
+
+          if (
+            statusFilter ===
+            "available"
+          ) {
+            return (
+              !isOut &&
+              !isLow
+            );
+          }
+
+          if (
+            statusFilter ===
+            "low"
+          ) {
+            return isLow;
+          }
+
+          if (
+            statusFilter ===
+            "out"
+          ) {
+            return isOut;
+          }
+
+          return true;
+        }
+      );
+    }, [
+      inventory,
+      statusFilter,
+    ]);
 
   // ============================================================
   // الأرقام
@@ -91,162 +177,35 @@ export default function InventoryTable({
 
   const lastResult =
     Math.min(
-      currentPage * pageSize,
+      currentPage *
+        pageSize,
       totalResults
     );
 
-  // ============================================================
-  // إحصائيات الصفحة الحالية
-  // ============================================================
+  const totalAvailable =
+    filteredInventory.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.available_quantity ??
+            0
+        ),
+      0
+    );
 
-  const pageStats =
-    inventory.reduce(
-      (result, item) => {
-        const available =
-          Number(
-            item.available_quantity ?? 0
-          );
-
-        const reserved =
-          Number(
-            item.reserved_quantity ?? 0
-          );
-
-        const minimum =
-          Number(
-            item.minimum_quantity ?? 0
-          );
-
-        result.available +=
-          available;
-
-        result.reserved +=
-          reserved;
-
-        if (available <= 0) {
-          result.out += 1;
-        } else if (
-          minimum > 0 &&
-          available <= minimum
-        ) {
-          result.low += 1;
-        }
-
-        return result;
-      },
-      {
-        available: 0,
-        reserved: 0,
-        low: 0,
-        out: 0,
-      }
+  const totalReserved =
+    filteredInventory.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.reserved_quantity ??
+            0
+        ),
+      0
     );
 
   // ============================================================
-  // تحديث الرابط
-  // ============================================================
-
-  function updateParams(
-    changes: Record<string, string>
-  ) {
-    const params =
-      new URLSearchParams();
-
-    if (search) {
-      params.set(
-        "search",
-        search
-      );
-    }
-
-    if (
-      locationFilter &&
-      locationFilter !== "all"
-    ) {
-      params.set(
-        "location",
-        locationFilter
-      );
-    }
-
-    if (
-      statusFilter &&
-      statusFilter !== "all"
-    ) {
-      params.set(
-        "status",
-        statusFilter
-      );
-    }
-
-    Object.entries(changes).forEach(
-      ([key, value]) => {
-        if (
-          value &&
-          value !== "all"
-        ) {
-          params.set(
-            key,
-            value
-          );
-        } else {
-          params.delete(key);
-        }
-      }
-    );
-
-    if (
-      changes.page === undefined
-    ) {
-      params.set("page", "1");
-    }
-
-    router.push(
-      `${pathname}?${params.toString()}`
-    );
-  }
-
-  // ============================================================
-  // البحث
-  // ============================================================
-
-  function handleSearch(
-    value: string
-  ) {
-    updateParams({
-      search: value.trim(),
-      page: "1",
-    });
-  }
-
-  // ============================================================
-  // الموقع
-  // ============================================================
-
-  function handleLocation(
-    value: string
-  ) {
-    updateParams({
-      location: value,
-      page: "1",
-    });
-  }
-
-  // ============================================================
-  // الحالة
-  // ============================================================
-
-  function handleStatus(
-    value: string
-  ) {
-    updateParams({
-      status: value,
-      page: "1",
-    });
-  }
-
-  // ============================================================
-  // الصفحة
+  // تغيير الصفحة
   // ============================================================
 
   function goToPage(
@@ -261,11 +220,231 @@ export default function InventoryTable({
         )
       );
 
-    updateParams({
-      page: String(
-        safePage
-      ),
-    });
+    const params =
+      new URLSearchParams();
+
+    if (search.trim()) {
+      params.set(
+        "search",
+        search.trim()
+      );
+    }
+
+    if (
+      locationFilter &&
+      locationFilter !==
+        "all"
+    ) {
+      params.set(
+        "location",
+        locationFilter
+      );
+    }
+
+    if (
+      statusFilter &&
+      statusFilter !==
+        "all"
+    ) {
+      params.set(
+        "status",
+        statusFilter
+      );
+    }
+
+    params.set(
+      "page",
+      String(safePage)
+    );
+
+    router.push(
+      `/inventory?${params.toString()}`
+    );
+  }
+
+  // ============================================================
+  // البحث
+  // ============================================================
+
+  function submitSearch() {
+    const params =
+      new URLSearchParams();
+
+    if (search.trim()) {
+      params.set(
+        "search",
+        search.trim()
+      );
+    }
+
+    if (
+      locationFilter &&
+      locationFilter !==
+        "all"
+    ) {
+      params.set(
+        "location",
+        locationFilter
+      );
+    }
+
+    if (
+      statusFilter &&
+      statusFilter !==
+        "all"
+    ) {
+      params.set(
+        "status",
+        statusFilter
+      );
+    }
+
+    params.set(
+      "page",
+      "1"
+    );
+
+    router.push(
+      `/inventory?${params.toString()}`
+    );
+  }
+
+  // ============================================================
+  // تغيير الموقع
+  // ============================================================
+
+  function changeLocation(
+    value: string
+  ) {
+    setLocationFilter(value);
+
+    const params =
+      new URLSearchParams();
+
+    if (search.trim()) {
+      params.set(
+        "search",
+        search.trim()
+      );
+    }
+
+    if (
+      value &&
+      value !== "all"
+    ) {
+      params.set(
+        "location",
+        value
+      );
+    }
+
+    if (
+      statusFilter &&
+      statusFilter !==
+        "all"
+    ) {
+      params.set(
+        "status",
+        statusFilter
+      );
+    }
+
+    params.set(
+      "page",
+      "1"
+    );
+
+    router.push(
+      `/inventory?${params.toString()}`
+    );
+  }
+
+  // ============================================================
+  // تغيير الحالة
+  // ============================================================
+
+  function changeStatus(
+    value: string
+  ) {
+    setStatusFilter(value);
+
+    const params =
+      new URLSearchParams();
+
+    if (search.trim()) {
+      params.set(
+        "search",
+        search.trim()
+      );
+    }
+
+    if (
+      locationFilter &&
+      locationFilter !==
+        "all"
+    ) {
+      params.set(
+        "location",
+        locationFilter
+      );
+    }
+
+    if (
+      value &&
+      value !== "all"
+    ) {
+      params.set(
+        "status",
+        value
+      );
+    }
+
+    params.set(
+      "page",
+      "1"
+    );
+
+    router.push(
+      `/inventory?${params.toString()}`
+    );
+  }
+
+  function clearSearch() {
+    setSearch("");
+
+    const params =
+      new URLSearchParams();
+
+    if (
+      locationFilter &&
+      locationFilter !==
+        "all"
+    ) {
+      params.set(
+        "location",
+        locationFilter
+      );
+    }
+
+    if (
+      statusFilter &&
+      statusFilter !==
+        "all"
+    ) {
+      params.set(
+        "status",
+        statusFilter
+      );
+    }
+
+    params.set(
+      "page",
+      "1"
+    );
+
+    router.push(
+      `/inventory?${params.toString()}`
+    );
   }
 
   // ============================================================
@@ -304,6 +483,132 @@ export default function InventoryTable({
     );
   }
 
+  // ============================================================
+  // Pagination
+  // ============================================================
+
+  function Pagination() {
+    if (totalResults <= 0) {
+      return null;
+    }
+
+    return (
+      <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-xs text-slate-400">
+          عرض{" "}
+          <strong className="text-slate-600">
+            {firstResult.toLocaleString(
+              "ar-SA"
+            )}
+          </strong>
+          {" إلى "}
+          <strong className="text-slate-600">
+            {lastResult.toLocaleString(
+              "ar-SA"
+            )}
+          </strong>
+          {" من أصل "}
+          <strong className="text-slate-600">
+            {totalResults.toLocaleString(
+              "ar-SA"
+            )}
+          </strong>
+          {" رصيد"}
+        </span>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              goToPage(
+                currentPage - 1
+              )
+            }
+            disabled={
+              currentPage <= 1
+            }
+            className="
+              inline-flex
+              items-center
+              gap-1.5
+              rounded-lg
+              border
+              border-slate-200
+              bg-white
+              px-3
+              py-2
+              text-xs
+              font-semibold
+              text-slate-600
+              transition
+              hover:border-teal-200
+              hover:bg-teal-50
+              hover:text-teal-700
+              disabled:cursor-not-allowed
+              disabled:opacity-40
+            "
+          >
+            <ChevronRight
+              size={15}
+            />
+
+            السابق
+          </button>
+
+          <span className="rounded-lg bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-700">
+            صفحة{" "}
+            {currentPage.toLocaleString(
+              "ar-SA"
+            )}
+            {" من "}
+            {totalPages.toLocaleString(
+              "ar-SA"
+            )}
+          </span>
+
+          <button
+            type="button"
+            onClick={() =>
+              goToPage(
+                currentPage + 1
+              )
+            }
+            disabled={
+              currentPage >=
+              totalPages
+            }
+            className="
+              inline-flex
+              items-center
+              gap-1.5
+              rounded-lg
+              border
+              border-slate-200
+              bg-white
+              px-3
+              py-2
+              text-xs
+              font-semibold
+              text-slate-600
+              transition
+              hover:border-teal-200
+              hover:bg-teal-50
+              hover:text-teal-700
+              disabled:cursor-not-allowed
+              disabled:opacity-40
+            "
+          >
+            التالي
+
+            <ChevronLeft
+              size={15}
+            />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       {/* ======================================================
@@ -311,26 +616,27 @@ export default function InventoryTable({
       ======================================================= */}
 
       <div className="border-b border-slate-100 p-5 sm:p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h2 className="text-lg font-bold text-slate-900">
               أرصدة المنتجات
             </h2>
 
             <p className="mt-1 text-sm text-slate-400">
-              عرض{" "}
-              {firstResult.toLocaleString(
+              {filteredInventory.length.toLocaleString(
                 "ar-SA"
-              )}
-              {" إلى "}
-              {lastResult.toLocaleString(
-                "ar-SA"
-              )}
-              {" من "}
-              {totalResults.toLocaleString(
-                "ar-SA"
-              )}
-              {" رصيد"}
+              )}{" "}
+              في الصفحة
+              {" · "}
+              {formatNumber(
+                totalAvailable
+              )}{" "}
+              متاح
+              {" · "}
+              {formatNumber(
+                totalReserved
+              )}{" "}
+              محجوز
             </p>
           </div>
 
@@ -339,36 +645,36 @@ export default function InventoryTable({
                 البحث
             =================================================== */}
 
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-
-                const form =
-                  event.currentTarget;
-
-                const input =
-                  form.elements.namedItem(
-                    "search"
-                  ) as HTMLInputElement;
-
-                handleSearch(
-                  input.value
-                );
-              }}
-              className="relative sm:w-96"
-            >
+            <div className="relative sm:w-80">
               <Search
                 size={18}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                className="
+                  pointer-events-none
+                  absolute
+                  right-3
+                  top-1/2
+                  -translate-y-1/2
+                  text-slate-400
+                "
               />
 
               <input
-                name="search"
                 type="search"
-                defaultValue={
-                  search
+                value={search}
+                onChange={(event) =>
+                  setSearch(
+                    event.target.value
+                  )
                 }
-                placeholder="ابحث بالمنتج أو SKU أو الباركود..."
+                onKeyDown={(event) => {
+                  if (
+                    event.key ===
+                    "Enter"
+                  ) {
+                    submitSearch();
+                  }
+                }}
+                placeholder="ابحث باسم المنتج أو SKU أو الباركود..."
                 className="
                   h-11
                   w-full
@@ -377,103 +683,52 @@ export default function InventoryTable({
                   border-slate-200
                   bg-slate-50
                   pr-10
-                  pl-4
+                  pl-10
                   text-sm
                   text-slate-700
                   outline-none
                   transition
-                  hover:border-slate-300
                   focus:border-teal-400
                   focus:bg-white
                   focus:ring-4
                   focus:ring-teal-50
                 "
               />
-            </form>
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={
+                    clearSearch
+                  }
+                  className="
+                    absolute
+                    left-3
+                    top-1/2
+                    -translate-y-1/2
+                    rounded-md
+                    p-1
+                    text-slate-400
+                    hover:bg-slate-100
+                    hover:text-slate-700
+                  "
+                  aria-label="مسح البحث"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
 
             {/* ==================================================
-                الموقع
-            =================================================== */}
-
-            {canViewAllLocations ? (
-              <select
-                value={
-                  locationFilter
-                }
-                onChange={(event) =>
-                  handleLocation(
-                    event.target.value
-                  )
-                }
-                className="
-                  h-11
-                  rounded-xl
-                  border
-                  border-slate-200
-                  bg-white
-                  px-4
-                  text-sm
-                  text-slate-600
-                  outline-none
-                  transition
-                  hover:border-slate-300
-                  focus:border-teal-400
-                  focus:ring-4
-                  focus:ring-teal-50
-                "
-              >
-                <option value="all">
-                  جميع الفروع
-                </option>
-
-                {currentLocationId && (
-                  <option
-                    value={
-                      currentLocationId
-                    }
-                  >
-                    فرعي الحالي
-                  </option>
-                )}
-
-                <option value="other">
-                  الفروع الأخرى
-                </option>
-
-                {locations.map(
-                  (location) => (
-                    <option
-                      key={
-                        location.id
-                      }
-                      value={
-                        location.id
-                      }
-                    >
-                      {location.name} (
-                      {
-                        location.code
-                      })
-                    </option>
-                  )
-                )}
-              </select>
-            ) : (
-              <div className="flex h-11 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-600">
-                فرعي الحالي
-              </div>
-            )}
-
-            {/* ==================================================
-                الحالة
+                المواقع
             =================================================== */}
 
             <select
               value={
-                statusFilter
+                locationFilter
               }
               onChange={(event) =>
-                handleStatus(
+                changeLocation(
                   event.target.value
                 )
               }
@@ -488,7 +743,100 @@ export default function InventoryTable({
                 text-slate-600
                 outline-none
                 transition
-                hover:border-slate-300
+                focus:border-teal-400
+                focus:ring-4
+                focus:ring-teal-50
+              "
+            >
+              {canViewAllLocations ? (
+                <>
+                  <option value="all">
+                    جميع المواقع
+                  </option>
+
+                  {currentLocationId && (
+                    <option value={currentLocationId}>
+                      موقعي
+                    </option>
+                  )}
+
+                  <option value="other">
+                    الفروع الأخرى
+                  </option>
+
+                  {locations.map(
+                    (location) => (
+                      <option
+                        key={
+                          location.id
+                        }
+                        value={
+                          location.id
+                        }
+                      >
+                        {location.name} (
+                        {
+                          location.code
+                        }
+                        )
+                      </option>
+                    )
+                  )}
+                </>
+              ) : (
+                <>
+                  {locations
+                    .filter(
+                      (location) =>
+                        location.id ===
+                        currentLocationId
+                    )
+                    .map(
+                      (location) => (
+                        <option
+                          key={
+                            location.id
+                          }
+                          value={
+                            location.id
+                          }
+                        >
+                          {location.name} (
+                          {
+                            location.code
+                          }
+                          )
+                        </option>
+                      )
+                    )}
+                </>
+              )}
+            </select>
+
+            {/* ==================================================
+                الحالة
+            =================================================== */}
+
+            <select
+              value={
+                statusFilter
+              }
+              onChange={(event) =>
+                changeStatus(
+                  event.target.value
+                )
+              }
+              className="
+                h-11
+                rounded-xl
+                border
+                border-slate-200
+                bg-white
+                px-4
+                text-sm
+                text-slate-600
+                outline-none
+                transition
                 focus:border-teal-400
                 focus:ring-4
                 focus:ring-teal-50
@@ -514,48 +862,14 @@ export default function InventoryTable({
         </div>
 
         {/* ======================================================
-            ملخص
+            Pagination فوق الجدول
         ======================================================= */}
 
-        <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-          <span className="rounded-full bg-teal-50 px-3 py-1.5 font-semibold text-teal-700">
-            {formatNumber(
-              pageStats.available
-            )}{" "}
-            متاح
-          </span>
-
-          <span className="rounded-full bg-slate-100 px-3 py-1.5 font-semibold text-slate-600">
-            {formatNumber(
-              pageStats.reserved
-            )}{" "}
-            محجوز
-          </span>
-
-          {pageStats.low >
-            0 && (
-            <span className="rounded-full bg-orange-50 px-3 py-1.5 font-semibold text-orange-700">
-              {
-                pageStats.low
-              }{" "}
-              منخفض
-            </span>
-          )}
-
-          {pageStats.out >
-            0 && (
-            <span className="rounded-full bg-red-50 px-3 py-1.5 font-semibold text-red-700">
-              {
-                pageStats.out
-              }{" "}
-              نافد
-            </span>
-          )}
-        </div>
+        <Pagination />
       </div>
 
       {/* ======================================================
-          Table
+          الجدول
       ======================================================= */}
 
       <div className="overflow-x-auto">
@@ -605,7 +919,7 @@ export default function InventoryTable({
           </thead>
 
           <tbody className="divide-y divide-slate-100">
-            {inventory.length ===
+            {filteredInventory.length ===
             0 ? (
               <tr>
                 <td
@@ -613,7 +927,7 @@ export default function InventoryTable({
                   className="px-6 py-20 text-center"
                 >
                   <Package
-                    size={34}
+                    size={36}
                     className="mx-auto mb-3 text-slate-300"
                   />
 
@@ -624,10 +938,33 @@ export default function InventoryTable({
                   <p className="mt-1 text-sm text-slate-400">
                     جرّب تغيير البحث أو الفلاتر.
                   </p>
+
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={
+                        clearSearch
+                      }
+                      className="
+                        mt-4
+                        rounded-lg
+                        bg-teal-600
+                        px-4
+                        py-2
+                        text-xs
+                        font-semibold
+                        text-white
+                        transition
+                        hover:bg-teal-700
+                      "
+                    >
+                      مسح البحث
+                    </button>
+                  )}
                 </td>
               </tr>
             ) : (
-              inventory.map(
+              filteredInventory.map(
                 (item) => {
                   const available =
                     Number(
@@ -647,42 +984,52 @@ export default function InventoryTable({
                         0
                     );
 
+                  const isOut =
+                    available <= 0;
+
+                  const isLow =
+                    !isOut &&
+                    minimum > 0 &&
+                    available <= minimum;
+
                   const barcode =
                     barcodeMap.get(
                       item.product_id
                     );
-
-                  const isOut =
-                    available <=
-                    0;
-
-                  const isLow =
-                    !isOut &&
-                    minimum >
-                      0 &&
-                    available <=
-                      minimum;
 
                   return (
                     <tr
                       key={
                         item.id
                       }
-                      className="transition-colors hover:bg-teal-50/30"
+                      className="
+                        transition
+                        hover:bg-teal-50/30
+                      "
                     >
                       {/* المنتج */}
 
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                          <div
+                            className="
+                              flex
+                              h-10
+                              w-10
+                              shrink-0
+                              items-center
+                              justify-center
+                              rounded-xl
+                              bg-teal-50
+                              text-teal-600
+                            "
+                          >
                             <Package
-                              size={
-                                18
-                              }
+                              size={18}
                             />
                           </div>
 
-                          <div>
+                          <div className="min-w-0">
                             <p className="font-semibold text-slate-800">
                               {
                                 item
@@ -706,7 +1053,7 @@ export default function InventoryTable({
                         </span>
                       </td>
 
-                      {/* Barcode */}
+                      {/* الباركود */}
 
                       <td className="px-6 py-5">
                         {barcode ? (
@@ -716,8 +1063,8 @@ export default function InventoryTable({
                             }
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-300">
-                            غير مضاف
+                          <span className="text-xs text-slate-400">
+                            لا يوجد
                           </span>
                         )}
                       </td>
@@ -803,28 +1150,25 @@ export default function InventoryTable({
                         {isOut ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700">
                             <AlertTriangle
-                              size={
-                                13
-                              }
+                              size={13}
                             />
+
                             نافد
                           </span>
                         ) : isLow ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700">
                             <AlertTriangle
-                              size={
-                                13
-                              }
+                              size={13}
                             />
+
                             منخفض
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
                             <CheckCircle2
-                              size={
-                                13
-                              }
+                              size={13}
                             />
+
                             متوفر
                           </span>
                         )}
@@ -839,126 +1183,10 @@ export default function InventoryTable({
       </div>
 
       {/* ======================================================
-          Pagination
+          Pagination تحت الجدول
       ======================================================= */}
 
-      {totalResults >
-        0 && (
-        <div className="flex flex-col gap-4 border-t border-slate-100 bg-slate-50/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-400">
-            عرض{" "}
-            <strong className="text-slate-600">
-              {firstResult.toLocaleString(
-                "ar-SA"
-              )}
-            </strong>
-            {" إلى "}
-            <strong className="text-slate-600">
-              {lastResult.toLocaleString(
-                "ar-SA"
-              )}
-            </strong>
-            {" من أصل "}
-            <strong className="text-slate-600">
-              {totalResults.toLocaleString(
-                "ar-SA"
-              )}
-            </strong>
-            {" رصيد"}
-          </p>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                goToPage(
-                  currentPage -
-                    1
-                )
-              }
-              disabled={
-                currentPage <=
-                1
-              }
-              className="
-                inline-flex
-                items-center
-                gap-1.5
-                rounded-lg
-                border
-                border-slate-200
-                bg-white
-                px-3
-                py-2
-                text-xs
-                font-semibold
-                text-slate-600
-                transition
-                hover:border-teal-200
-                hover:bg-teal-50
-                hover:text-teal-700
-                disabled:cursor-not-allowed
-                disabled:opacity-40
-              "
-            >
-              <ChevronRight
-                size={15}
-              />
-              السابق
-            </button>
-
-            <span className="rounded-lg bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-700">
-              صفحة{" "}
-              {currentPage.toLocaleString(
-                "ar-SA"
-              )}
-              {" من "}
-              {totalPages.toLocaleString(
-                "ar-SA"
-              )}
-            </span>
-
-            <button
-              type="button"
-              onClick={() =>
-                goToPage(
-                  currentPage +
-                    1
-                )
-              }
-              disabled={
-                currentPage >=
-                totalPages
-              }
-              className="
-                inline-flex
-                items-center
-                gap-1.5
-                rounded-lg
-                border
-                border-slate-200
-                bg-white
-                px-3
-                py-2
-                text-xs
-                font-semibold
-                text-slate-600
-                transition
-                hover:border-teal-200
-                hover:bg-teal-50
-                hover:text-teal-700
-                disabled:cursor-not-allowed
-                disabled:opacity-40
-              "
-            >
-              التالي
-              <ChevronLeft
-                size={15}
-              />
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination />
     </section>
   );
 }
