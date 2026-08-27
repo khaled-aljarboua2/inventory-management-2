@@ -3,10 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import ProductForm from "./ProductForm";
 import ProductsList from "./ProductsList";
 
-
 type Product = {
   id: string;
   sku: string;
+  barcode: string | null;
   name: string;
   description: string | null;
   minimum_quantity: number | null;
@@ -28,6 +28,7 @@ async function getAllProducts(
       .select(`
         id,
         sku,
+        barcode,
         name,
         description,
         minimum_quantity,
@@ -50,6 +51,7 @@ async function getAllProducts(
     }
 
     const batch = data ?? [];
+
     products.push(...batch);
 
     if (batch.length < PRODUCT_BATCH_SIZE) {
@@ -79,7 +81,15 @@ export default async function ProductsPage() {
       <DashboardLayout>
         <div
           dir="rtl"
-          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
+          className="
+            rounded-2xl
+            border
+            border-red-200
+            bg-red-50
+            p-6
+            text-sm
+            text-red-700
+          "
         >
           يجب تسجيل الدخول أولًا.
         </div>
@@ -106,20 +116,58 @@ export default async function ProductsPage() {
       <DashboardLayout>
         <div
           dir="rtl"
-          className="mx-auto w-full max-w-[1600px]"
+          className="
+            mx-auto
+            w-full
+            max-w-[1600px]
+          "
         >
-          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
+          <div
+            className="
+              rounded-3xl
+              border
+              border-amber-200
+              bg-amber-50
+              p-6
+            "
+          >
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+              <div
+                className="
+                  mt-0.5
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-amber-100
+                  text-amber-700
+                "
+              >
                 !
               </div>
 
               <div>
-                <h1 className="text-lg font-bold text-amber-800">
+                <h1
+                  className="
+                    text-lg
+                    font-bold
+                    text-amber-800
+                  "
+                >
                   ليس لديك صلاحية الوصول
                 </h1>
 
-                <p className="mt-2 text-sm leading-6 text-amber-700">
+                <p
+                  className="
+                    mt-2
+                    text-sm
+                    leading-6
+                    text-amber-700
+                  "
+                >
                   لا تملك الصلاحية اللازمة لعرض المنتجات.
                 </p>
               </div>
@@ -153,11 +201,20 @@ export default async function ProductsPage() {
       .order("name"),
   ]);
 
+  // ============================================================
+  // الصفحة
+  // ============================================================
+
   return (
     <DashboardLayout>
       <div
         dir="rtl"
-        className="mx-auto w-full max-w-[1600px] space-y-7"
+        className="
+          mx-auto
+          w-full
+          max-w-[1600px]
+          space-y-6
+        "
       >
         {/* =====================================================
             Header
@@ -176,23 +233,58 @@ export default async function ProductsPage() {
             sm:py-6
           "
         >
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div
+            className="
+              flex
+              flex-col
+              gap-4
+              lg:flex-row
+              lg:items-center
+              lg:justify-between
+            "
+          >
             <div>
-              <div className="mb-3 flex items-center gap-2 text-sm text-slate-400">
-                <span>إدارة المخزون</span>
+              <div
+                className="
+                  mb-3
+                  flex
+                  items-center
+                  gap-2
+                  text-sm
+                  text-slate-400
+                "
+              >
+                <span>
+                  إدارة المخزون
+                </span>
 
                 <span>/</span>
 
-                <span className="text-slate-500">
+                <span className="text-teal-600">
                   المنتجات
                 </span>
               </div>
 
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              <h1
+                className="
+                  text-3xl
+                  font-bold
+                  tracking-tight
+                  text-slate-900
+                "
+              >
                 المنتجات
               </h1>
 
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+              <p
+                className="
+                  mt-2
+                  max-w-2xl
+                  text-sm
+                  leading-6
+                  text-slate-500
+                "
+              >
                 إدارة منتجات الشركة والوحدات والباركود
                 والتصنيفات والعلامات التجارية.
               </p>
@@ -207,7 +299,18 @@ export default async function ProductsPage() {
         {(productsError ||
           categoriesError ||
           brandsError) && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          <div
+            className="
+              rounded-2xl
+              border
+              border-red-200
+              bg-red-50
+              px-5
+              py-4
+              text-sm
+              text-red-700
+            "
+          >
             حدث خطأ أثناء تحميل بيانات المنتجات.
           </div>
         )}
@@ -218,22 +321,77 @@ export default async function ProductsPage() {
 
         <section
           id="add-product"
-          className="scroll-mt-24"
+          className="
+            scroll-mt-24
+            rounded-3xl
+            border
+            border-slate-200
+            bg-white
+            shadow-sm
+          "
         >
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-slate-900">
-              إضافة منتج
-            </h2>
+          <div
+            className="
+              border-b
+              border-slate-100
+              px-5
+              py-4
+              sm:px-6
+            "
+          >
+            <div
+              className="
+                flex
+                items-center
+                gap-3
+              "
+            >
+              <div
+                className="
+                  flex
+                  h-10
+                  w-10
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-teal-50
+                  text-teal-600
+                "
+              >
+                +
+              </div>
 
-            <p className="mt-1 text-xs text-slate-400">
-              إنشاء منتج جديد وإضافة بياناته الأساسية.
-            </p>
+              <div>
+                <h2
+                  className="
+                    text-base
+                    font-bold
+                    text-slate-900
+                  "
+                >
+                  إضافة منتج
+                </h2>
+
+                <p
+                  className="
+                    mt-0.5
+                    text-xs
+                    text-slate-400
+                  "
+                >
+                  إضافة البيانات الأساسية للمنتج.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <ProductForm
-            categories={categories ?? []}
-            brands={brands ?? []}
-          />
+          <div className="px-4 py-4 sm:px-5">
+            <ProductForm
+              categories={categories ?? []}
+              brands={brands ?? []}
+            />
+          </div>
         </section>
 
         {/* =====================================================
