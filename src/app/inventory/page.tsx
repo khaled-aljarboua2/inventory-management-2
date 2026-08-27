@@ -70,6 +70,12 @@ type UnitTotals = Map<string, number>;
 const BATCH_SIZE = 500;
 const UNKNOWN_UNIT = "وحدة غير محددة";
 
+function formatInventoryNumber(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 function ErrorBox({ children }: { children: ReactNode }) {
   return (
     <DashboardLayout>
@@ -258,7 +264,7 @@ export default async function InventoryPage() {
         const unit = Array.isArray(row.units)
           ? row.units[0] ?? null
           : row.units;
-        const unitName = unit?.name || unit?.symbol || UNKNOWN_UNIT;
+        const unitName = unit?.symbol || unit?.name || UNKNOWN_UNIT;
 
         if (!unitNameByProduct.has(row.product_id) || row.is_base) {
           unitNameByProduct.set(row.product_id, unitName);
@@ -355,7 +361,8 @@ export default async function InventoryPage() {
 
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500 shadow-sm">
               <Warehouse size={17} className="text-teal-600" />
-              <span>{locations.length.toLocaleString("ar-SA")} موقع</span>
+              <span dir="ltr" className="font-mono tabular-nums text-slate-700">{formatInventoryNumber(locations.length)}</span>
+              <span>مواقع</span>
             </div>
           </div>
         </div>
@@ -364,8 +371,8 @@ export default async function InventoryPage() {
           <StatCard
             icon={<Boxes size={19} />}
             label="المنتجات"
-            value={totalProducts.toLocaleString("ar-SA")}
-            description={`${totalRows.toLocaleString("ar-SA")} رصيد`}
+            value={<MetricNumber value={totalProducts} />}
+            description={`${formatInventoryNumber(totalRows)} رصيد`}
           />
 
           <StatCard
@@ -385,8 +392,8 @@ export default async function InventoryPage() {
           <StatCard
             icon={<AlertTriangle size={19} />}
             label="تنبيهات المخزون"
-            value={(lowStockCount + outOfStockCount).toLocaleString("ar-SA")}
-            description={`${outOfStockCount.toLocaleString("ar-SA")} نافد · ${lowStockCount.toLocaleString("ar-SA")} منخفض`}
+            value={<MetricNumber value={lowStockCount + outOfStockCount} danger={lowStockCount + outOfStockCount > 0} />}
+            description={`${formatInventoryNumber(outOfStockCount)} نافد · ${formatInventoryNumber(lowStockCount)} منخفض`}
             danger={lowStockCount + outOfStockCount > 0}
           />
         </div>
@@ -401,24 +408,59 @@ export default async function InventoryPage() {
   );
 }
 
-function UnitTotalsList({ totals }: { totals: UnitTotals }) {
+function MetricNumber({ value, danger = false }: { value: number; danger?: boolean }) {
+  return (
+    <p
+      dir="ltr"
+      className={`font-mono text-2xl font-bold leading-none tabular-nums sm:text-3xl ${
+        danger ? "text-red-600" : "text-slate-900"
+      }`}
+    >
+      {formatInventoryNumber(value)}
+    </p>
+  );
+}
+
+function UnitTotalsList({
+  totals,
+  muted = false,
+}: {
+  totals: UnitTotals;
+  muted?: boolean;
+}) {
   const entries = Array.from(totals.entries()).sort(([, left], [, right]) => right - left);
 
   if (entries.length === 0) {
-    return <span>٠</span>;
+    return <MetricNumber value={0} />;
   }
 
   return (
-    <div className="mt-1 space-y-0.5">
+    <div className="space-y-1.5">
       {entries.slice(0, 2).map(([unitName, quantity]) => (
-        <p key={unitName} className="text-base font-bold leading-5 text-slate-900 sm:text-lg">
-          {quantity.toLocaleString("ar-SA", { maximumFractionDigits: 2 })}{" "}
-          <span className="text-xs font-semibold text-teal-700">{unitName}</span>
-        </p>
+        <div
+          key={unitName}
+          className={
+            muted
+              ? "flex items-center justify-between gap-2 rounded-lg bg-slate-100 px-2.5 py-1.5"
+              : "flex items-center justify-between gap-2 rounded-lg bg-teal-50 px-2.5 py-1.5"
+          }
+        >
+          <span
+            dir="rtl"
+            className={muted ? "text-[11px] font-semibold text-slate-600" : "text-[11px] font-semibold text-teal-700"}
+          >
+            {unitName}
+          </span>
+          <span dir="ltr" className="font-mono text-sm font-bold tabular-nums text-slate-800">
+            {formatInventoryNumber(quantity)}
+          </span>
+        </div>
       ))}
-      {entries.length > 2 && (
-        <p className="text-[11px] font-medium text-slate-400">+ {entries.length - 2} وحدات أخرى</p>
-      )}
+      {entries.length > 2 ? (
+        <p className="pr-1 text-[11px] font-medium text-slate-400">
+          + {formatInventoryNumber(entries.length - 2)} وحدات أخرى
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -447,12 +489,10 @@ function StatCard({
           {icon}
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-medium text-slate-500 sm:text-sm">{label}</p>
-          <div className={danger ? "mt-1 text-xl font-bold text-red-600 sm:text-2xl" : "mt-1 text-xl font-bold text-slate-900 sm:text-2xl"}>
-            {value}
-          </div>
-          <p className="mt-1 text-[11px] text-slate-400">{description}</p>
+          <div className="mt-2">{value}</div>
+          <p className="mt-2 text-[11px] text-slate-400">{description}</p>
         </div>
       </div>
     </div>
