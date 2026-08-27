@@ -326,7 +326,7 @@ export default async function StatsGrid() {
         return "bg-amber-50 text-amber-700";
 
       case "pending":
-        return "bg-blue-50 text-blue-700";
+        return "bg-teal-50 text-teal-700";
 
       case "approved":
         return "bg-indigo-50 text-indigo-700";

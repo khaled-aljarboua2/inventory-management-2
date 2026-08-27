@@ -109,23 +109,26 @@ export default async function UsersPage() {
   // ملف المستخدم الحالي
   // ============================================================
 
-  const {
-    data: currentUser,
-    error: currentUserError,
-  } = await supabase
-    .from("users")
-    .select(
-      "id, company_id, role_id, is_active"
-    )
-    .eq(
-      "auth_user_id",
-      user.id
-    )
-    .eq(
-      "is_active",
-      true
-    )
-    .single();
+  const [
+    {
+      data: currentUser,
+      error: currentUserError,
+    },
+    {
+      data: canViewUsers,
+      error: permissionError,
+    },
+  ] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id, company_id, role_id, is_active")
+      .eq("auth_user_id", user.id)
+      .eq("is_active", true)
+      .single(),
+    supabase.rpc("has_permission", {
+      permission_code: "users.view",
+    }),
+  ]);
 
   if (
     currentUserError ||
@@ -146,17 +149,6 @@ export default async function UsersPage() {
   // ============================================================
   // التحقق من صلاحية عرض المستخدمين
   // ============================================================
-
-  const {
-    data: canViewUsers,
-    error: permissionError,
-  } = await supabase.rpc(
-    "has_permission",
-    {
-      permission_code:
-        "users.view",
-    }
-  );
 
   if (
     permissionError ||
@@ -185,10 +177,21 @@ export default async function UsersPage() {
   // تحميل المستخدمين
   // ============================================================
 
-  const {
-    data: users,
-    error: usersError,
-  } = await admin
+  const [
+    {
+      data: users,
+      error: usersError,
+    },
+    {
+      data: roles,
+      error: rolesError,
+    },
+    {
+      data: locations,
+      error: locationsError,
+    },
+  ] = await Promise.all([
+    admin
     .from("users")
     .select(
       `
@@ -228,7 +231,18 @@ export default async function UsersPage() {
       {
         ascending: false,
       }
-    );
+    ),
+    admin
+      .from("roles")
+      .select("id, name, description")
+      .order("name"),
+    admin
+      .from("locations")
+      .select("id, name, code, type")
+      .eq("company_id", currentUser.company_id)
+      .eq("is_active", true)
+      .order("name"),
+  ]);
 
   if (usersError) {
     return (
@@ -261,20 +275,6 @@ export default async function UsersPage() {
     );
   }
 
-  // ============================================================
-  // الأدوار
-  // ============================================================
-
-  const {
-    data: roles,
-    error: rolesError,
-  } = await admin
-    .from("roles")
-    .select(
-      "id, name, description"
-    )
-    .order("name");
-
   if (rolesError) {
     return (
       <DashboardLayout>
@@ -290,28 +290,6 @@ export default async function UsersPage() {
       </DashboardLayout>
     );
   }
-
-  // ============================================================
-  // المواقع
-  // ============================================================
-
-  const {
-    data: locations,
-    error: locationsError,
-  } = await admin
-    .from("locations")
-    .select(
-      "id, name, code, type"
-    )
-    .eq(
-      "company_id",
-      currentUser.company_id
-    )
-    .eq(
-      "is_active",
-      true
-    )
-    .order("name");
 
   if (locationsError) {
     return (

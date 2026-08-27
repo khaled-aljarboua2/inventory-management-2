@@ -82,18 +82,30 @@ export default async function RolesPage() {
   // صلاحية إدارة الوصول
   // ============================================================
 
-  const {
-    data: canManageAccess,
-    error: permissionError,
-  } = await supabase.rpc(
-    "has_permission",
+  const [
     {
-      permission_code:
-        "users.manage_access",
-    }
-  );
+      data: currentUser,
+      error: currentUserError,
+    },
+    {
+      data: canManageAccess,
+      error: permissionError,
+    },
+  ] = await Promise.all([
+    supabase
+      .from("users")
+      .select("company_id")
+      .eq("auth_user_id", user.id)
+      .eq("is_active", true)
+      .single(),
+    supabase.rpc("has_permission", {
+      permission_code: "users.manage_access",
+    }),
+  ]);
 
   if (
+    currentUserError ||
+    !currentUser ||
     permissionError ||
     canManageAccess !== true
   ) {
@@ -156,7 +168,8 @@ export default async function RolesPage() {
 
     admin
       .from("users")
-      .select("role_id"),
+      .select("role_id")
+      .eq("company_id", currentUser.company_id),
   ]);
 
   if (

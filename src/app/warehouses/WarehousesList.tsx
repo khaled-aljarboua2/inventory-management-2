@@ -232,7 +232,7 @@ export default function WarehousesList({
             onClick={() => setFilter("all")}
             className={`rounded-2xl border p-5 text-right transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${
               filter === "all"
-                ? "border-blue-200 bg-blue-50"
+                ? "border-teal-200 bg-teal-50"
                 : "border-slate-200 bg-white"
             }`}
           >
@@ -247,7 +247,7 @@ export default function WarehousesList({
                 </p>
               </div>
 
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                 <Boxes size={23} />
               </div>
             </div>
@@ -334,7 +334,7 @@ export default function WarehousesList({
                     )
                   }
                   placeholder="ابحث عن مستودع..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-4 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
 
                 {search && (
@@ -353,7 +353,7 @@ export default function WarehousesList({
               <button
                 type="button"
                 onClick={openCreate}
-                className="group inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100"
+                className="group inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-lg hover:shadow-teal-100"
               >
                 <Plus
                   size={18}
@@ -428,11 +428,11 @@ export default function WarehousesList({
                   (warehouse) => (
                     <tr
                       key={warehouse.id}
-                      className="group transition hover:bg-blue-50/30"
+                      className="group transition hover:bg-teal-50/30"
                     >
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:scale-105">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition group-hover:scale-105">
                             <Building2 size={19} />
                           </div>
 
@@ -490,7 +490,7 @@ export default function WarehousesList({
                                 warehouse
                               )
                             }
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-600"
                           >
                             <Pencil size={14} />
                             تعديل
@@ -591,7 +591,7 @@ export default function WarehousesList({
                   required
                   disabled={loading}
                   placeholder="مثال: المستودع الرئيسي"
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
               </div>
 
@@ -610,7 +610,7 @@ export default function WarehousesList({
                   required
                   disabled={loading}
                   placeholder="WH-001"
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-mono text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-mono text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
               </div>
 
@@ -628,7 +628,7 @@ export default function WarehousesList({
                   }
                   disabled={loading}
                   placeholder="بريدة"
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
               </div>
 
@@ -647,7 +647,7 @@ export default function WarehousesList({
                   disabled={loading}
                   rows={3}
                   placeholder="العنوان التفصيلي للمستودع..."
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
               </div>
 
@@ -664,7 +664,7 @@ export default function WarehousesList({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-50"
+                  className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:opacity-50"
                 >
                   {loading
                     ? "جاري الحفظ..."

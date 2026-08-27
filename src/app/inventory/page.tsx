@@ -367,7 +367,7 @@ export default async function InventoryPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             icon={<Boxes size={19} />}
             label="المنتجات"
@@ -435,23 +435,23 @@ function UnitTotalsList({
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className="grid grid-cols-2 gap-2">
       {entries.map(([unitName, quantity]) => (
         <div
           key={unitName}
           className={
             muted
-              ? "flex items-center justify-between gap-2 rounded-lg bg-slate-100 px-2.5 py-1.5"
-              : "flex items-center justify-between gap-2 rounded-lg bg-teal-50 px-2.5 py-1.5"
+              ? "min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2"
+              : "min-w-0 rounded-xl border border-teal-100 bg-teal-50/70 px-2.5 py-2"
           }
         >
           <span
             dir="rtl"
-            className={muted ? "text-[11px] font-semibold text-slate-600" : "text-[11px] font-semibold text-teal-700"}
+            className={muted ? "block truncate text-[10px] font-semibold text-slate-500" : "block truncate text-[10px] font-semibold text-teal-700"}
           >
             {unitName}
           </span>
-          <span dir="ltr" className="font-mono text-sm font-bold tabular-nums text-slate-800">
+          <span dir="ltr" className="mt-0.5 block font-mono text-sm font-bold tabular-nums text-slate-800">
             {formatInventoryNumber(quantity)}
           </span>
         </div>
@@ -474,22 +474,28 @@ function StatCard({
   danger?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <div className="flex items-start gap-3">
+    <section className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+      <div
+        className={`pointer-events-none absolute -left-10 -top-10 h-28 w-28 rounded-full blur-3xl ${
+          danger ? "bg-red-100/80" : "bg-teal-100/80"
+        }`}
+      />
+      <div className="relative flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold tracking-wide text-slate-500">{label}</p>
+          <div className="mt-3">{value}</div>
+          <p className="mt-3 text-[11px] leading-5 text-slate-400">{description}</p>
+        </div>
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-            danger ? "bg-red-50 text-red-500" : "bg-teal-50 text-teal-600"
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ring-8 ${
+            danger
+              ? "bg-red-50 text-red-600 ring-red-50/80"
+              : "bg-teal-50 text-teal-600 ring-teal-50/80"
           }`}
         >
           {icon}
         </div>
-
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-slate-500 sm:text-sm">{label}</p>
-          <div className="mt-2">{value}</div>
-          <p className="mt-2 text-[11px] text-slate-400">{description}</p>
-        </div>
       </div>
-    </div>
+    </section>
   );
 }

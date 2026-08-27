@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 
 import ReportExportPanel from "./ReportExportPanel";
-import StockAdjustmentForm from "./StockAdjustmentForm";
 import ProductImportExport from "../products/ProductImportExport";
 import {
   formatReportDate,
@@ -22,61 +21,6 @@ import {
 } from "@/lib/reports";
 
 type UnitTotals = Map<string, number>;
-type AdjustmentProduct = { id: string; sku: string; name: string };
-type AdjustmentLocation = { id: string; name: string; code: string };
-type ReportClient = NonNullable<Awaited<ReturnType<typeof getReportAccess>>["supabase"]>;
-type ReportScope = NonNullable<Awaited<ReturnType<typeof getReportAccess>>["access"]>;
-
-const OPTIONS_PAGE_SIZE = 1000;
-
-async function getAllAdjustmentProducts(
-  supabase: ReportClient,
-  companyId: string
-) {
-  const products: AdjustmentProduct[] = [];
-  let from = 0;
-
-  while (true) {
-    const { data, error } = await supabase
-      .from("products")
-      .select("id, sku, name")
-      .eq("company_id", companyId)
-      .order("name")
-      .range(from, from + OPTIONS_PAGE_SIZE - 1);
-
-    if (error) throw error;
-
-    const batch = (data ?? []) as AdjustmentProduct[];
-    products.push(...batch);
-
-    if (batch.length < OPTIONS_PAGE_SIZE) return products;
-
-    from += OPTIONS_PAGE_SIZE;
-  }
-}
-
-async function getAdjustmentLocations(
-  supabase: ReportClient,
-  access: ReportScope
-) {
-  let query = supabase
-    .from("locations")
-    .select("id, name, code")
-    .eq("company_id", access.companyId)
-    .eq("is_active", true)
-    .order("name");
-
-  if (!access.isAdmin && access.locationId) {
-    query = query.eq("id", access.locationId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-
-  return (data ?? []) as AdjustmentLocation[];
-}
-
 function ErrorBox({ children }: { children: ReactNode }) {
   return (
     <DashboardLayout>
@@ -170,12 +114,10 @@ export default async function ReportsPage() {
   }
 
   try {
-    const [{ data: canAdjustStock }, { balances, transactions }, adjustmentProducts, adjustmentLocations] = await Promise.all([
-      session.supabase.rpc("has_permission", { permission_code: "stock.adjust" }),
-      loadReportData(session.supabase, session.access),
-      getAllAdjustmentProducts(session.supabase, session.access.companyId),
-      getAdjustmentLocations(session.supabase, session.access),
-    ]);
+    const { balances, transactions } = await loadReportData(
+      session.supabase,
+      session.access
+    );
     const availableTotals = new Map<string, number>();
     const reservedTotals = new Map<string, number>();
     const productIds = new Set<string>();
@@ -244,19 +186,6 @@ export default async function ReportsPage() {
 
             <ProductImportExport showExport={false} />
 
-            {canAdjustStock === true ? (
-              <div className="space-y-3 border-t border-teal-100 pt-4">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">تسوية يدوية</h3>
-                  <p className="mt-1 text-xs text-slate-500">زيادة أو خصم أي منتج مباشرة مع سبب إلزامي وتسجيل الحركة.</p>
-                </div>
-                <StockAdjustmentForm products={adjustmentProducts} locations={adjustmentLocations} />
-              </div>
-            ) : (
-              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
-                ليس لديك صلاحية تسوية المخزون يدويًا. يمكنك عرض التقارير فقط.
-              </p>
-            )}
           </section>
 
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">

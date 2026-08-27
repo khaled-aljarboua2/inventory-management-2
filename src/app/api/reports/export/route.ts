@@ -302,7 +302,9 @@ export async function GET(request: Request) {
     : "xlsx";
 
   try {
-    const data = await loadReportData(session.supabase, session.access);
+    const data = await loadReportData(session.supabase, session.access, {
+      includeBarcodes: true,
+    });
     const table = buildTable(report, data);
     const date = new Date().toISOString().slice(0, 10);
     const fileName = `${table.fileName}-${date}.${format}`;

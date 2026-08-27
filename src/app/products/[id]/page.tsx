@@ -122,7 +122,7 @@ export default async function ProductDetailsPage({
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Link
             href="/products"
-            className="transition-colors hover:text-blue-600"
+            className="transition-colors hover:text-teal-600"
           >
             المنتجات
           </Link>
@@ -142,14 +142,14 @@ export default async function ProductDetailsPage({
         ====================================================== */}
 
         <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
-          <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-blue-100/60 blur-3xl" />
+          <div className="pointer-events-none absolute -left-16 -top-16 h-40 w-40 rounded-full bg-teal-100/60 blur-3xl" />
 
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-4">
 
               {/* أيقونة المنتج */}
 
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200/60 transition-transform duration-300 hover:scale-105">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-200/60 transition-transform duration-300 hover:scale-105">
                 <Package
                   size={29}
                   strokeWidth={1.8}
@@ -207,7 +207,7 @@ export default async function ProductDetailsPage({
 
               <Link
                 href={`/products/${product.id}/edit`}
-                className="group inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200"
+                className="group inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-md hover:shadow-teal-200"
               >
                 <Edit3
                   size={17}
@@ -241,7 +241,7 @@ export default async function ProductDetailsPage({
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-300 group-hover:scale-110">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-transform duration-300 group-hover:scale-110">
                 <Tag size={21} />
               </div>
             </div>
@@ -262,7 +262,7 @@ export default async function ProductDetailsPage({
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-300 group-hover:scale-110">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-transform duration-300 group-hover:scale-110">
                 <Factory size={21} />
               </div>
             </div>
@@ -283,7 +283,7 @@ export default async function ProductDetailsPage({
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-300 group-hover:scale-110">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-transform duration-300 group-hover:scale-110">
                 <Boxes size={21} />
               </div>
             </div>
@@ -329,7 +329,7 @@ export default async function ProductDetailsPage({
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                 <Package size={19} />
               </div>
 
@@ -408,7 +408,7 @@ export default async function ProductDetailsPage({
 
         <section>
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <Building2 size={19} />
             </div>
 

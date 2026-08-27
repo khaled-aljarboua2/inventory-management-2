@@ -90,7 +90,7 @@ export const TRANSACTION_LABELS: Record<string, string> = {
   return: "مرتجع",
 };
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 1000;
 const UNKNOWN_UNIT = "وحدة غير محددة";
 
 export function formatReportNumber(value: number) {
@@ -278,7 +278,11 @@ async function getRecentTransactions(
   }
 }
 
-async function getProductMetadata(supabase: SupabaseServerClient, productIds: string[]) {
+async function getProductMetadata(
+  supabase: SupabaseServerClient,
+  productIds: string[],
+  includeBarcodes: boolean
+) {
   const unitNameByProduct = new Map<string, string>();
   const barcodeByProduct = new Map<string, string>();
   const productBatches = splitIntoBatches(productIds);
@@ -293,15 +297,17 @@ async function getProductMetadata(supabase: SupabaseServerClient, productIds: st
           .order("is_base", { ascending: false })
       )
     ),
-    Promise.all(
-      productBatches.map((ids) =>
-        supabase
-          .from("product_barcodes")
-          .select("product_id, barcode, is_default")
-          .in("product_id", ids)
-          .order("is_default", { ascending: false })
-      )
-    ),
+    includeBarcodes
+      ? Promise.all(
+          productBatches.map((ids) =>
+            supabase
+              .from("product_barcodes")
+              .select("product_id, barcode, is_default")
+              .in("product_id", ids)
+              .order("is_default", { ascending: false })
+          )
+        )
+      : Promise.resolve([]),
   ]);
 
   for (const response of unitResponses) {
@@ -340,7 +346,8 @@ async function getProductMetadata(supabase: SupabaseServerClient, productIds: st
 
 export async function loadReportData(
   supabase: SupabaseServerClient,
-  access: ReportAccess
+  access: ReportAccess,
+  { includeBarcodes = false }: { includeBarcodes?: boolean } = {}
 ): Promise<ReportData> {
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const [rawBalances, rawTransactions] = await Promise.all([
@@ -356,7 +363,8 @@ export async function loadReportData(
   );
   const { unitNameByProduct, barcodeByProduct } = await getProductMetadata(
     supabase,
-    productIds
+    productIds,
+    includeBarcodes
   );
 
   return {

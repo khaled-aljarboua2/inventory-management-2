@@ -40,6 +40,9 @@ export default function SidebarNav({
   const [masterOpen, setMasterOpen] =
     useState(true);
 
+  const [generalSettingsOpen, setGeneralSettingsOpen] =
+    useState(true);
+
   // ============================================================
   // الأقسام
   // ============================================================
@@ -144,17 +147,6 @@ export default function SidebarNav({
               />
             )}
 
-            {allowed("stock.view") && (
-              <NavLink
-                href="/reports"
-                icon={
-                  <BarChart3 size={17} />
-                }
-                label="التقارير"
-                sub
-              />
-            )}
-
             {(
               allowed("transfers.view") ||
               allowed("transfers.create") ||
@@ -167,6 +159,17 @@ export default function SidebarNav({
                   <ArrowRightLeft size={17} />
                 }
                 label="طلبات النقل"
+                sub
+              />
+            )}
+
+            {allowed("stock.view") && (
+              <NavLink
+                href="/reports"
+                icon={
+                  <BarChart3 size={17} />
+                }
+                label="التقارير"
                 sub
               />
             )}
@@ -297,38 +300,46 @@ export default function SidebarNav({
       {hasManagement && (
         <>
           <SectionTitle className="mt-7">
-            الإدارة
+          الإعدادات العامة
           </SectionTitle>
 
-          {allowed("users.view") && (
-            <NavLink
-              href="/users"
-              icon={
-                <Users size={19} />
-              }
-              label="المستخدمون"
-            />
-          )}
+          <MenuButton
+            open={generalSettingsOpen}
+            onClick={() =>
+              setGeneralSettingsOpen(!generalSettingsOpen)
+            }
+            icon={<Settings size={19} />}
+            label="الإعدادات العامة"
+          />
 
-          {allowed("users.manage_access") && (
-            <NavLink
-              href="/roles"
-              icon={
-                <ShieldCheck size={19} />
-              }
-              label="الأدوار والصلاحيات"
-            />
-          )}
+          <SubMenu open={generalSettingsOpen}>
+            {allowed("settings.view") && (
+              <NavLink
+                href="/settings"
+                icon={<Settings size={17} />}
+                label="إعدادات النظام"
+                sub
+              />
+            )}
 
-          {allowed("settings.view") && (
-            <NavLink
-              href="/settings"
-              icon={
-                <Settings size={19} />
-              }
-              label="الإعدادات العامة"
-            />
-          )}
+            {allowed("users.view") && (
+              <NavLink
+                href="/users"
+                icon={<Users size={17} />}
+                label="المستخدمون"
+                sub
+              />
+            )}
+
+            {allowed("users.manage_access") && (
+              <NavLink
+                href="/roles"
+                icon={<ShieldCheck size={17} />}
+                label="الأدوار والصلاحيات"
+                sub
+              />
+            )}
+          </SubMenu>
         </>
       )}
     </nav>

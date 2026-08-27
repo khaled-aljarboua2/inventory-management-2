@@ -573,7 +573,7 @@ export default function ProductManagement({
         <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                 <Ruler size={20} />
               </div>
 
@@ -626,7 +626,7 @@ export default function ProductManagement({
                   setUnitId(e.target.value)
                 }
                 disabled={loading}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <option value="">
                   اختر الوحدة
@@ -673,14 +673,14 @@ export default function ProductManagement({
                     loading || isBase
                   }
                   placeholder="1"
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-9 pl-4 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-70"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-9 pl-4 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-70"
                 />
               </div>
             </div>
 
             {/* الوحدة الأساسية */}
 
-            <label className="flex h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50/40">
+            <label className="flex h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 hover:border-teal-200 hover:bg-teal-50/40">
               <input
                 type="checkbox"
                 checked={isBase}
@@ -695,7 +695,7 @@ export default function ProductManagement({
                     setConversionFactor("1");
                   }
                 }}
-                className="h-4 w-4 accent-blue-600"
+                className="h-4 w-4 accent-teal-600"
               />
 
               <div>
@@ -717,7 +717,7 @@ export default function ProductManagement({
                 loading || !unitId
               }
               onClick={addUnit}
-              className="group flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+              className="group flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white shadow-sm shadow-teal-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-md hover:shadow-teal-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
             >
               {loading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -792,7 +792,7 @@ export default function ProductManagement({
                     return (
                       <tr
                         key={item.id}
-                        className="bg-blue-50/40"
+                        className="bg-teal-50/40"
                       >
                         {/* الوحدة */}
 
@@ -805,7 +805,7 @@ export default function ProductManagement({
                               )
                             }
                             disabled={loading}
-                            className="h-10 w-full rounded-xl border border-blue-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-blue-50"
+                            className="h-10 w-full rounded-xl border border-teal-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-teal-50"
                           >
                             {units.map(
                               (unit) => (
@@ -842,7 +842,7 @@ export default function ProductManagement({
                               loading ||
                               editIsBase
                             }
-                            className="h-10 w-full rounded-xl border border-blue-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-blue-50"
+                            className="h-10 w-full rounded-xl border border-teal-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-teal-50"
                           />
                         </td>
 
@@ -871,7 +871,7 @@ export default function ProductManagement({
                                   );
                                 }
                               }}
-                              className="h-4 w-4 accent-blue-600"
+                              className="h-4 w-4 accent-teal-600"
                             />
 
                             <span className="text-xs font-medium text-slate-600">
@@ -930,7 +930,7 @@ export default function ProductManagement({
 
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-200 group-hover:scale-105">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-transform duration-200 group-hover:scale-105">
                             <Ruler size={18} />
                           </div>
 
@@ -967,7 +967,7 @@ export default function ProductManagement({
 
                       <td className="px-5 py-5">
                         {item.is_base ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
                             <Star
                               size={13}
                               fill="currentColor"
@@ -993,7 +993,7 @@ export default function ProductManagement({
                               )
                             }
                             disabled={loading}
-                            className="group/edit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
+                            className="group/edit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-600 disabled:opacity-50"
                           >
                             <Edit3
                               size={14}
@@ -1039,7 +1039,7 @@ export default function ProductManagement({
         <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                 <Barcode size={20} />
               </div>
 
@@ -1101,7 +1101,7 @@ export default function ProductManagement({
                   }
                   disabled={loading}
                   placeholder="أدخل رقم الباركود..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-4 font-mono text-sm text-slate-700 outline-none transition-all duration-200 placeholder:font-sans placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-4 font-mono text-sm text-slate-700 outline-none transition-all duration-200 placeholder:font-sans placeholder:text-slate-400 hover:border-slate-300 focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
             </div>
@@ -1121,7 +1121,7 @@ export default function ProductManagement({
                   )
                 }
                 disabled={loading}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <option value="">
                   بدون وحدة
@@ -1143,7 +1143,7 @@ export default function ProductManagement({
 
             {/* افتراضي */}
 
-            <label className="flex h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50/40">
+            <label className="flex h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 hover:border-teal-200 hover:bg-teal-50/40">
               <input
                 type="checkbox"
                 checked={barcodeDefault}
@@ -1153,7 +1153,7 @@ export default function ProductManagement({
                     e.target.checked
                   )
                 }
-                className="h-4 w-4 accent-blue-600"
+                className="h-4 w-4 accent-teal-600"
               />
 
               <div>
@@ -1176,7 +1176,7 @@ export default function ProductManagement({
                 !barcode.trim()
               }
               onClick={addBarcode}
-              className="group flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+              className="group flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white shadow-sm shadow-teal-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-md hover:shadow-teal-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
             >
               {loading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -1252,7 +1252,7 @@ export default function ProductManagement({
                     return (
                       <tr
                         key={item.id}
-                        className="bg-blue-50/40"
+                        className="bg-teal-50/40"
                       >
                         {/* الباركود */}
 
@@ -1266,7 +1266,7 @@ export default function ProductManagement({
                               )
                             }
                             disabled={loading}
-                            className="h-10 w-full rounded-xl border border-blue-200 bg-white px-3 font-mono text-sm outline-none focus:ring-4 focus:ring-blue-50"
+                            className="h-10 w-full rounded-xl border border-teal-200 bg-white px-3 font-mono text-sm outline-none focus:ring-4 focus:ring-teal-50"
                           />
                         </td>
 
@@ -1283,7 +1283,7 @@ export default function ProductManagement({
                               )
                             }
                             disabled={loading}
-                            className="h-10 w-full rounded-xl border border-blue-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-blue-50"
+                            className="h-10 w-full rounded-xl border border-teal-200 bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-teal-50"
                           >
                             <option value="">
                               بدون وحدة
@@ -1329,7 +1329,7 @@ export default function ProductManagement({
                                     .checked
                                 )
                               }
-                              className="h-4 w-4 accent-blue-600"
+                              className="h-4 w-4 accent-teal-600"
                             />
 
                             <span className="text-xs font-medium text-slate-600">
@@ -1388,7 +1388,7 @@ export default function ProductManagement({
 
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-200 group-hover:scale-105">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition-transform duration-200 group-hover:scale-105">
                             <Barcode size={18} />
                           </div>
 
@@ -1444,7 +1444,7 @@ export default function ProductManagement({
                               )
                             }
                             disabled={loading}
-                            className="group/edit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
+                            className="group/edit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-600 disabled:opacity-50"
                           >
                             <Edit3
                               size={14}

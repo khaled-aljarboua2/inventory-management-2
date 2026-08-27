@@ -127,11 +127,11 @@ export default function EditProductForm({
           Header
       ====================================================== */}
 
-      <div className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-l from-blue-50 via-white to-white px-6 py-7 sm:px-8">
-        <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-blue-100/40 blur-2xl" />
+      <div className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-l from-teal-50 via-white to-white px-6 py-7 sm:px-8">
+        <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-teal-100/40 blur-2xl" />
 
         <div className="relative flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200 transition-transform duration-300 hover:scale-105">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-200 transition-transform duration-300 hover:scale-105">
             <PackagePlus size={27} />
           </div>
 
@@ -186,7 +186,7 @@ export default function EditProductForm({
 
         <section className="rounded-2xl border border-slate-200 bg-white">
           <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <Boxes size={20} />
             </div>
 
@@ -219,7 +219,7 @@ export default function EditProductForm({
                 required
                 disabled={loading}
                 placeholder="مثال: PRD-001"
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-mono text-sm outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:opacity-50"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-mono text-sm outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:opacity-50"
               />
             </div>
 
@@ -239,7 +239,7 @@ export default function EditProductForm({
                 required
                 disabled={loading}
                 placeholder="اسم المنتج"
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:opacity-50"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:opacity-50"
               />
             </div>
 
@@ -259,7 +259,7 @@ export default function EditProductForm({
                     )
                   }
                   disabled={loading}
-                  className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 pl-10 text-sm outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:opacity-50"
+                  className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 pl-10 text-sm outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:opacity-50"
                 >
                   <option value="">
                     بدون تصنيف
@@ -300,7 +300,7 @@ export default function EditProductForm({
                     )
                   }
                   disabled={loading}
-                  className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 pl-10 text-sm outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:opacity-50"
+                  className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 pl-10 text-sm outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:opacity-50"
                 >
                   <option value="">
                     بدون علامة تجارية
@@ -341,7 +341,7 @@ export default function EditProductForm({
                   )
                 }
                 disabled={loading}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:opacity-50 md:max-w-md"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:opacity-50 md:max-w-md"
               />
             </div>
           </div>
@@ -353,7 +353,7 @@ export default function EditProductForm({
 
         <section className="rounded-2xl border border-slate-200 bg-white">
           <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
               <FileText size={20} />
             </div>
 
@@ -379,7 +379,7 @@ export default function EditProductForm({
               rows={5}
               disabled={loading}
               placeholder="اكتب وصفًا اختياريًا للمنتج..."
-              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:opacity-50"
+              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:opacity-50"
             />
           </div>
         </section>
@@ -408,7 +408,7 @@ export default function EditProductForm({
             <button
               type="submit"
               disabled={loading}
-              className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-7 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+              className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-teal-600 px-7 text-sm font-semibold text-white shadow-sm shadow-teal-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
             >
               <Save
                 size={18}
