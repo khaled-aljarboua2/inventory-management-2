@@ -15,6 +15,62 @@ type RouteParams = {
   }>;
 };
 
+const PRODUCT_BATCH_SIZE = 500;
+
+async function getCompanyProducts(
+  supabase: any,
+  companyId: string,
+  search = "",
+  productIds?: string[]
+) {
+  const products: Array<{ id: string; name: string; sku: string }> = [];
+
+  if (productIds?.length) {
+    for (let start = 0; start < productIds.length; start += PRODUCT_BATCH_SIZE) {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, sku")
+        .eq("company_id", companyId)
+        .eq("is_active", true)
+        .in("id", productIds.slice(start, start + PRODUCT_BATCH_SIZE))
+        .order("name");
+
+      if (error) return { data: null, error };
+      products.push(...(data ?? []));
+    }
+
+    return { data: products, error: null };
+  }
+
+  let from = 0;
+
+  while (true) {
+    let query = supabase
+      .from("products")
+      .select("id, name, sku")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .order("name")
+      .range(from, from + PRODUCT_BATCH_SIZE - 1);
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) return { data: null, error };
+
+    const batch = data ?? [];
+    products.push(...batch);
+
+    if (batch.length < PRODUCT_BATCH_SIZE) break;
+    from += PRODUCT_BATCH_SIZE;
+  }
+
+  return { data: products, error: null };
+}
+
 async function getAuthenticatedUser() {
   const supabase = await createClient();
 
@@ -349,36 +405,14 @@ export async function GET(
     // المنتجات
     // ==========================================================
 
-    let productsQuery =
-      auth.supabase
-        .from("products")
-        .select(`
-          id,
-          name,
-          sku
-        `)
-        .eq(
-          "company_id",
-          auth.dbUser.company_id
-        )
-        .eq(
-          "is_active",
-          true
-        );
-
-    if (search) {
-      productsQuery =
-        productsQuery.or(
-          `name.ilike.%${search}%,sku.ilike.%${search}%`
-        );
-    }
-
     const {
       data: products,
       error: productsError,
-    } = await productsQuery
-      .order("name")
-      .limit(1000);
+    } = await getCompanyProducts(
+      auth.supabase,
+      auth.dbUser.company_id,
+      search
+    );
 
     if (productsError) {
       return NextResponse.json(
@@ -623,37 +657,15 @@ export async function POST(
     // المنتجات
     // ==========================================================
 
-    let productsQuery =
-      auth.supabase
-        .from("products")
-        .select(
-          "id, name, sku"
-        )
-        .eq(
-          "company_id",
-          auth.dbUser.company_id
-        )
-        .eq(
-          "is_active",
-          true
-        );
-
-    if (
-      body.mode === "selected"
-    ) {
-      productsQuery =
-        productsQuery.in(
-          "id",
-          body.productIds
-        );
-    }
-
     const {
       data: products,
       error: productsError,
-    } = await productsQuery
-      .order("name")
-      .limit(1000);
+    } = await getCompanyProducts(
+      auth.supabase,
+      auth.dbUser.company_id,
+      "",
+      body.mode === "selected" ? body.productIds : undefined
+    );
 
     if (productsError) {
       return NextResponse.json(

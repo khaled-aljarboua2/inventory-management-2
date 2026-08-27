@@ -248,7 +248,7 @@ export default async function ReportsPage() {
               <div className="space-y-3 border-t border-teal-100 pt-4">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">تسوية يدوية</h3>
-                  <p className="mt-1 text-xs text-slate-500">زيادة أو خصم أي منتج مباشرة مع سبب إلزامي وتسجيل الحركة. الإدمن يستطيع اختيار كل الفروع.</p>
+                  <p className="mt-1 text-xs text-slate-500">زيادة أو خصم أي منتج مباشرة مع سبب إلزامي وتسجيل الحركة.</p>
                 </div>
                 <StockAdjustmentForm products={adjustmentProducts} locations={adjustmentLocations} />
               </div>

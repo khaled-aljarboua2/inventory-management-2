@@ -25,7 +25,7 @@ export default function StockAdjustmentForm({ products, locations }: { products:
     const matching = key
       ? products.filter((product) => product.name.toLowerCase().includes(key) || product.sku.toLowerCase().includes(key))
       : products;
-    return matching.slice(0, 100);
+    return matching;
   }, [products, query]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -86,7 +86,6 @@ export default function StockAdjustmentForm({ products, locations }: { products:
             <option value="">{visibleProducts.length ? "اختر المنتج" : "لا توجد نتائج"}</option>
             {visibleProducts.map((product) => <option key={product.id} value={product.id}>{product.name} — {product.sku}</option>)}
           </select>
-          {query && visibleProducts.length === 100 ? <p className="mt-1 text-[11px] text-slate-400">تظهر أول 100 نتيجة فقط؛ أكمل البحث لتضييق القائمة.</p> : null}
         </label>
 
         <label className="block">

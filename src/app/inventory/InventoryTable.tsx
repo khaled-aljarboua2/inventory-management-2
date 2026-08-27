@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -51,6 +51,8 @@ type Props = {
   canViewAllLocations: boolean;
 };
 
+const ROWS_PER_PAGE = 50;
+
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 2,
@@ -83,9 +85,11 @@ export default function InventoryTable({
   const [search, setSearch] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const deferredSearch = useDeferredValue(search);
 
   const filteredInventory = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase();
+    const query = deferredSearch.trim().toLocaleLowerCase();
 
     return inventory.filter((item) => {
       const name = item.products?.name?.toLocaleLowerCase() ?? "";
@@ -118,7 +122,7 @@ export default function InventoryTable({
 
       return matchesSearch && matchesLocation && matchesStatus;
     });
-  }, [inventory, search, locationFilter, statusFilter, canViewAllLocations]);
+  }, [inventory, deferredSearch, locationFilter, statusFilter, canViewAllLocations]);
 
   const quantityTotals = useMemo<QuantityTotals>(() => {
     const available = new Map<string, number>();
@@ -137,9 +141,14 @@ export default function InventoryTable({
     setSearch("");
     setLocationFilter("all");
     setStatusFilter("all");
+    setPage(1);
   }
 
   const hasActiveFilters = search || locationFilter !== "all" || statusFilter !== "all";
+  const totalPages = Math.max(1, Math.ceil(filteredInventory.length / ROWS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * ROWS_PER_PAGE;
+  const visibleInventory = filteredInventory.slice(pageStart, pageStart + ROWS_PER_PAGE);
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -161,14 +170,20 @@ export default function InventoryTable({
               <input
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
                 placeholder="ابحث بالاسم أو SKU أو الباركود..."
                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-10 text-sm text-slate-700 outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
               />
               {search ? (
                 <button
                   type="button"
-                  onClick={() => setSearch("")}
+                  onClick={() => {
+                    setSearch("");
+                    setPage(1);
+                  }}
                   className="absolute left-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                   aria-label="مسح البحث"
                 >
@@ -180,7 +195,10 @@ export default function InventoryTable({
             {canViewAllLocations ? (
               <select
                 value={locationFilter}
-                onChange={(event) => setLocationFilter(event.target.value)}
+                onChange={(event) => {
+                  setLocationFilter(event.target.value);
+                  setPage(1);
+                }}
                 className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
               >
                 <option value="all">جميع المواقع</option>
@@ -194,7 +212,10 @@ export default function InventoryTable({
 
             <select
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
+              onChange={(event) => {
+                setStatusFilter(event.target.value);
+                setPage(1);
+              }}
               className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
             >
               <option value="all">جميع الحالات</option>
@@ -250,7 +271,7 @@ export default function InventoryTable({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredInventory.map((item) => (
+                {visibleInventory.map((item) => (
                   <InventoryTableRow key={item.id} item={item} />
                 ))}
               </tbody>
@@ -258,13 +279,68 @@ export default function InventoryTable({
           </div>
 
           <div className="divide-y divide-slate-100 lg:hidden">
-            {filteredInventory.map((item) => (
+            {visibleInventory.map((item) => (
               <InventoryMobileCard key={item.id} item={item} />
             ))}
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredInventory.length}
+            pageStart={pageStart}
+            onPageChange={setPage}
+          />
         </>
       )}
     </section>
+  );
+}
+
+function Pagination({
+  currentPage,
+  totalPages,
+  totalItems,
+  pageStart,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageStart: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalItems === 0) return null;
+
+  const pageEnd = Math.min(pageStart + ROWS_PER_PAGE, totalItems);
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/50 px-4 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <span>
+        عرض {formatNumber(pageStart + 1)}–{formatNumber(pageEnd)} من {formatNumber(totalItems)}
+      </span>
+      {totalPages > 1 ? (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-teal-200 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            السابق
+          </button>
+          <span className="font-mono tabular-nums text-slate-600">{formatNumber(currentPage)} / {formatNumber(totalPages)}</span>
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-teal-200 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            التالي
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

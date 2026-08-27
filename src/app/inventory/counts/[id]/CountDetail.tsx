@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
   useState,
@@ -59,6 +60,8 @@ type AddMode =
   | "with_stock"
   | "selected";
 
+const ROWS_PER_PAGE = 50;
+
 export default function CountDetail({
   countId,
 }: {
@@ -93,6 +96,8 @@ export default function CountDetail({
 
   const [countSearch, setCountSearch] =
     useState("");
+  const [itemsPage, setItemsPage] = useState(1);
+  const deferredCountSearch = useDeferredValue(countSearch);
 
   const [showAddProducts, setShowAddProducts] =
     useState(false);
@@ -264,7 +269,7 @@ export default function CountDetail({
     if (!count) return [];
 
     const search =
-      countSearch.trim().toLowerCase();
+      deferredCountSearch.trim().toLowerCase();
 
     if (!search) return count.items;
 
@@ -280,7 +285,12 @@ export default function CountDetail({
         sku.includes(search)
       );
     });
-  }, [count, countSearch]);
+  }, [count, deferredCountSearch]);
+
+  const totalItemPages = Math.max(1, Math.ceil(filteredItems.length / ROWS_PER_PAGE));
+  const currentItemsPage = Math.min(itemsPage, totalItemPages);
+  const itemsPageStart = (currentItemsPage - 1) * ROWS_PER_PAGE;
+  const visibleItems = filteredItems.slice(itemsPageStart, itemsPageStart + ROWS_PER_PAGE);
 
   const isCompleted =
     count?.status === "completed";
@@ -724,11 +734,10 @@ export default function CountDetail({
 
               <input
                 value={countSearch}
-                onChange={(event) =>
-                  setCountSearch(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => {
+                  setCountSearch(event.target.value);
+                  setItemsPage(1);
+                }}
                 placeholder="ابحث بالاسم أو SKU..."
                 className="h-11 rounded-xl border border-slate-200 bg-slate-50/70 pr-10 pl-3 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
               />
@@ -757,6 +766,7 @@ export default function CountDetail({
             </button>
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1150px] text-right">
               <thead className="bg-slate-50 text-xs text-slate-500">
@@ -772,7 +782,7 @@ export default function CountDetail({
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {filteredItems.map((item) => {
+                {visibleItems.map((item) => {
                   const value =
                     quantities[item.id] ?? "";
 
@@ -899,6 +909,17 @@ export default function CountDetail({
               </tbody>
             </table>
           </div>
+          {filteredItems.length > 0 && totalItemPages > 1 ? (
+            <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/50 px-5 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <span>عرض {itemsPageStart + 1}–{Math.min(itemsPageStart + ROWS_PER_PAGE, filteredItems.length)} من {filteredItems.length}</span>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setItemsPage(currentItemsPage - 1)} disabled={currentItemsPage === 1} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-teal-200 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40">السابق</button>
+                <span className="font-mono tabular-nums text-slate-600">{currentItemsPage} / {totalItemPages}</span>
+                <button type="button" onClick={() => setItemsPage(currentItemsPage + 1)} disabled={currentItemsPage === totalItemPages} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-teal-200 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40">التالي</button>
+              </div>
+            </div>
+          ) : null}
+          </>
         )}
       </section>
 

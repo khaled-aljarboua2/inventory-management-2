@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -61,11 +61,15 @@ type Props = {
   locations?: Location[];
 };
 
+const ROWS_PER_PAGE = 50;
+
 export default function TransactionsTable({
   transactions = [],
   locations = [],
 }: Props) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const deferredSearch = useDeferredValue(search);
 
   const [
     locationFilter,
@@ -83,7 +87,7 @@ export default function TransactionsTable({
   ] = useState("all");
 
   const filteredTransactions = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = deferredSearch.trim().toLowerCase();
 
     return transactions.filter(
       (transaction) => {
@@ -158,7 +162,7 @@ export default function TransactionsTable({
     );
   }, [
     transactions,
-    search,
+    deferredSearch,
     locationFilter,
     transactionFilter,
     directionFilter,
@@ -182,11 +186,17 @@ export default function TransactionsTable({
     transactionFilter !== "all" ||
     directionFilter !== "all";
 
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / ROWS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * ROWS_PER_PAGE;
+  const visibleTransactions = filteredTransactions.slice(pageStart, pageStart + ROWS_PER_PAGE);
+
   function resetFilters() {
     setSearch("");
     setLocationFilter("all");
     setTransactionFilter("all");
     setDirectionFilter("all");
+    setPage(1);
   }
 
   function formatNumber(value: number) {
@@ -264,11 +274,10 @@ export default function TransactionsTable({
 
             <select
               value={locationFilter}
-              onChange={(event) =>
-                setLocationFilter(
-                  event.target.value
-                )
-              }
+              onChange={(event) => {
+                setLocationFilter(event.target.value);
+                setPage(1);
+              }}
               className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
             >
               <option value="all">
@@ -297,11 +306,10 @@ export default function TransactionsTable({
               <input
                 type="search"
                 value={search}
-                onChange={(event) =>
-                  setSearch(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
                 placeholder="ابحث عن منتج أو SKU أو مستخدم..."
                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pr-10 pl-10 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
               />
@@ -309,7 +317,10 @@ export default function TransactionsTable({
               {search && (
                 <button
                   type="button"
-                  onClick={() => setSearch("")}
+                  onClick={() => {
+                    setSearch("");
+                    setPage(1);
+                  }}
                   className="absolute left-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                   aria-label="مسح البحث"
                 >
@@ -320,11 +331,10 @@ export default function TransactionsTable({
 
             <select
               value={transactionFilter}
-              onChange={(event) =>
-                setTransactionFilter(
-                  event.target.value
-                )
-              }
+              onChange={(event) => {
+                setTransactionFilter(event.target.value);
+                setPage(1);
+              }}
               className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
             >
               <option value="all">
@@ -350,11 +360,10 @@ export default function TransactionsTable({
 
             <select
               value={directionFilter}
-              onChange={(event) =>
-                setDirectionFilter(
-                  event.target.value
-                )
-              }
+              onChange={(event) => {
+                setDirectionFilter(event.target.value);
+                setPage(1);
+              }}
               className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600 outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
             >
               <option value="all">
@@ -504,7 +513,7 @@ export default function TransactionsTable({
                 </td>
               </tr>
             ) : (
-              filteredTransactions.map(
+              visibleTransactions.map(
                 (transaction) => {
                   const quantity = Number(
                     transaction.quantity ?? 0
@@ -647,7 +656,7 @@ export default function TransactionsTable({
       {filteredTransactions.length > 0 && (
         <div className="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/40 px-5 py-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
           <span>
-            إجمالي النتائج المعروضة:{" "}
+            عرض {pageStart + 1}–{Math.min(pageStart + ROWS_PER_PAGE, filteredTransactions.length)} من{" "}
             <strong className="text-slate-600">
               {filteredTransactions.length.toLocaleString(
                 "ar-SA"
@@ -655,11 +664,29 @@ export default function TransactionsTable({
             </strong>
           </span>
 
-          <span>
-            {hasFilters
-              ? "النتائج مفلترة حسب الاختيارات الحالية"
-              : "جميع حركات المخزون"}
-          </span>
+          {totalPages > 1 ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-teal-200 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                السابق
+              </button>
+              <span className="font-mono tabular-nums text-slate-600">{currentPage} / {totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-teal-200 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                التالي
+              </button>
+            </div>
+          ) : (
+            <span>{hasFilters ? "النتائج مفلترة حسب الاختيارات الحالية" : "جميع حركات المخزون"}</span>
+          )}
         </div>
       )}
     </section>
