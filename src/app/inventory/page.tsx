@@ -70,7 +70,7 @@ export default async function InventoryPage() {
   const supabase = await createClient();
 
   // ============================================================
-  // المستخدم
+  // المستخدم الحالي
   // ============================================================
 
   const {
@@ -86,7 +86,7 @@ export default async function InventoryPage() {
   }
 
   // ============================================================
-  // مستخدم النظام
+  // بيانات المستخدم
   // ============================================================
 
   const {
@@ -139,9 +139,11 @@ export default async function InventoryPage() {
   }
 
   const isAdmin = role.name === "admin";
+
   const currentLocationId =
     dbUser.location_id ?? null;
 
+  // غير الأدمن يجب أن يكون مرتبطًا بموقع
   if (!isAdmin && !currentLocationId) {
     return (
       <ErrorBox>
@@ -151,20 +153,19 @@ export default async function InventoryPage() {
   }
 
   // ============================================================
-  // جلب جميع أرصدة المخزون
+  // جلب أرصدة المخزون
   //
-  // لا توجد Pagination للمستخدم.
-  // الدفعات داخلية فقط لتجاوز حد Supabase.
+  // لا يوجد Pagination في الواجهة.
+  // يتم الجلب داخليًا على دفعات 500 فقط
+  // حتى نتجاوز حد Supabase.
   // ============================================================
 
   const allBalances: InventoryBalance[] = [];
 
   try {
-    for (
-      let from = 0;
-      ;
-      from += BATCH_SIZE
-    ) {
+    let from = 0;
+
+    while (true) {
       let query = supabase
         .from("stock_balances")
         .select(`
@@ -208,9 +209,8 @@ export default async function InventoryPage() {
           from + BATCH_SIZE - 1
         );
 
-      // الأدمن: جميع المواقع
+      // الأدمن: كل المواقع
       // غير الأدمن: موقعه فقط
-
       if (!isAdmin) {
         query = query.eq(
           "location_id",
@@ -227,8 +227,8 @@ export default async function InventoryPage() {
         throw error;
       }
 
-      const batch =
-        (data ?? []).map((row) => ({
+      const batch = (data ?? []).map(
+        (row) => ({
           ...row,
           products: firstRelation(
             row.products
@@ -236,15 +236,16 @@ export default async function InventoryPage() {
           locations: firstRelation(
             row.locations
           ),
-        })) as InventoryBalance[];
+        })
+      ) as InventoryBalance[];
 
       allBalances.push(...batch);
 
-      if (
-        batch.length < BATCH_SIZE
-      ) {
+      if (batch.length < BATCH_SIZE) {
         break;
       }
+
+      from += BATCH_SIZE;
     }
   } catch (error) {
     return (
@@ -263,7 +264,7 @@ export default async function InventoryPage() {
   }
 
   // ============================================================
-  // حماية الشركة والموقع
+  // حماية إضافية
   // ============================================================
 
   const companyInventory =
@@ -281,23 +282,24 @@ export default async function InventoryPage() {
     );
 
   // ============================================================
-  // الباركودات
+  // جلب الباركودات
   //
-  // مهم:
-  // InventoryTable ينتظر Map وليس Record.
+  // Record وليس Map
+  // حتى يتطابق تمامًا مع InventoryTable.tsx
   // ============================================================
 
-  const barcodeMap =
-    new Map<string, string>();
+  const barcodeMap: Record<
+    string,
+    string
+  > = {};
 
-  const productIds = [
-    ...new Set(
+  const productIds = Array.from(
+    new Set(
       companyInventory.map(
-        (item) =>
-          item.product_id
+        (item) => item.product_id
       )
-    ),
-  ];
+    )
+  );
 
   try {
     for (
@@ -305,11 +307,10 @@ export default async function InventoryPage() {
       i < productIds.length;
       i += BATCH_SIZE
     ) {
-      const ids =
-        productIds.slice(
-          i,
-          i + BATCH_SIZE
-        );
+      const ids = productIds.slice(
+        i,
+        i + BATCH_SIZE
+      );
 
       if (ids.length === 0) {
         continue;
@@ -335,18 +336,13 @@ export default async function InventoryPage() {
         throw error;
       }
 
-      for (
-        const barcode of data ?? []
-      ) {
+      for (const item of data ?? []) {
         if (
-          !barcodeMap.has(
-            barcode.product_id
-          )
+          !barcodeMap[item.product_id]
         ) {
-          barcodeMap.set(
-            barcode.product_id,
-            barcode.barcode
-          );
+          barcodeMap[
+            item.product_id
+          ] = item.barcode;
         }
       }
     }
@@ -373,13 +369,11 @@ export default async function InventoryPage() {
   const totalRows =
     companyInventory.length;
 
-  const totalProducts =
-    new Set(
-      companyInventory.map(
-        (item) =>
-          item.product_id
-      )
-    ).size;
+  const totalProducts = new Set(
+    companyInventory.map(
+      (item) => item.product_id
+    )
+  ).size;
 
   const totalAvailable =
     companyInventory.reduce(
@@ -404,15 +398,13 @@ export default async function InventoryPage() {
   const lowStockCount =
     companyInventory.filter(
       (item) => {
-        const available =
-          Number(
-            item.available_quantity ?? 0
-          );
+        const available = Number(
+          item.available_quantity ?? 0
+        );
 
-        const minimum =
-          Number(
-            item.minimum_quantity ?? 0
-          );
+        const minimum = Number(
+          item.minimum_quantity ?? 0
+        );
 
         return (
           available > 0 &&
@@ -434,8 +426,10 @@ export default async function InventoryPage() {
   // المواقع
   // ============================================================
 
-  const locationMap =
-    new Map<string, Location>();
+  const locationMap = new Map<
+    string,
+    Location
+  >();
 
   for (
     const item of companyInventory
@@ -457,10 +451,9 @@ export default async function InventoryPage() {
     }
   }
 
-  const locations =
-    Array.from(
-      locationMap.values()
-    );
+  const locations = Array.from(
+    locationMap.values()
+  );
 
   // ============================================================
   // الصفحة
@@ -540,7 +533,9 @@ export default async function InventoryPage() {
           />
 
           <StatCard
-            icon={<Warehouse size={19} />}
+            icon={
+              <Warehouse size={19} />
+            }
             label="الكمية المحجوزة"
             value={totalReserved}
             description="إجمالي الكمية المحجوزة"
@@ -548,7 +543,9 @@ export default async function InventoryPage() {
 
           <StatCard
             icon={
-              <AlertTriangle size={19} />
+              <AlertTriangle
+                size={19}
+              />
             }
             label="تنبيهات المخزون"
             value={
@@ -573,10 +570,16 @@ export default async function InventoryPage() {
         ======================================================= */}
 
         <InventoryTable
-          inventory={companyInventory}
+          inventory={
+            companyInventory
+          }
           locations={locations}
-          barcodeMap={barcodeMap}
-          canViewAllLocations={isAdmin}
+          barcodeMap={
+            barcodeMap
+          }
+          canViewAllLocations={
+            isAdmin
+          }
         />
       </div>
     </DashboardLayout>
