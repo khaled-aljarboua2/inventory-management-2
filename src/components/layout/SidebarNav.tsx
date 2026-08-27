@@ -12,6 +12,7 @@ import {
   Settings,
   ClipboardCheck,
   ChevronDown,
+  BarChart3,
   Boxes,
   Ruler,
   Building2,
@@ -139,6 +140,17 @@ export default function SidebarNav({
                   <ClipboardList size={17} />
                 }
                 label="حركة المخزون"
+                sub
+              />
+            )}
+
+            {allowed("stock.view") && (
+              <NavLink
+                href="/reports"
+                icon={
+                  <BarChart3 size={17} />
+                }
+                label="التقارير"
                 sub
               />
             )}
