@@ -6,12 +6,18 @@ import ProductsList from "./ProductsList";
 type Product = {
   id: string;
   sku: string;
-  barcode: string | null;
   name: string;
   description: string | null;
   minimum_quantity: number | null;
   is_active: boolean | null;
   created_at: string;
+  barcode: string | null;
+};
+
+type ProductBarcode = {
+  product_id: string;
+  barcode: string;
+  is_default: boolean | null;
 };
 
 const PRODUCT_BATCH_SIZE = 1000;
@@ -19,7 +25,7 @@ const PRODUCT_BATCH_SIZE = 1000;
 async function getAllProducts(
   supabase: Awaited<ReturnType<typeof createClient>>
 ) {
-  const products: Product[] = [];
+  const products: Omit<Product, "barcode">[] = [];
   let from = 0;
 
   while (true) {
@@ -28,7 +34,6 @@ async function getAllProducts(
       .select(`
         id,
         sku,
-        barcode,
         name,
         description,
         minimum_quantity,
@@ -133,13 +138,17 @@ export default async function ProductsPage() {
   }
 
   // ============================================================
-  // تحميل بيانات المنتجات
+  // تحميل البيانات
   // ============================================================
 
   const [
     { data: products, error: productsError },
     { data: categories, error: categoriesError },
     { data: brands, error: brandsError },
+    {
+      data: productBarcodes,
+      error: barcodesError,
+    },
   ] = await Promise.all([
     getAllProducts(supabase),
 
@@ -153,7 +162,60 @@ export default async function ProductsPage() {
       .from("brands")
       .select("id, name")
       .order("name"),
+
+    supabase
+      .from("product_barcodes")
+      .select(`
+        product_id,
+        barcode,
+        is_default
+      `),
   ]);
+
+  // ============================================================
+  // ربط الباركود بالمنتج
+  //
+  // نفضّل الباركود الافتراضي.
+  // وإذا لم يوجد، نأخذ أول باركود للمنتج.
+  // ============================================================
+
+  const barcodeMap = new Map<
+    string,
+    ProductBarcode
+  >();
+
+  for (
+    const barcode of productBarcodes ?? []
+  ) {
+    const existing =
+      barcodeMap.get(
+        barcode.product_id
+      );
+
+    if (
+      !existing ||
+      barcode.is_default === true
+    ) {
+      barcodeMap.set(
+        barcode.product_id,
+        barcode
+      );
+    }
+  }
+
+  const productsWithBarcodes: Product[] =
+    (products ?? []).map((product) => ({
+      ...product,
+      barcode:
+        barcodeMap.get(product.id)
+          ?.barcode ?? null,
+    }));
+
+  const hasError =
+    productsError ||
+    categoriesError ||
+    brandsError ||
+    barcodesError;
 
   return (
     <DashboardLayout>
@@ -206,10 +268,19 @@ export default async function ProductsPage() {
             Errors
         ====================================================== */}
 
-        {(productsError ||
-          categoriesError ||
-          brandsError) && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+        {hasError && (
+          <div
+            className="
+              rounded-2xl
+              border
+              border-red-200
+              bg-red-50
+              px-5
+              py-4
+              text-sm
+              text-red-700
+            "
+          >
             حدث خطأ أثناء تحميل بيانات المنتجات.
           </div>
         )}
@@ -243,7 +314,7 @@ export default async function ProductsPage() {
         ====================================================== */}
 
         <ProductsList
-          products={products ?? []}
+          products={productsWithBarcodes}
         />
       </div>
     </DashboardLayout>
