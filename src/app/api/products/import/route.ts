@@ -342,7 +342,7 @@ export async function POST(request: Request) {
 
   const { data: profile, error: profileError } = await supabase
     .from("users")
-    .select("company_id, is_active")
+    .select("company_id, role_id, location_id, is_active")
     .eq("auth_user_id", user.id)
     .eq("is_active", true)
     .single();
@@ -350,6 +350,18 @@ export async function POST(request: Request) {
   if (profileError || !profile?.company_id) {
     return NextResponse.json({ error: "تعذر العثور على الشركة المرتبطة بالمستخدم." }, { status: 403 });
   }
+
+  const { data: role, error: roleError } = await supabase
+    .from("roles")
+    .select("name")
+    .eq("id", profile.role_id)
+    .single();
+
+  if (roleError || !role) {
+    return NextResponse.json({ error: "تعذر التحقق من صلاحية المستخدم." }, { status: 403 });
+  }
+
+  const isAdmin = role.name === "admin";
 
   const [{ data: canCreate }, { data: canUpdate }, { data: canAdjustStock }] = await Promise.all([
     supabase.rpc("has_permission", { permission_code: "products.create" }),
@@ -416,10 +428,24 @@ export async function POST(request: Request) {
     }
 
     const summary: Summary = { created: 0, updated: 0, inventoryUpdated: 0, skipped: 0, errors: [] };
+    let locationsQuery = supabase
+      .from("locations")
+      .select("id, code")
+      .eq("company_id", profile.company_id)
+      .eq("is_active", true);
+
+    if (!isAdmin && profile.location_id) {
+      locationsQuery = locationsQuery.eq("id", profile.location_id);
+    }
+
+    const locationsRequest = !isAdmin && !profile.location_id
+      ? Promise.resolve({ data: [], error: null })
+      : locationsQuery;
+
     const [existingProducts, unitsResponse, locationsResponse] = await Promise.all([
       getAllCompanyProducts(supabase, profile.company_id),
       supabase.from("units").select("id, name, symbol").eq("company_id", profile.company_id),
-      supabase.from("locations").select("id, code").eq("company_id", profile.company_id).eq("is_active", true),
+      locationsRequest,
     ]);
 
     if (unitsResponse.error) {

@@ -22,6 +22,60 @@ import {
 } from "@/lib/reports";
 
 type UnitTotals = Map<string, number>;
+type AdjustmentProduct = { id: string; sku: string; name: string };
+type AdjustmentLocation = { id: string; name: string; code: string };
+type ReportClient = NonNullable<Awaited<ReturnType<typeof getReportAccess>>["supabase"]>;
+type ReportScope = NonNullable<Awaited<ReturnType<typeof getReportAccess>>["access"]>;
+
+const OPTIONS_PAGE_SIZE = 1000;
+
+async function getAllAdjustmentProducts(
+  supabase: ReportClient,
+  companyId: string
+) {
+  const products: AdjustmentProduct[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, sku, name")
+      .eq("company_id", companyId)
+      .order("name")
+      .range(from, from + OPTIONS_PAGE_SIZE - 1);
+
+    if (error) throw error;
+
+    const batch = (data ?? []) as AdjustmentProduct[];
+    products.push(...batch);
+
+    if (batch.length < OPTIONS_PAGE_SIZE) return products;
+
+    from += OPTIONS_PAGE_SIZE;
+  }
+}
+
+async function getAdjustmentLocations(
+  supabase: ReportClient,
+  access: ReportScope
+) {
+  let query = supabase
+    .from("locations")
+    .select("id, name, code")
+    .eq("company_id", access.companyId)
+    .eq("is_active", true)
+    .order("name");
+
+  if (!access.isAdmin && access.locationId) {
+    query = query.eq("id", access.locationId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  return (data ?? []) as AdjustmentLocation[];
+}
 
 function ErrorBox({ children }: { children: ReactNode }) {
   return (
@@ -116,9 +170,11 @@ export default async function ReportsPage() {
   }
 
   try {
-    const [{ data: canAdjustStock }, { balances, transactions }] = await Promise.all([
+    const [{ data: canAdjustStock }, { balances, transactions }, adjustmentProducts, adjustmentLocations] = await Promise.all([
       session.supabase.rpc("has_permission", { permission_code: "stock.adjust" }),
       loadReportData(session.supabase, session.access),
+      getAllAdjustmentProducts(session.supabase, session.access.companyId),
+      getAdjustmentLocations(session.supabase, session.access),
     ]);
     const availableTotals = new Map<string, number>();
     const reservedTotals = new Map<string, number>();
@@ -152,34 +208,6 @@ export default async function ReportsPage() {
       }))
       .sort((left, right) => right.count - left.count);
     const highestMovementCount = movementTypes[0]?.count ?? 1;
-    const adjustmentProducts = Array.from(
-      new Map(
-        balances
-          .filter((balance) => balance.products !== null)
-          .map((balance) => [
-            balance.product_id,
-            {
-              id: balance.product_id,
-              sku: balance.products?.sku ?? "",
-              name: balance.products?.name ?? "",
-            },
-          ])
-      ).values()
-    );
-    const adjustmentLocations = Array.from(
-      new Map(
-        balances
-          .filter((balance) => balance.locations !== null)
-          .map((balance) => [
-            balance.location_id,
-            {
-              id: balance.location_id,
-              name: balance.locations?.name ?? "",
-              code: balance.locations?.code ?? "",
-            },
-          ])
-      ).values()
-    );
 
     return (
       <DashboardLayout>
@@ -199,7 +227,7 @@ export default async function ReportsPage() {
                 </p>
               </div>
               <span className="rounded-xl bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-700">
-                البيانات حسب صلاحيات موقعك
+                {session.access.isAdmin ? "كل الفروع" : "البيانات حسب صلاحيات موقعك"}
               </span>
             </div>
           </section>
@@ -220,7 +248,7 @@ export default async function ReportsPage() {
               <div className="space-y-3 border-t border-teal-100 pt-4">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">تسوية يدوية</h3>
-                  <p className="mt-1 text-xs text-slate-500">زيادة أو خصم المخزون مباشرة مع سبب إلزامي وتسجيل الحركة.</p>
+                  <p className="mt-1 text-xs text-slate-500">زيادة أو خصم أي منتج مباشرة مع سبب إلزامي وتسجيل الحركة. الإدمن يستطيع اختيار كل الفروع.</p>
                 </div>
                 <StockAdjustmentForm products={adjustmentProducts} locations={adjustmentLocations} />
               </div>
