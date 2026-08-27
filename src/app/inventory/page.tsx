@@ -436,7 +436,7 @@ function UnitTotalsList({
 
   return (
     <div className="space-y-1.5">
-      {entries.slice(0, 2).map(([unitName, quantity]) => (
+      {entries.map(([unitName, quantity]) => (
         <div
           key={unitName}
           className={
@@ -456,11 +456,6 @@ function UnitTotalsList({
           </span>
         </div>
       ))}
-      {entries.length > 2 ? (
-        <p className="pr-1 text-[11px] font-medium text-slate-400">
-          + {formatInventoryNumber(entries.length - 2)} وحدات أخرى
-        </p>
-      ) : null}
     </div>
   );
 }

@@ -44,7 +44,7 @@ function UnitTotalsList({ totals, muted = false }: { totals: UnitTotals; muted?:
 
   return (
     <div className="space-y-2">
-      {entries.slice(0, 4).map(([unitName, quantity]) => (
+      {entries.map(([unitName, quantity]) => (
         <div
           key={unitName}
           className={
@@ -61,9 +61,6 @@ function UnitTotalsList({ totals, muted = false }: { totals: UnitTotals; muted?:
           </span>
         </div>
       ))}
-      {entries.length > 4 ? (
-        <p className="pr-1 text-xs text-slate-400">+ {formatReportNumber(entries.length - 4)} وحدات أخرى</p>
-      ) : null}
     </div>
   );
 }
