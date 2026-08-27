@@ -46,6 +46,12 @@ type ProductBarcode = {
   is_default: boolean | null;
 };
 
+type Location = {
+  id: string;
+  name: string;
+  code: string;
+};
+
 const PAGE_SIZE = 100;
 
 export default async function InventoryPage({
@@ -90,7 +96,9 @@ export default async function InventoryPage({
     error: userError,
   } = await supabase
     .from("users")
-    .select("id, company_id, is_active")
+    .select(
+      "id, company_id, role_id, location_id, is_active"
+    )
     .eq("auth_user_id", user.id)
     .eq("is_active", true)
     .single();
@@ -124,6 +132,39 @@ export default async function InventoryPage({
   }
 
   // ============================================================
+  // الدور
+  // ============================================================
+
+  const {
+    data: role,
+    error: roleError,
+  } = await supabase
+    .from("roles")
+    .select("id, name")
+    .eq("id", dbUser.role_id)
+    .maybeSingle();
+
+  if (roleError) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700"
+        >
+          تعذر التحقق من دور المستخدم.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const roleName =
+    role?.name?.toLowerCase() ?? "";
+
+  const canViewAllLocations =
+    roleName === "admin" ||
+    roleName === "warehouse manager";
+
+  // ============================================================
   // Parameters
   // ============================================================
 
@@ -142,14 +183,14 @@ export default async function InventoryPage({
   const search =
     params.search?.trim() ?? "";
 
-  const locationFilter =
+  const requestedLocation =
     params.location ?? "all";
 
   const statusFilter =
     params.status ?? "all";
 
   // ============================================================
-  // المواقع
+  // المواقع التابعة للشركة
   // ============================================================
 
   const {
@@ -159,6 +200,7 @@ export default async function InventoryPage({
     .from("locations")
     .select("id, name, code")
     .eq("company_id", companyId)
+    .eq("is_active", true)
     .order("name");
 
   if (locationsError) {
@@ -180,10 +222,46 @@ export default async function InventoryPage({
     );
   }
 
-  const locations = locationsData ?? [];
+  const locations: Location[] =
+    locationsData ?? [];
 
   // ============================================================
-  // بناء استعلام أرصدة المخزون
+  // تحديد الموقع المسموح به
+  // ============================================================
+
+  let effectiveLocation =
+    requestedLocation;
+
+  if (!canViewAllLocations) {
+    effectiveLocation =
+      dbUser.location_id ?? "none";
+  }
+
+  // ============================================================
+  // البحث عن المنتجات بالباركود
+  // ============================================================
+
+  let barcodeProductIds: string[] = [];
+
+  if (search) {
+    const {
+      data: barcodeRows,
+    } = await supabase
+      .from("product_barcodes")
+      .select("product_id")
+      .ilike(
+        "barcode",
+        `%${search}%`
+      );
+
+    barcodeProductIds =
+      (barcodeRows ?? []).map(
+        (row) => row.product_id
+      );
+  }
+
+  // ============================================================
+  // استعلام أرصدة المخزون
   // ============================================================
 
   let balanceQuery = supabase
@@ -218,80 +296,61 @@ export default async function InventoryPage({
         count: "exact",
       }
     )
-    .eq("products.company_id", companyId)
-    .eq("locations.company_id", companyId);
+    .eq(
+      "products.company_id",
+      companyId
+    )
+    .eq(
+      "locations.company_id",
+      companyId
+    );
 
   // ============================================================
-  // فلترة الموقع
+  // فلترة الفرع
   // ============================================================
 
   if (
-    locationFilter !== "all"
+    effectiveLocation !== "all"
   ) {
     balanceQuery =
       balanceQuery.eq(
         "location_id",
-        locationFilter
+        effectiveLocation
       );
   }
 
   // ============================================================
   // البحث
   //
-  // البحث في اسم المنتج و SKU يتم من قاعدة البيانات.
-  // الباركود يحتاج ربط product_barcodes.
-  // لذلك إذا كان البحث رقمًا، نبحث أولًا عن المنتجات
-  // التي تطابق الباركود.
+  // الاسم + SKU + الباركود
   // ============================================================
 
-  let barcodeProductIds: string[] =
-    [];
-
   if (search) {
-    const {
-      data: barcodeRows,
-    } = await supabase
-      .from("product_barcodes")
-      .select("product_id")
-      .ilike(
-        "barcode",
-        `%${search}%`
-      );
+    const searchConditions = [
+      `name.ilike.%${search}%`,
+      `sku.ilike.%${search}%`,
+    ];
 
-    barcodeProductIds =
-      (barcodeRows ?? []).map(
-        (row) => row.product_id
-      );
-  }
-
-  if (search) {
     if (
       barcodeProductIds.length > 0
     ) {
-      balanceQuery =
-        balanceQuery.or(
-          `name.ilike.%${search}%,sku.ilike.%${search}%,id.in.(${barcodeProductIds.join(",")})`,
-          {
-            foreignTable:
-              "products",
-          }
-        );
-    } else {
-      balanceQuery =
-        balanceQuery.or(
-          `name.ilike.%${search}%,sku.ilike.%${search}%`,
-          {
-            foreignTable:
-              "products",
-          }
-        );
+      searchConditions.push(
+        `id.in.(${barcodeProductIds.join(",")})`
+      );
     }
+
+    balanceQuery =
+      balanceQuery.or(
+        searchConditions.join(","),
+        {
+          foreignTable:
+            "products",
+        }
+      );
   }
 
   // ============================================================
-  // جلب جميع النتائج المطلوبة للحالة
-  //
-  // الحالة تعتمد على available/minimum.
+  // فلترة الحالة
   // ============================================================
 
   if (statusFilter === "out") {
@@ -313,24 +372,9 @@ export default async function InventoryPage({
           "minimum_quantity",
           0
         )
-        .filter(
+        .lte(
           "available_quantity",
-          "lte",
-          "minimum_quantity"
-        );
-  }
-
-  if (
-    statusFilter === "available"
-  ) {
-    balanceQuery =
-      balanceQuery
-        .gt(
-          "available_quantity",
-          0
-        )
-        .or(
-          "minimum_quantity.is.null,minimum_quantity.eq.0,minimum_quantity.lt.available_quantity"
+          999999999999
         );
   }
 
@@ -375,7 +419,7 @@ export default async function InventoryPage({
   }
 
   // ============================================================
-  // جلب باركودات المنتجات الموجودة في الصفحة فقط
+  // باركودات المنتجات الموجودة في الصفحة
   // ============================================================
 
   const productIds =
@@ -384,10 +428,8 @@ export default async function InventoryPage({
         balance.product_id
     );
 
-  let barcodeMap = new Map<
-    string,
-    string
-  >();
+  const barcodeMap =
+    new Map<string, string>();
 
   if (productIds.length > 0) {
     const {
@@ -403,8 +445,7 @@ export default async function InventoryPage({
       );
 
     for (
-      const row of (barcodeRows ??
-        []) as ProductBarcode[]
+      const row of barcodeRows ?? []
     ) {
       const existing =
         barcodeMap.get(
@@ -431,12 +472,10 @@ export default async function InventoryPage({
     (balances ?? []).map(
       (balance) => ({
         ...balance,
-
         products:
           firstRelation(
             balance.products
           ),
-
         locations:
           firstRelation(
             balance.locations
@@ -445,7 +484,7 @@ export default async function InventoryPage({
     );
 
   // ============================================================
-  // الإحصائيات الخاصة بالصفحة الحالية
+  // الإحصائيات
   // ============================================================
 
   const totalRows =
@@ -456,8 +495,7 @@ export default async function InventoryPage({
       (sum, item) =>
         sum +
         Number(
-          item.available_quantity ??
-            0
+          item.available_quantity ?? 0
         ),
       0
     );
@@ -467,8 +505,7 @@ export default async function InventoryPage({
       (sum, item) =>
         sum +
         Number(
-          item.reserved_quantity ??
-            0
+          item.reserved_quantity ?? 0
         ),
       0
     );
@@ -478,19 +515,17 @@ export default async function InventoryPage({
       (item) => {
         const available =
           Number(
-            item.available_quantity ??
-              0
+            item.available_quantity ?? 0
           );
 
         const minimum =
           Number(
-            item.minimum_quantity ??
-              0
+            item.minimum_quantity ?? 0
           );
 
         return (
-          minimum > 0 &&
           available > 0 &&
+          minimum > 0 &&
           available <= minimum
         );
       }
@@ -500,8 +535,7 @@ export default async function InventoryPage({
     inventory.filter(
       (item) =>
         Number(
-          item.available_quantity ??
-            0
+          item.available_quantity ?? 0
         ) <= 0
     ).length;
 
@@ -531,13 +565,16 @@ export default async function InventoryPage({
         className="mx-auto w-full max-w-[1600px] space-y-7"
       >
         {/* ======================================================
-            رأس الصفحة
+            الرأس
         ======================================================= */}
 
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2 text-sm text-slate-400">
-              <Boxes size={16} />
+              <Boxes
+                size={16}
+                className="text-teal-600"
+              />
 
               <span>
                 إدارة المخزون
@@ -594,16 +631,20 @@ export default async function InventoryPage({
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            icon={<Boxes size={20} />}
+            icon={
+              <Boxes size={20} />
+            }
             label="أرصدة المخزون"
             value={totalRows.toLocaleString(
               "ar-SA"
             )}
-            description="عدد النتائج الحالية"
+            description="عدد النتائج"
           />
 
           <StatCard
-            icon={<Package size={20} />}
+            icon={
+              <Package size={20} />
+            }
             label="الكمية المتاحة"
             value={totalAvailable.toLocaleString(
               "ar-SA",
@@ -611,11 +652,13 @@ export default async function InventoryPage({
                 maximumFractionDigits: 2,
               }
             )}
-            description="إجمالي الكمية في الصفحة"
+            description="إجمالي الصفحة الحالية"
           />
 
           <StatCard
-            icon={<Warehouse size={20} />}
+            icon={
+              <Warehouse size={20} />
+            }
             label="الكمية المحجوزة"
             value={totalReserved.toLocaleString(
               "ar-SA",
@@ -623,7 +666,7 @@ export default async function InventoryPage({
                 maximumFractionDigits: 2,
               }
             )}
-            description="إجمالي المحجوز في الصفحة"
+            description="إجمالي الصفحة الحالية"
           />
 
           <StatCard
@@ -669,10 +712,16 @@ export default async function InventoryPage({
           }
           search={search}
           locationFilter={
-            locationFilter
+            effectiveLocation
           }
           statusFilter={
             statusFilter
+          }
+          canViewAllLocations={
+            canViewAllLocations
+          }
+          currentLocationId={
+            dbUser.location_id
           }
         />
       </div>
