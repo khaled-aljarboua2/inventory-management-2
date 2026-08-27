@@ -310,7 +310,9 @@ async function getProductMetadata(supabase: SupabaseServerClient, productIds: st
     }
 
     for (const row of (response.data ?? []) as ProductUnitRow[]) {
-      const unit = firstRelation(row.units);
+      const unit = Array.isArray(row.units)
+        ? row.units[0] ?? null
+        : row.units;
       const unitName = unit?.symbol || unit?.name || UNKNOWN_UNIT;
 
       if (!unitNameByProduct.has(row.product_id) || row.is_base) {
@@ -358,15 +360,37 @@ export async function loadReportData(
   );
 
   return {
-    balances: rawBalances.map((item) => ({
-      ...item,
-      unitName: unitNameByProduct.get(item.product_id) ?? UNKNOWN_UNIT,
-      barcode: barcodeByProduct.get(item.product_id) ?? "",
-    })),
-    transactions: rawTransactions.map((item) => ({
-      ...item,
-      unitName: unitNameByProduct.get(item.product_id) ?? UNKNOWN_UNIT,
-    })),
+    balances: rawBalances.map((item) => {
+      const products = Array.isArray(item.products)
+        ? item.products[0] ?? null
+        : item.products;
+      const locations = Array.isArray(item.locations)
+        ? item.locations[0] ?? null
+        : item.locations;
+
+      return {
+        ...item,
+        products,
+        locations,
+        unitName: unitNameByProduct.get(item.product_id) ?? UNKNOWN_UNIT,
+        barcode: barcodeByProduct.get(item.product_id) ?? "",
+      };
+    }),
+    transactions: rawTransactions.map((item) => {
+      const products = Array.isArray(item.products)
+        ? item.products[0] ?? null
+        : item.products;
+      const locations = Array.isArray(item.locations)
+        ? item.locations[0] ?? null
+        : item.locations;
+
+      return {
+        ...item,
+        products,
+        locations,
+        unitName: unitNameByProduct.get(item.product_id) ?? UNKNOWN_UNIT,
+      };
+    }),
   };
 }
 
