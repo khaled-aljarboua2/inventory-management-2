@@ -90,7 +90,8 @@ export const TRANSACTION_LABELS: Record<string, string> = {
   return: "مرتجع",
 };
 
-const BATCH_SIZE = 1000;
+const PAGE_SIZE = 1000;
+const PRODUCT_METADATA_BATCH_SIZE = 500;
 const UNKNOWN_UNIT = "وحدة غير محددة";
 
 export function formatReportNumber(value: number) {
@@ -110,11 +111,11 @@ export function formatReportDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function splitIntoBatches<T>(items: T[]) {
+function splitIntoBatches<T>(items: T[], batchSize = PRODUCT_METADATA_BATCH_SIZE) {
   const batches: T[][] = [];
 
-  for (let index = 0; index < items.length; index += BATCH_SIZE) {
-    batches.push(items.slice(index, index + BATCH_SIZE));
+  for (let index = 0; index < items.length; index += batchSize) {
+    batches.push(items.slice(index, index + batchSize));
   }
 
   return batches;
@@ -197,7 +198,7 @@ async function getAllBalances(supabase: SupabaseServerClient, access: ReportAcce
       .eq("locations.company_id", access.companyId)
       .order("updated_at", { ascending: false })
       .order("id", { ascending: true })
-      .range(from, from + BATCH_SIZE - 1);
+      .range(from, from + PAGE_SIZE - 1);
 
     if (!access.isAdmin && access.locationId) {
       query = query.eq("location_id", access.locationId);
@@ -217,11 +218,11 @@ async function getAllBalances(supabase: SupabaseServerClient, access: ReportAcce
 
     balances.push(...batch);
 
-    if (batch.length < BATCH_SIZE) {
+    if (batch.length < PAGE_SIZE) {
       return balances;
     }
 
-    from += BATCH_SIZE;
+    from += PAGE_SIZE;
   }
 }
 
@@ -250,7 +251,7 @@ async function getRecentTransactions(
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .order("id", { ascending: true })
-      .range(from, from + BATCH_SIZE - 1);
+      .range(from, from + PAGE_SIZE - 1);
 
     if (!access.isAdmin && access.locationId) {
       query = query.eq("location_id", access.locationId);
@@ -270,11 +271,11 @@ async function getRecentTransactions(
 
     transactions.push(...batch);
 
-    if (batch.length < BATCH_SIZE) {
+    if (batch.length < PAGE_SIZE) {
       return transactions;
     }
 
-    from += BATCH_SIZE;
+    from += PAGE_SIZE;
   }
 }
 
