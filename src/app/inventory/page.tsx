@@ -40,7 +40,24 @@ type InventoryBalance = {
     | null;
 };
 
-export default async function InventoryPage() {
+type ProductBarcode = {
+  product_id: string;
+  barcode: string;
+  is_default: boolean | null;
+};
+
+const PAGE_SIZE = 100;
+
+export default async function InventoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    search?: string;
+    location?: string;
+    status?: string;
+  }>;
+}) {
   const supabase = await createClient();
 
   // ============================================================
@@ -107,17 +124,69 @@ export default async function InventoryPage() {
   }
 
   // ============================================================
-  // أرصدة المخزون
-  //
-  // لا نستخدم .in() مع product IDs أو location IDs.
-  // يتم فلترة المنتجات والمواقع التابعة للشركة مباشرة
-  // داخل نفس الاستعلام باستخدام inner joins.
+  // Parameters
+  // ============================================================
+
+  const params = await searchParams;
+
+  const requestedPage = Number(
+    params.page ?? "1"
+  );
+
+  const currentPage =
+    Number.isFinite(requestedPage) &&
+    requestedPage > 0
+      ? Math.floor(requestedPage)
+      : 1;
+
+  const search =
+    params.search?.trim() ?? "";
+
+  const locationFilter =
+    params.location ?? "all";
+
+  const statusFilter =
+    params.status ?? "all";
+
+  // ============================================================
+  // المواقع
   // ============================================================
 
   const {
-    data: balances,
-    error: balancesError,
+    data: locationsData,
+    error: locationsError,
   } = await supabase
+    .from("locations")
+    .select("id, name, code")
+    .eq("company_id", companyId)
+    .order("name");
+
+  if (locationsError) {
+    return (
+      <DashboardLayout>
+        <div
+          dir="rtl"
+          className="rounded-2xl border border-red-200 bg-red-50 p-6"
+        >
+          <p className="font-semibold text-red-700">
+            تعذر تحميل المواقع
+          </p>
+
+          <p className="mt-2 text-sm text-red-600">
+            {locationsError.message}
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const locations = locationsData ?? [];
+
+  // ============================================================
+  // بناء استعلام أرصدة المخزون
+  // ============================================================
+
+  let balanceQuery = supabase
     .from("stock_balances")
     .select(
       `
@@ -144,17 +213,147 @@ export default async function InventoryPage() {
           code,
           company_id
         )
-      `
+      `,
+      {
+        count: "exact",
+      }
     )
     .eq("products.company_id", companyId)
-    .eq("locations.company_id", companyId)
-    .order("updated_at", {
-      ascending: false,
-    });
+    .eq("locations.company_id", companyId);
 
   // ============================================================
-  // التحقق من أرصدة المخزون
+  // فلترة الموقع
   // ============================================================
+
+  if (
+    locationFilter !== "all"
+  ) {
+    balanceQuery =
+      balanceQuery.eq(
+        "location_id",
+        locationFilter
+      );
+  }
+
+  // ============================================================
+  // البحث
+  //
+  // البحث في اسم المنتج و SKU يتم من قاعدة البيانات.
+  // الباركود يحتاج ربط product_barcodes.
+  // لذلك إذا كان البحث رقمًا، نبحث أولًا عن المنتجات
+  // التي تطابق الباركود.
+  // ============================================================
+
+  let barcodeProductIds: string[] =
+    [];
+
+  if (search) {
+    const {
+      data: barcodeRows,
+    } = await supabase
+      .from("product_barcodes")
+      .select("product_id")
+      .ilike(
+        "barcode",
+        `%${search}%`
+      );
+
+    barcodeProductIds =
+      (barcodeRows ?? []).map(
+        (row) => row.product_id
+      );
+  }
+
+  if (search) {
+    if (
+      barcodeProductIds.length > 0
+    ) {
+      balanceQuery =
+        balanceQuery.or(
+          `name.ilike.%${search}%,sku.ilike.%${search}%,id.in.(${barcodeProductIds.join(",")})`,
+          {
+            foreignTable:
+              "products",
+          }
+        );
+    } else {
+      balanceQuery =
+        balanceQuery.or(
+          `name.ilike.%${search}%,sku.ilike.%${search}%`,
+          {
+            foreignTable:
+              "products",
+          }
+        );
+    }
+  }
+
+  // ============================================================
+  // جلب جميع النتائج المطلوبة للحالة
+  //
+  // الحالة تعتمد على available/minimum.
+  // ============================================================
+
+  if (statusFilter === "out") {
+    balanceQuery =
+      balanceQuery.lte(
+        "available_quantity",
+        0
+      );
+  }
+
+  if (statusFilter === "low") {
+    balanceQuery =
+      balanceQuery
+        .gt(
+          "available_quantity",
+          0
+        )
+        .gt(
+          "minimum_quantity",
+          0
+        )
+        .filter(
+          "available_quantity",
+          "lte",
+          "minimum_quantity"
+        );
+  }
+
+  if (
+    statusFilter === "available"
+  ) {
+    balanceQuery =
+      balanceQuery
+        .gt(
+          "available_quantity",
+          0
+        )
+        .or(
+          "minimum_quantity.is.null,minimum_quantity.eq.0,minimum_quantity.lt.available_quantity"
+        );
+  }
+
+  // ============================================================
+  // Pagination
+  // ============================================================
+
+  const from =
+    (currentPage - 1) *
+    PAGE_SIZE;
+
+  const to =
+    from + PAGE_SIZE - 1;
+
+  const {
+    data: balances,
+    error: balancesError,
+    count,
+  } = await balanceQuery
+    .order("updated_at", {
+      ascending: false,
+    })
+    .range(from, to);
 
   if (balancesError) {
     return (
@@ -176,98 +375,150 @@ export default async function InventoryPage() {
   }
 
   // ============================================================
+  // جلب باركودات المنتجات الموجودة في الصفحة فقط
+  // ============================================================
+
+  const productIds =
+    (balances ?? []).map(
+      (balance) =>
+        balance.product_id
+    );
+
+  let barcodeMap = new Map<
+    string,
+    string
+  >();
+
+  if (productIds.length > 0) {
+    const {
+      data: barcodeRows,
+    } = await supabase
+      .from("product_barcodes")
+      .select(
+        "product_id, barcode, is_default"
+      )
+      .in(
+        "product_id",
+        productIds
+      );
+
+    for (
+      const row of (barcodeRows ??
+        []) as ProductBarcode[]
+    ) {
+      const existing =
+        barcodeMap.get(
+          row.product_id
+        );
+
+      if (
+        !existing ||
+        row.is_default === true
+      ) {
+        barcodeMap.set(
+          row.product_id,
+          row.barcode
+        );
+      }
+    }
+  }
+
+  // ============================================================
   // تجهيز البيانات
   // ============================================================
 
   const inventory: InventoryBalance[] =
-    (balances ?? []).map((balance) => ({
-      ...balance,
-      products: firstRelation(balance.products),
-      locations: firstRelation(balance.locations),
-    }));
+    (balances ?? []).map(
+      (balance) => ({
+        ...balance,
 
-  // حماية إضافية على مستوى التطبيق
-  const companyInventory = inventory.filter(
-    (item) =>
-      item.products?.company_id === companyId &&
-      item.locations?.company_id === companyId
-  );
+        products:
+          firstRelation(
+            balance.products
+          ),
+
+        locations:
+          firstRelation(
+            balance.locations
+          ),
+      })
+    );
 
   // ============================================================
-  // الإحصائيات
+  // الإحصائيات الخاصة بالصفحة الحالية
   // ============================================================
 
-  const totalRows = companyInventory.length;
+  const totalRows =
+    count ?? 0;
 
-  const totalAvailable = companyInventory.reduce(
-    (sum, item) =>
-      sum + Number(item.available_quantity ?? 0),
-    0
-  );
+  const totalAvailable =
+    inventory.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.available_quantity ??
+            0
+        ),
+      0
+    );
 
-  const totalReserved = companyInventory.reduce(
-    (sum, item) =>
-      sum + Number(item.reserved_quantity ?? 0),
-    0
-  );
+  const totalReserved =
+    inventory.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.reserved_quantity ??
+            0
+        ),
+      0
+    );
 
-  const lowStockCount = companyInventory.filter(
-    (item) => {
-      const available = Number(
-        item.available_quantity ?? 0
-      );
+  const lowStockCount =
+    inventory.filter(
+      (item) => {
+        const available =
+          Number(
+            item.available_quantity ??
+              0
+          );
 
-      const minimum = Number(
-        item.minimum_quantity ?? 0
-      );
+        const minimum =
+          Number(
+            item.minimum_quantity ??
+              0
+          );
 
-      return (
-        minimum > 0 &&
-        available <= minimum
-      );
-    }
-  ).length;
+        return (
+          minimum > 0 &&
+          available > 0 &&
+          available <= minimum
+        );
+      }
+    ).length;
 
   const outOfStockCount =
-    companyInventory.filter(
+    inventory.filter(
       (item) =>
         Number(
-          item.available_quantity ?? 0
+          item.available_quantity ??
+            0
         ) <= 0
     ).length;
 
-  // ============================================================
-  // المواقع المستخدمة
-  // ============================================================
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        totalRows /
+          PAGE_SIZE
+      )
+    );
 
-  const locationMap = new Map<
-    string,
-    {
-      id: string;
-      name: string;
-      code: string;
-    }
-  >();
-
-  companyInventory.forEach((item) => {
-    if (
-      item.locations &&
-      !locationMap.has(item.locations.id)
-    ) {
-      locationMap.set(
-        item.locations.id,
-        {
-          id: item.locations.id,
-          name: item.locations.name,
-          code: item.locations.code,
-        }
-      );
-    }
-  });
-
-  const locations = Array.from(
-    locationMap.values()
-  );
+  const safeCurrentPage =
+    Math.min(
+      currentPage,
+      totalPages
+    );
 
   // ============================================================
   // الصفحة
@@ -328,7 +579,10 @@ export default async function InventoryPage() {
               />
 
               <span>
-                {totalRows} رصيد
+                {totalRows.toLocaleString(
+                  "ar-SA"
+                )}{" "}
+                رصيد
               </span>
             </div>
           </div>
@@ -345,7 +599,7 @@ export default async function InventoryPage() {
             value={totalRows.toLocaleString(
               "ar-SA"
             )}
-            description="عدد سجلات المنتجات والمواقع"
+            description="عدد النتائج الحالية"
           />
 
           <StatCard
@@ -357,7 +611,7 @@ export default async function InventoryPage() {
                 maximumFractionDigits: 2,
               }
             )}
-            description="إجمالي الكمية المتاحة"
+            description="إجمالي الكمية في الصفحة"
           />
 
           <StatCard
@@ -369,16 +623,22 @@ export default async function InventoryPage() {
                 maximumFractionDigits: 2,
               }
             )}
-            description="إجمالي الكمية المحجوزة"
+            description="إجمالي المحجوز في الصفحة"
           />
 
           <StatCard
-            icon={<AlertTriangle size={20} />}
+            icon={
+              <AlertTriangle
+                size={20}
+              />
+            }
             label="تنبيهات المخزون"
             value={(
               lowStockCount +
               outOfStockCount
-            ).toLocaleString("ar-SA")}
+            ).toLocaleString(
+              "ar-SA"
+            )}
             description={`${outOfStockCount} نافد · ${lowStockCount} منخفض`}
             danger={
               lowStockCount > 0 ||
@@ -392,8 +652,28 @@ export default async function InventoryPage() {
         ======================================================= */}
 
         <InventoryTable
-          inventory={companyInventory}
+          inventory={inventory}
           locations={locations}
+          barcodeMap={barcodeMap}
+          currentPage={
+            safeCurrentPage
+          }
+          totalPages={
+            totalPages
+          }
+          totalResults={
+            totalRows
+          }
+          pageSize={
+            PAGE_SIZE
+          }
+          search={search}
+          locationFilter={
+            locationFilter
+          }
+          statusFilter={
+            statusFilter
+          }
         />
       </div>
     </DashboardLayout>
