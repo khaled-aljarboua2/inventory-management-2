@@ -75,29 +75,29 @@ export default function Sidebar({
             border-teal-600/30
             bg-teal-700
             px-3
-            py-3
+            py-4
           "
         >
           <div
             className="
               flex
-              h-[92px]
+              min-h-[72px]
               items-center
               justify-center
-              overflow-hidden
             "
           >
             <Image
-              src="/warevance-logo.PNG"
+              src="/warevance-logo-transparent.png"
               alt="WAREVANCE - Inventory & Branch Management"
-              width={500}
-              height={160}
+              width={720}
+              height={190}
               priority
+              sizes="(min-width: 768px) 232px, 240px"
               className="
                 h-auto
-                w-[205px]
+                w-full
+                max-w-[240px]
                 object-contain
-                mix-blend-multiply
               "
             />
           </div>
@@ -131,40 +131,6 @@ export default function Sidebar({
             p-4
           "
         >
-          {/* =================================================
-              Brand Information
-          ================================================== */}
-          <div
-            className="
-              mb-3
-              rounded-xl
-              bg-teal-800/30
-              px-4
-              py-3
-            "
-          >
-            <p
-              className="
-                text-xs
-                font-semibold
-                text-white
-              "
-            >
-              WAREVANCE
-            </p>
-
-            <p
-              className="
-                mt-1
-                text-[11px]
-                leading-5
-                text-teal-100/70
-              "
-            >
-              Inventory & Branch Management
-            </p>
-          </div>
-
           {/* =================================================
               Logout
           ================================================== */}
