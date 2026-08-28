@@ -40,7 +40,7 @@ async function getCurrentUser() {
 }
 
 async function checkPermission(
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   permission: string
 ) {
   const { data, error } = await supabase.rpc(

@@ -4,10 +4,6 @@ import { firstRelation } from "@/lib/supabase/relations";
 import TransfersList from "./TransfersList";
 
 export default async function TransfersPage() {
-  const pageStart = performance.now();
-
-  console.log("[TRANSFERS] page start");
-
   const supabase = await createClient();
 
   // ============================================================
@@ -17,11 +13,6 @@ export default async function TransfersPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  console.log(
-    "[TRANSFERS] auth.getUser:",
-    `${(performance.now() - pageStart).toFixed(0)}ms`
-  );
 
   if (!user) {
     return (
@@ -67,11 +58,6 @@ export default async function TransfersPage() {
     )
     .single();
 
-  console.log(
-    "[TRANSFERS] users query:",
-    `${(performance.now() - pageStart).toFixed(0)}ms`
-  );
-
   if (userError || !dbUser) {
     return (
       <DashboardLayout>
@@ -94,9 +80,7 @@ export default async function TransfersPage() {
   const roleName =
     firstRelation(dbUser.roles)?.name;
 
-  const isGeneralManager =
-    roleName ===
-    "General Manager";
+  const isGeneralManager = roleName?.trim().toLowerCase() === "admin";
 
   // ============================================================
   // تحميل البيانات
@@ -199,11 +183,6 @@ export default async function TransfersPage() {
       )
       .order("name"),
   ]);
-
-  console.log(
-    "[TRANSFERS] data queries finished:",
-    `${(performance.now() - pageStart).toFixed(0)}ms`
-  );
 
   // ============================================================
   // أخطاء التحميل
@@ -320,15 +299,6 @@ export default async function TransfersPage() {
         ),
       })),
     })
-  );
-
-  // ============================================================
-  // قياس إجمالي وقت السيرفر
-  // ============================================================
-
-  console.log(
-    "[TRANSFERS] total server time:",
-    `${(performance.now() - pageStart).toFixed(0)}ms`
   );
 
   // ============================================================

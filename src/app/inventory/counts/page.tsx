@@ -21,12 +21,6 @@ type StockCount = {
     | null;
 };
 
-type Location = {
-  id: string;
-  name: string;
-  code: string;
-};
-
 export default async function StockCountsPage() {
   const supabase = await createClient();
 

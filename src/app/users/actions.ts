@@ -544,10 +544,8 @@ export async function updateUser({
       : targetUser.roles;
 
   if (
-    targetRole?.name ===
-      "General Manager" &&
-    targetUser.id !==
-      currentUser.id
+    targetRole?.name?.trim().toLowerCase() === "admin" &&
+    targetUser.id !== currentUser.id
   ) {
     return {
       success: false,
@@ -961,10 +959,7 @@ export async function deleteUser(
       ? targetUser.roles[0]
       : targetUser.roles;
 
-  if (
-    targetRole?.name ===
-    "General Manager"
-  ) {
+  if (targetRole?.name?.trim().toLowerCase() === "admin") {
     return {
       success: false,
       error:

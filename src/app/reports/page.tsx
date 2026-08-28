@@ -113,11 +113,24 @@ export default async function ReportsPage() {
     return <ErrorBox>{session.error ?? "تعذر تحميل التقارير."}</ErrorBox>;
   }
 
-  try {
-    const { balances, transactions } = await loadReportData(
-      session.supabase,
-      session.access
+  const reportResult = await loadReportData(session.supabase, session.access)
+    .then((data) => ({ data, error: null }))
+    .catch((error: unknown) => ({ data: null, error }));
+
+  if (reportResult.error || !reportResult.data) {
+    return (
+      <ErrorBox>
+        <p className="font-semibold">تعذر تحميل بيانات التقارير.</p>
+        <p className="mt-2">
+          {reportResult.error instanceof Error
+            ? reportResult.error.message
+            : "حدث خطأ غير متوقع."}
+        </p>
+      </ErrorBox>
     );
+  }
+
+  const { balances, transactions } = reportResult.data;
     const availableTotals = new Map<string, number>();
     const reservedTotals = new Map<string, number>();
     const productIds = new Set<string>();
@@ -151,7 +164,7 @@ export default async function ReportsPage() {
       .sort((left, right) => right.count - left.count);
     const highestMovementCount = movementTypes[0]?.count ?? 1;
 
-    return (
+  return (
       <DashboardLayout>
         <div dir="rtl" className="mx-auto w-full max-w-[1600px] space-y-5">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -333,14 +346,6 @@ export default async function ReportsPage() {
           </div>
         </div>
       </DashboardLayout>
-    );
-  } catch (error) {
-    return (
-      <ErrorBox>
-        <p className="font-semibold">تعذر تحميل بيانات التقارير.</p>
-        <p className="mt-2">{error instanceof Error ? error.message : "حدث خطأ غير متوقع."}</p>
-      </ErrorBox>
-    );
-  }
+  );
 }
 

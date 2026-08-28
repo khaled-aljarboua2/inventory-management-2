@@ -530,10 +530,7 @@ export async function deleteRole(
   }
 
   // حماية General Manager
-  if (
-    role.name ===
-    "General Manager"
-  ) {
+  if (role.name.trim().toLowerCase() === "admin") {
     return {
       success: false,
       error:

@@ -1,6 +1,5 @@
 import {
   Settings,
-  Save,
   ShieldCheck,
   PackageCheck,
   Languages,

@@ -271,13 +271,6 @@ export default async function StatsGrid() {
         100
       : 0;
 
-  const preparingPercent =
-    totalTransfers > 0
-      ? (preparingTransfers /
-          totalTransfers) *
-        100
-      : 0;
-
   // ============================================================
   // حالة طلب النقل
   // ============================================================

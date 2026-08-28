@@ -26,14 +26,6 @@ export default function ProductImportExport({ showExport = true }: { showExport?
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState("");
 
-  function downloadExport() {
-    window.location.assign("/api/products/export");
-  }
-
-  function downloadTemplate() {
-    window.location.assign("/api/products/export?template=1");
-  }
-
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -104,23 +96,21 @@ export default function ProductImportExport({ showExport = true }: { showExport?
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={downloadTemplate}
+          <a
+            href="/api/products/export?template=1"
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-teal-200 bg-white px-3 text-xs font-semibold text-teal-700 transition hover:bg-teal-50"
           >
             <Download size={15} />
             نموذج Excel
-          </button>
+          </a>
           {showExport ? (
-            <button
-              type="button"
-              onClick={downloadExport}
+            <a
+              href="/api/products/export"
               className="inline-flex h-9 items-center gap-2 rounded-lg border border-teal-200 bg-white px-3 text-xs font-semibold text-teal-700 transition hover:bg-teal-50"
             >
               <Download size={15} />
               تصدير البيانات
-            </button>
+            </a>
           ) : null}
           <button
             type="button"
