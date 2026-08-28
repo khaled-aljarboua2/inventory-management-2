@@ -84,10 +84,6 @@ export async function GET() {
         .order("id", { ascending: true })
         .range(from, from + BALANCE_PAGE_SIZE - 1);
 
-      if (!session.access.isAdmin && session.access.locationId) {
-        query = query.eq("location_id", session.access.locationId);
-      }
-
       const { data, error } = await query;
 
       if (error) {
@@ -146,13 +142,6 @@ export async function GET() {
       .eq("company_id", session.access.companyId)
       .eq("is_active", true)
       .order("name");
-
-    if (!session.access.isAdmin && session.access.locationId) {
-      locationsQuery = locationsQuery.eq(
-        "id",
-        session.access.locationId
-      );
-    }
 
     const { data: locations, error: locationsError } = await locationsQuery;
 
