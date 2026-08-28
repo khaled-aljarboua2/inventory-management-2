@@ -67,7 +67,8 @@ type Location = {
 
 type UnitTotals = Map<string, number>;
 
-const BATCH_SIZE = 500;
+const BALANCE_PAGE_SIZE = 1000;
+const RELATED_PRODUCTS_BATCH_SIZE = 500;
 const UNKNOWN_UNIT = "وحدة غير محددة";
 
 function formatInventoryNumber(value: number) {
@@ -89,11 +90,11 @@ function ErrorBox({ children }: { children: ReactNode }) {
   );
 }
 
-function splitIntoBatches<T>(items: T[]): T[][] {
+function splitIntoBatches<T>(items: T[], size = RELATED_PRODUCTS_BATCH_SIZE): T[][] {
   const batches: T[][] = [];
 
-  for (let index = 0; index < items.length; index += BATCH_SIZE) {
-    batches.push(items.slice(index, index + BATCH_SIZE));
+  for (let index = 0; index < items.length; index += size) {
+    batches.push(items.slice(index, index + size));
   }
 
   return batches;
@@ -182,7 +183,7 @@ export default async function InventoryPage() {
         .eq("locations.company_id", dbUser.company_id)
         .order("updated_at", { ascending: false })
         .order("id", { ascending: true })
-        .range(from, from + BATCH_SIZE - 1);
+        .range(from, from + BALANCE_PAGE_SIZE - 1);
 
       if (!isAdmin) {
         query = query.eq("location_id", currentLocationId);
@@ -202,11 +203,11 @@ export default async function InventoryPage() {
 
       allBalances.push(...batch);
 
-      if (batch.length < BATCH_SIZE) {
+      if (batch.length < BALANCE_PAGE_SIZE) {
         break;
       }
 
-      from += BATCH_SIZE;
+      from += BALANCE_PAGE_SIZE;
     }
   } catch (error) {
     return (
