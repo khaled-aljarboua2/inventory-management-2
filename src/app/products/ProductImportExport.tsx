@@ -143,10 +143,16 @@ export default function ProductImportExport({ showExport = true }: { showExport?
       ) : null}
 
       {summary ? (
-        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-xs text-emerald-800">
+        <div
+          className={`mt-3 rounded-xl border px-3 py-3 text-xs ${
+            summary.skipped > 0
+              ? "border-amber-200 bg-amber-50 text-amber-800"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800"
+          }`}
+        >
           <div className="flex items-center gap-2 font-semibold">
-            <CheckCircle2 size={16} />
-            اكتمل الاستيراد
+            {summary.skipped > 0 ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+            {summary.skipped > 0 ? "اكتمل الاستيراد مع ملاحظات" : "اكتمل الاستيراد"}
           </div>
           <p className="mt-1.5">
             جديد: {summary.created} · محدّث: {summary.updated} · أرصدة محدّثة: {summary.inventoryUpdated} · متجاوز: {summary.skipped}

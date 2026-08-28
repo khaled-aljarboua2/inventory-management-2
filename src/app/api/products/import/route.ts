@@ -396,6 +396,16 @@ export async function POST(request: Request) {
     const productRows = readProductsSheet(productsSheet);
     const inventoryRows = readInventorySheet(inventorySheet);
 
+    if (inventoryRows.length > 0 && canAdjustStock !== true) {
+      return NextResponse.json(
+        {
+          error:
+            "ليس لديك صلاحية تسوية المخزون من ملف Excel. لم يتم تنفيذ الاستيراد.",
+        },
+        { status: 403 }
+      );
+    }
+
     if (productRows.length + inventoryRows.length === 0) {
       return NextResponse.json({ error: "لا توجد صفوف صالحة للاستيراد." }, { status: 400 });
     }
@@ -619,13 +629,7 @@ export async function POST(request: Request) {
       }
     }
 
-    if (inventoryRows.length > 0 && canAdjustStock !== true) {
-      for (const row of inventoryRows) {
-        addError(summary, `ورقة المخزون - الصف ${row.rowNumber}: ليس لديك صلاحية تحديث المخزون من ملف Excel.`);
-      }
-    }
-
-    if (inventoryRows.length > 0 && canAdjustStock === true) {
+    if (inventoryRows.length > 0) {
       const balances = await getBalances(supabase);
       const balancesByKey = new Map(
         balances.map((balance) => [`${balance.product_id}|${balance.location_id}`, Number(balance.available_quantity ?? 0)])
@@ -645,11 +649,10 @@ export async function POST(request: Request) {
           }
 
           const balanceKey = `${product.id}|${locationId}`;
-          const currentQuantity = balancesByKey.get(balanceKey);
-
-          if (currentQuantity === undefined) {
-            throw new Error("لا يوجد رصيد ابتدائي لهذا المنتج في الموقع.");
-          }
+          // Some legacy products do not yet have a balance row for every
+          // active location. A missing row represents a zero opening balance;
+          // adjust_stock creates the row atomically when a count changes it.
+          const currentQuantity = balancesByKey.get(balanceKey) ?? 0;
 
           const delta = row.availableQuantity - currentQuantity;
 
