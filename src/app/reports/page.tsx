@@ -11,11 +11,13 @@ import {
 } from "lucide-react";
 
 import ReportExportPanel from "./ReportExportPanel";
+import ReportLocationSelector from "./ReportLocationSelector";
 import ProductImportExport from "../products/ProductImportExport";
 import {
   formatReportDate,
   formatReportNumber,
   getReportAccess,
+  resolveReportLocation,
   loadReportData,
   TRANSACTION_LABELS,
 } from "@/lib/reports";
@@ -106,14 +108,30 @@ function EmptyState({ message }: { message: string }) {
   return <p className="px-5 py-12 text-center text-sm text-slate-400">{message}</p>;
 }
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ location?: string }>;
+}) {
   const session = await getReportAccess();
 
   if (session.error || !session.supabase || !session.access) {
     return <ErrorBox>{session.error ?? "تعذر تحميل التقارير."}</ErrorBox>;
   }
 
-  const reportResult = await loadReportData(session.supabase, session.access)
+  const { location: requestedLocation, locations } = await resolveReportLocation(
+    session.supabase,
+    session.access,
+    (await searchParams).location
+  );
+
+  if (!requestedLocation) {
+    return <ErrorBox>لا يوجد فرع نشط متاح لعرض تقريره.</ErrorBox>;
+  }
+
+  const reportResult = await loadReportData(session.supabase, session.access, {
+    locationId: requestedLocation.id,
+  })
     .then((data) => ({ data, error: null }))
     .catch((error: unknown) => ({ data: null, error }));
 
@@ -181,13 +199,15 @@ export default async function ReportsPage() {
                   متابعة عملية للأرصدة والتنبيهات وحركة آخر 30 يومًا.
                 </p>
               </div>
-              <span className="rounded-xl bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-700">
-                {session.access.isAdmin ? "كل الفروع" : "البيانات حسب صلاحيات موقعك"}
-              </span>
+              <ReportLocationSelector
+                locations={locations}
+                selectedLocationId={requestedLocation.id}
+                canChooseLocation={session.access.isAdmin && locations.length > 1}
+              />
             </div>
           </section>
 
-          <ReportExportPanel />
+          <ReportExportPanel locationId={requestedLocation.id} locationName={requestedLocation.name} />
 
           <section className="space-y-4 rounded-2xl border border-teal-100 bg-teal-50/40 p-4 sm:p-5">
             <div>
@@ -197,7 +217,12 @@ export default async function ReportsPage() {
               </p>
             </div>
 
-            <ProductImportExport showExport={false} />
+            <ProductImportExport
+              key={requestedLocation.id}
+              showExport={false}
+              locations={locations}
+              selectedLocationId={requestedLocation.id}
+            />
 
           </section>
 

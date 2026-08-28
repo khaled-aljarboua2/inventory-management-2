@@ -16,6 +16,12 @@ type Product = {
   is_active: boolean | null;
 };
 
+type ImportLocation = {
+  id: string;
+  name: string;
+  code: string;
+};
+
 function normalizeRelation<T>(value: T | T[] | null | undefined) {
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
 }
@@ -95,32 +101,92 @@ function addProductSheet(workbook: ExcelJS.Workbook, rows: Array<Record<string, 
   styleSheet(worksheet);
 }
 
-function addInventorySheet(workbook: ExcelJS.Workbook, rows: Array<Record<string, string | number>>) {
+function addInventorySheet(
+  workbook: ExcelJS.Workbook,
+  rows: Array<Record<string, string | number>>,
+  includeLocationCode = true
+) {
   const worksheet = workbook.addWorksheet("المخزون");
   worksheet.columns = [
     { header: "sku", key: "sku", width: 20 },
-    { header: "location_code", key: "location_code", width: 22 },
     { header: "available_quantity", key: "available_quantity", width: 22 },
   ];
+  if (includeLocationCode) {
+    worksheet.columns = [
+      { header: "sku", key: "sku", width: 20 },
+      { header: "location_code", key: "location_code", width: 22 },
+      { header: "available_quantity", key: "available_quantity", width: 22 },
+    ];
+  }
   rows.forEach((row) => worksheet.addRow(row));
   worksheet.getColumn("sku").numFmt = "@";
   styleSheet(worksheet);
 }
 
-function createTemplate() {
+function addInstructionsSheet(workbook: ExcelJS.Workbook, location: ImportLocation | null) {
+  const worksheet = workbook.addWorksheet("التعليمات");
+  worksheet.columns = [
+    { header: "الخطوة", key: "step", width: 25 },
+    { header: "التعليمات", key: "instruction", width: 95 },
+  ];
+  worksheet.addRows([
+    { step: "1. اختيار الفرع", instruction: `اختر الفرع من شاشة الاستيراد قبل رفع الملف.${location ? ` النموذج تم تنزيله للفرع: ${location.name} (${location.code}).` : ""}` },
+    { step: "2. ورقة المنتجات", instruction: "اختيارية. لإضافة منتج جديد يلزم sku وname وunit. المنتجات الموجودة تُحدَّث حسب sku." },
+    { step: "3. ورقة المخزون", instruction: "اكتب sku وavailable_quantity فقط. الكمية المكتوبة هي الرصيد النهائي المطلوب للفرع المختار، وليست كمية تضاف فوق الرصيد الحالي." },
+    { step: "4. المعاينة", instruction: "ارفع الملف ثم راجع المنتجات الجديدة والتسويات والملاحظات. لا يتم حفظ أي تعديل في مرحلة المعاينة." },
+    { step: "5. الاعتماد", instruction: "بعد أن تصبح المعاينة سليمة، اضغط اعتماد الاستيراد. يسجل النظام فرق الرصيد كتسوية في سجل الحركات." },
+  ]);
+  worksheet.views = [{ state: "frozen", ySplit: 1 }];
+  worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+  worksheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F766E" } };
+  worksheet.getColumn("instruction").alignment = { wrapText: true, vertical: "top" };
+}
+
+function addLocationsSheet(workbook: ExcelJS.Workbook, locations: ImportLocation[]) {
+  const worksheet = workbook.addWorksheet("الفروع");
+  worksheet.columns = [
+    { header: "اسم الفرع", key: "name", width: 36 },
+    { header: "رمز الفرع", key: "code", width: 16 },
+  ];
+  locations.forEach((location) => worksheet.addRow({ name: location.name, code: location.code }));
+  styleSheet(worksheet);
+}
+
+function createTemplate(location: ImportLocation | null, locations: ImportLocation[]) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "نظام إدارة المخزون";
-  addProductSheet(workbook, [{
-    sku: "PRD-001",
-    name: "منتج تجريبي",
-    description: "وصف اختياري",
-    minimum_quantity: 5,
-    is_active: true,
-    unit: "حبة",
-    barcode: "6280000000000",
-  }]);
-  addInventorySheet(workbook, [{ sku: "PRD-001", location_code: "MAIN", available_quantity: 50 }]);
+  addInstructionsSheet(workbook, location);
+  addProductSheet(workbook, []);
+  addInventorySheet(workbook, [], false);
+  addLocationsSheet(workbook, locations);
   return workbook;
+}
+
+async function getImportLocations(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  profile: { company_id: string; role_id: string; location_id: string | null }
+) {
+  const { data: role, error: roleError } = await supabase
+    .from("roles")
+    .select("name")
+    .eq("id", profile.role_id)
+    .single();
+  if (roleError || !role) throw roleError ?? new Error("تعذر التحقق من الدور.");
+
+  let query = supabase
+    .from("locations")
+    .select("id, name, code")
+    .eq("company_id", profile.company_id)
+    .eq("is_active", true)
+    .order("name");
+  if (role.name !== "admin") {
+    if (!profile.location_id) return [];
+    query = query.eq("id", profile.location_id);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as ImportLocation[];
 }
 
 export async function GET(request: Request) {
@@ -132,7 +198,7 @@ export async function GET(request: Request) {
   }
 
   const [{ data: profile, error: profileError }, { data: canViewProducts }] = await Promise.all([
-    supabase.from("users").select("company_id, is_active").eq("auth_user_id", user.id).eq("is_active", true).single(),
+    supabase.from("users").select("company_id, role_id, location_id, is_active").eq("auth_user_id", user.id).eq("is_active", true).single(),
     supabase.rpc("has_permission", { permission_code: "products.view" }),
   ]);
 
@@ -141,8 +207,19 @@ export async function GET(request: Request) {
   }
 
   try {
-    if (new URL(request.url).searchParams.get("template") === "1") {
-      return workbookResponse(createTemplate(), "products-import-template.xlsx");
+    const url = new URL(request.url);
+    const locations = await getImportLocations(supabase, profile);
+    const requestedLocationId = url.searchParams.get("location");
+    const targetLocation = requestedLocationId
+      ? locations.find((location) => location.id === requestedLocationId) ?? null
+      : null;
+
+    if (requestedLocationId && !targetLocation) {
+      return NextResponse.json({ error: "الفرع المحدد غير متاح لك." }, { status: 403 });
+    }
+
+    if (url.searchParams.get("template") === "1") {
+      return workbookResponse(createTemplate(targetLocation ?? locations[0] ?? null, locations), "products-import-template.xlsx");
     }
 
     const products = await getAllProducts(supabase, profile.company_id);
@@ -155,7 +232,9 @@ export async function GET(request: Request) {
       const [unitsResponse, barcodesResponse, balancesResponse] = await Promise.all([
         supabase.from("product_units").select("product_id, is_base, units(name, symbol)").in("product_id", ids),
         supabase.from("product_barcodes").select("product_id, barcode, is_default").in("product_id", ids),
-        supabase.from("stock_balances").select("product_id, available_quantity, locations(code)").in("product_id", ids),
+        targetLocation
+          ? supabase.from("stock_balances").select("product_id, available_quantity, locations(code)").in("product_id", ids).eq("location_id", targetLocation.id)
+          : supabase.from("stock_balances").select("product_id, available_quantity, locations(code)").in("product_id", ids),
       ]);
 
       if (unitsResponse.error) throw unitsResponse.error;

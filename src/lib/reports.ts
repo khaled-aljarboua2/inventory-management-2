@@ -61,6 +61,12 @@ export type ReportAccess = {
   isAdmin: boolean;
 };
 
+export type ReportLocation = {
+  id: string;
+  name: string;
+  code: string;
+};
+
 export type ReportBalance = Omit<RawBalance, "products" | "locations"> & {
   products: ProductRef | null;
   locations: LocationRef | null;
@@ -175,7 +181,52 @@ export async function getReportAccess(): Promise<
   };
 }
 
-async function getAllBalances(supabase: SupabaseServerClient, access: ReportAccess) {
+export async function getReportLocations(
+  supabase: SupabaseServerClient,
+  access: ReportAccess
+): Promise<ReportLocation[]> {
+  let query = supabase
+    .from("locations")
+    .select("id, name, code")
+    .eq("company_id", access.companyId)
+    .eq("is_active", true)
+    .order("name");
+
+  if (!access.isAdmin && access.locationId) {
+    query = query.eq("id", access.locationId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).filter((location): location is ReportLocation =>
+    Boolean(location.id && location.name && location.code)
+  );
+}
+
+export async function resolveReportLocation(
+  supabase: SupabaseServerClient,
+  access: ReportAccess,
+  requestedLocationId: string | null | undefined
+): Promise<{ location: ReportLocation | null; locations: ReportLocation[] }> {
+  const locations = await getReportLocations(supabase, access);
+  const requested = requestedLocationId?.trim();
+  const location =
+    (requested ? locations.find((item) => item.id === requested) : null) ??
+    locations[0] ??
+    null;
+
+  return { location, locations };
+}
+
+async function getAllBalances(
+  supabase: SupabaseServerClient,
+  access: ReportAccess,
+  selectedLocationId: string | null
+) {
   const balances: RawBalance[] = [];
   let from = 0;
 
@@ -200,8 +251,10 @@ async function getAllBalances(supabase: SupabaseServerClient, access: ReportAcce
       .order("id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
 
-    if (!access.isAdmin && access.locationId) {
-      query = query.eq("location_id", access.locationId);
+    const locationId = selectedLocationId ?? (!access.isAdmin ? access.locationId : null);
+
+    if (locationId) {
+      query = query.eq("location_id", locationId);
     }
 
     const { data, error } = await query;
@@ -229,7 +282,8 @@ async function getAllBalances(supabase: SupabaseServerClient, access: ReportAcce
 async function getRecentTransactions(
   supabase: SupabaseServerClient,
   access: ReportAccess,
-  since: string
+  since: string,
+  selectedLocationId: string | null
 ) {
   const transactions: RawTransaction[] = [];
   let from = 0;
@@ -253,8 +307,10 @@ async function getRecentTransactions(
       .order("id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
 
-    if (!access.isAdmin && access.locationId) {
-      query = query.eq("location_id", access.locationId);
+    const locationId = selectedLocationId ?? (!access.isAdmin ? access.locationId : null);
+
+    if (locationId) {
+      query = query.eq("location_id", locationId);
     }
 
     const { data, error } = await query;
@@ -348,12 +404,15 @@ async function getProductMetadata(
 export async function loadReportData(
   supabase: SupabaseServerClient,
   access: ReportAccess,
-  { includeBarcodes = false }: { includeBarcodes?: boolean } = {}
+  {
+    includeBarcodes = false,
+    locationId = null,
+  }: { includeBarcodes?: boolean; locationId?: string | null } = {}
 ): Promise<ReportData> {
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const [rawBalances, rawTransactions] = await Promise.all([
-    getAllBalances(supabase, access),
-    getRecentTransactions(supabase, access, since),
+    getAllBalances(supabase, access, locationId),
+    getRecentTransactions(supabase, access, since, locationId),
   ]);
 
   const productIds = Array.from(

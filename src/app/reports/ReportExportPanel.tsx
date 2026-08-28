@@ -17,7 +17,13 @@ const FORMATS = [
   { value: "xml", label: "XML", icon: Code2 },
 ] as const;
 
-export default function ReportExportPanel() {
+export default function ReportExportPanel({
+  locationId,
+  locationName,
+}: {
+  locationId: string;
+  locationName: string;
+}) {
   const [report, setReport] = useState<ReportKind>("inventory");
 
   return (
@@ -29,7 +35,7 @@ export default function ReportExportPanel() {
             إصدار تقرير
           </div>
           <p className="mt-1 text-xs text-teal-700/80">
-            اختر التقرير ثم نزّله بالصيغة المناسبة.
+            يصدر التقرير للفرع المحدد فقط: {locationName}.
           </p>
         </div>
 
@@ -50,7 +56,7 @@ export default function ReportExportPanel() {
             {FORMATS.map(({ value, label, icon: Icon }) => (
               <a
                 key={value}
-                href={`/api/reports/export?report=${report}&format=${value}`}
+                href={`/api/reports/export?report=${report}&format=${value}&location=${encodeURIComponent(locationId)}`}
                 className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-teal-600 px-3 text-xs font-bold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-200"
               >
                 <Icon size={15} />

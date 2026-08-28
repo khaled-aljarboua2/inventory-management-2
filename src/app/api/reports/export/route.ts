@@ -3,6 +3,7 @@ import { Buffer } from "node:buffer";
 import {
   formatReportDate,
   getReportAccess,
+  resolveReportLocation,
   loadReportData,
   TRANSACTION_LABELS,
 } from "@/lib/reports";
@@ -302,8 +303,19 @@ export async function GET(request: Request) {
     : "xlsx";
 
   try {
+    const { location } = await resolveReportLocation(
+      session.supabase,
+      session.access,
+      url.searchParams.get("location")
+    );
+
+    if (!location) {
+      return Response.json({ error: "لا يوجد فرع متاح لإصدار التقرير." }, { status: 403 });
+    }
+
     const data = await loadReportData(session.supabase, session.access, {
       includeBarcodes: true,
+      locationId: location.id,
     });
     const table = buildTable(report, data);
     const date = new Date().toISOString().slice(0, 10);
