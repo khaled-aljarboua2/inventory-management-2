@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import {
   Eye,
@@ -12,7 +13,6 @@ import {
 } from "lucide-react";
 import {
   useRouter,
-  useSearchParams,
 } from "next/navigation";
 import { loginWithUsernameOrEmail } from "./actions";
 
@@ -21,29 +21,7 @@ import { loginWithUsernameOrEmail } from "./actions";
 ============================================================ */
 
 export default function LoginPage() {
-  return (
-    <Suspense
-      fallback={
-        <main
-          dir="rtl"
-          className="flex min-h-screen items-center justify-center bg-slate-50"
-        >
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
-        </main>
-      }
-    >
-      <LoginContent />
-    </Suspense>
-  );
-}
-
-/* ============================================================
-   محتوى صفحة تسجيل الدخول
-============================================================ */
-
-function LoginContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -54,14 +32,16 @@ function LoginContent() {
      رسالة الخطأ
   ========================================================== */
 
-  const accountError = searchParams.get("error");
+  const [error, setError] = useState("");
 
-  const initialError =
-    accountError === "account_disabled"
-      ? "حسابك غير نشط، يرجى التواصل مع مسؤول النظام."
-      : "";
-
-  const [error, setError] = useState(initialError);
+  useEffect(() => {
+    if (
+      new URLSearchParams(window.location.search).get("error") ===
+      "account_disabled"
+    ) {
+      setError("حسابك غير نشط، يرجى التواصل مع مسؤول النظام.");
+    }
+  }, []);
 
   /* ==========================================================
      تسجيل الدخول
@@ -97,7 +77,6 @@ function LoginContent() {
       }
 
       router.replace("/dashboard");
-      router.refresh();
     } catch (error) {
       setError(
         error instanceof Error
@@ -194,19 +173,17 @@ function LoginContent() {
             الشعار - بدون خلفية
         ==================================================== */}
 
-     {/* Logo */}
-<div className="mb-8 flex justify-center">
-  <img
-    src="/warevance-logo.PNG"
-    alt="WAREVANCE - Inventory & Branch Management"
-    className="
-      h-auto
-      w-full
-      max-w-[390px]
-      object-contain
-    "
-  />
-</div>
+        <div className="mb-8 flex justify-center">
+          <Image
+            src="/warevance-logo-transparent.png"
+            alt="WAREVANCE - Inventory & Branch Management"
+            width={2172}
+            height={724}
+            priority
+            sizes="(max-width: 448px) calc(100vw - 40px), 390px"
+            className="h-auto w-full max-w-[390px] object-contain"
+          />
+        </div>
         {/* ===================================================
             بطاقة تسجيل الدخول
         ==================================================== */}

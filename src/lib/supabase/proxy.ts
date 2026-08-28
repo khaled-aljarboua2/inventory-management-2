@@ -2,6 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // صفحة الدخول عامة. تخطي طلب التحقق الشبكي هنا يعرض النموذج فورًا؛
+  // كل الصفحات المحمية تبقى تحت التحقق أدناه، وتتحقق منها الـ layout أيضًا.
+  if (pathname === "/login" || pathname.startsWith("/auth")) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -36,25 +44,10 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
-
-  // الصفحات العامة
-  const isPublicRoute =
-    pathname === "/login" ||
-    pathname.startsWith("/auth");
-
   // إذا لم يسجل الدخول وحاول فتح صفحة محمية
-  if (!user && !isPublicRoute) {
+  if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-
-    return NextResponse.redirect(url);
-  }
-
-  // إذا كان مسجل دخول وحاول فتح صفحة تسجيل الدخول
-  if (user && pathname === "/login") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
 
     return NextResponse.redirect(url);
   }

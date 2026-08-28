@@ -80,9 +80,7 @@ export async function loginWithUsernameOrEmail(
       error,
     } = await admin
       .from("users")
-      .select(
-        "id, email, is_active"
-      )
+      .select("id, auth_user_id, email, is_active")
       .eq(
         "username",
         value
@@ -110,9 +108,7 @@ export async function loginWithUsernameOrEmail(
       error,
     } = await admin
       .from("users")
-      .select(
-        "id, email, is_active"
-      )
+      .select("id, auth_user_id, email, is_active")
       .eq(
         "email",
         value.toLowerCase()
@@ -168,6 +164,7 @@ export async function loginWithUsernameOrEmail(
     await createClient();
 
   const {
+    data: authData,
     error: authError,
   } =
     await supabase.auth.signInWithPassword(
@@ -185,63 +182,14 @@ export async function loginWithUsernameOrEmail(
     };
   }
 
-  /* ==========================================================
-     التحقق النهائي بعد تسجيل الدخول
-  ========================================================== */
-
-  const {
-    data: {
-      user,
-    },
-  } =
-    await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      success: false,
-      error:
-        "تعذر إنشاء جلسة تسجيل الدخول.",
-    };
-  }
-
-  const {
-    data: activeProfile,
-    error:
-      activeProfileError,
-  } =
-    await admin
-      .from("users")
-      .select(
-        "id, is_active"
-      )
-      .eq(
-        "auth_user_id",
-        user.id
-      )
-      .maybeSingle();
-
-  if (
-    activeProfileError ||
-    !activeProfile
-  ) {
+  // signInWithPassword يعيد هوية المستخدم الموثقة؛ مطابقتها مع ملفه
+  // الذي تم التحقق من نشاطه قبل الدخول يغني عن طلبي شبكة إضافيين.
+  if (!authData.user || authData.user.id !== profile.auth_user_id) {
     await supabase.auth.signOut();
 
     return {
       success: false,
-      error:
-        "تعذر التحقق من حساب المستخدم.",
-    };
-  }
-
-  if (
-    !activeProfile.is_active
-  ) {
-    await supabase.auth.signOut();
-
-    return {
-      success: false,
-      error:
-        "حسابك غير نشط. يرجى التواصل مع مسؤول النظام.",
+      error: "تعذر التحقق من حساب المستخدم.",
     };
   }
 
