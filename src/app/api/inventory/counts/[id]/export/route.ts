@@ -6,8 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-const PRODUCT_BATCH_SIZE = 500;
-
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
@@ -25,16 +23,6 @@ type CountItem = {
     sku: string;
   }[] | null;
 };
-
-function splitIntoBatches<T>(items: T[], size = PRODUCT_BATCH_SIZE) {
-  const batches: T[][] = [];
-
-  for (let index = 0; index < items.length; index += size) {
-    batches.push(items.slice(index, index + size));
-  }
-
-  return batches;
-}
 
 function getRoleName(
   roles: { name: string } | { name: string }[] | null
@@ -200,33 +188,6 @@ export async function GET(
     }
 
     const items = (stockCount.stock_count_items ?? []) as CountItem[];
-    const productIds = Array.from(
-      new Set(items.map((item) => item.product_id))
-    );
-    const currentBalanceByProduct = new Map<string, number>();
-
-    const balanceResponses = await Promise.all(
-      splitIntoBatches(productIds).map((ids) =>
-        supabase
-          .from("stock_balances")
-          .select("product_id, available_quantity")
-          .eq("location_id", stockCount.location_id)
-          .in("product_id", ids)
-      )
-    );
-
-    for (const response of balanceResponses) {
-      if (response.error) {
-        throw response.error;
-      }
-
-      for (const balance of response.data ?? []) {
-        currentBalanceByProduct.set(
-          balance.product_id,
-          Number(balance.available_quantity ?? 0)
-        );
-      }
-    }
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = "نظام إدارة المخزون";
@@ -263,7 +224,13 @@ export async function GET(
           item.difference_quantity === null
             ? "—"
             : Number(item.difference_quantity),
-        after: currentBalanceByProduct.get(item.product_id) ?? 0,
+        // This is the reconciled quantity recorded by the completed count.
+        // It intentionally does not query today's balance, which could have
+        // changed later through sales, purchases, or transfers.
+        after:
+          item.counted_quantity === null
+            ? "—"
+            : Number(item.counted_quantity),
       });
     }
 
