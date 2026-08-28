@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   ArrowLeftRight,
   CheckCircle2,
+  Boxes,
   Clock3,
   FileText,
   PackageCheck,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 import TransferModal from "./TransferModal";
+import TransferBalances from "./TransferBalances";
 import { deleteTransfer } from "./actions";
 import RealtimeRefresh from "@/components/realtime/RealtimeRefresh";
 
@@ -33,6 +35,7 @@ type Product = {
   sku: string;
   is_active: boolean;
   product_units: any[];
+  barcodes: string[];
 };
 
 type Transfer = {
@@ -124,6 +127,10 @@ export default function TransfersList({
 
   const [modalOpen, setModalOpen] =
     useState(false);
+
+  const [activeTab, setActiveTab] = useState<
+    "transfers" | "balances"
+  >("transfers");
 
   const [deletingId, setDeletingId] =
     useState<string | null>(null);
@@ -259,6 +266,37 @@ export default function TransfersList({
         channelName="transfers-list-items"
       />
 
+      <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setActiveTab("transfers")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+            activeTab === "transfers"
+              ? "bg-teal-600 text-white shadow-sm"
+              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          }`}
+        >
+          <ArrowLeftRight size={17} />
+          طلبات النقل
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("balances")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+            activeTab === "balances"
+              ? "bg-teal-600 text-white shadow-sm"
+              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          }`}
+        >
+          <Boxes size={17} />
+          الأرصدة
+        </button>
+      </div>
+
+      {activeTab === "balances" ? (
+        <TransferBalances />
+      ) : (
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-4 border-b border-slate-100 bg-slate-50/50 p-5 md:grid-cols-3 xl:grid-cols-7">
           <StatusCard
@@ -648,6 +686,7 @@ export default function TransfersList({
           </table>
         </div>
       </section>
+      )}
 
       {modalOpen && (
         <TransferModal

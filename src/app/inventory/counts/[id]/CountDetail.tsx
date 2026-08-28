@@ -14,6 +14,7 @@ import {
   Boxes,
   CheckCircle2,
   ClipboardCheck,
+  Download,
   Layers3,
   Loader2,
   Package,
@@ -83,6 +84,9 @@ export default function CountDetail({
     useState(false);
 
   const [completing, setCompleting] =
+    useState(false);
+
+  const [exporting, setExporting] =
     useState(false);
 
   const [deletingItemId, setDeletingItemId] =
@@ -596,6 +600,47 @@ export default function CountDetail({
     }
   }
 
+  async function exportReport() {
+    setExporting(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/inventory/counts/${countId}/export`,
+        { cache: "no-store" }
+      );
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(
+          result?.error ?? "تعذر إنشاء تقرير الجرد."
+        );
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = downloadUrl;
+      link.download = "stock-count-report.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+      setMessage("تم تصدير تقرير الجرد بنجاح.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "تعذر إنشاء تقرير الجرد."
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500 shadow-sm">
@@ -643,7 +688,24 @@ export default function CountDetail({
           </div>
         </div>
 
-        {!isCompleted && (
+        {isCompleted ? (
+          <button
+            type="button"
+            onClick={() => void exportReport()}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 self-start rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 xl:self-auto"
+          >
+            {exporting ? (
+              <Loader2 size={17} className="animate-spin" />
+            ) : (
+              <Download size={17} />
+            )}
+
+            {exporting
+              ? "جاري تجهيز التقرير..."
+              : "تصدير التقرير Excel"}
+          </button>
+        ) : (
           <div className="flex flex-wrap gap-3">
             <button
               type="button"

@@ -171,6 +171,10 @@ export default async function TransfersPage() {
             name,
             symbol
           )
+        ),
+
+        product_barcodes (
+          barcode
         )
       `)
       .eq(
@@ -298,6 +302,10 @@ export default async function TransfersPage() {
           productUnit.units
         ),
       })),
+
+      barcodes: (product.product_barcodes ?? [])
+        .map((item) => item.barcode?.trim())
+        .filter((barcode): barcode is string => Boolean(barcode)),
     })
   );
 
