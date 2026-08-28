@@ -279,8 +279,16 @@ export default function ProductImportExport({
 
       {summary ? (
         <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-xs text-emerald-800">
-          <div className="flex items-center gap-2 font-semibold"><CheckCircle2 size={16} /> اكتمل الاستيراد والتسويات</div>
+          <div className="flex items-center gap-2 font-semibold">
+            <CheckCircle2 size={16} />
+            {summary.inventoryUpdated > 0 ? "اكتمل الاستيراد والتسويات" : "اكتمل الاستيراد دون حركة مخزون"}
+          </div>
           <p className="mt-1.5">جديد: {summary.created} · محدّث: {summary.updated} · أرصدة مسوّاة: {summary.inventoryUpdated}</p>
+          {summary.inventoryUpdated === 0 ? (
+            <p className="mt-1 text-emerald-700">
+              لم يُسجل سجل حركة لأن الكمية المستوردة لم تغيّر الرصيد الحالي. استخدم كمية مختلفة عن الرصيد لإنشاء تسوية وحركة مخزون.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </section>
