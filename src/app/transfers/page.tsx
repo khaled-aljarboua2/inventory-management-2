@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { firstRelation } from "@/lib/supabase/relations";
 import TransfersList from "./TransfersList";
 
+const PRODUCTS_PAGE_SIZE = 1000;
+
 export default async function TransfersPage() {
   const supabase = await createClient();
 
@@ -52,10 +54,7 @@ export default async function TransfersPage() {
       "auth_user_id",
       user.id
     )
-    .eq(
-      "is_active",
-      true
-    )
+    .eq("is_active", true)
     .single();
 
   if (userError || !dbUser) {
@@ -81,7 +80,97 @@ export default async function TransfersPage() {
     "has_full_location_access"
   );
 
-  const isGeneralManager = hasFullAccess === true;
+  const isGeneralManager =
+    hasFullAccess === true;
+
+  // ============================================================
+  // تحميل جميع المنتجات
+  // ============================================================
+
+  async function loadAllProducts() {
+    const allProducts: any[] = [];
+
+    let from = 0;
+
+    while (true) {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("products")
+        .select(`
+          id,
+          company_id,
+          name,
+          sku,
+          is_active,
+
+          product_units (
+            id,
+            unit_id,
+            conversion_factor,
+            is_base,
+
+            units (
+              id,
+              name,
+              symbol
+            )
+          ),
+
+          product_barcodes (
+            barcode
+          )
+        `)
+        .eq(
+          "company_id",
+          companyId
+        )
+        .eq(
+          "is_active",
+          true
+        )
+        .order(
+          "name",
+          {
+            ascending: true,
+          }
+        )
+        .range(
+          from,
+          from + PRODUCTS_PAGE_SIZE - 1
+        );
+
+      if (error) {
+        return {
+          data: null,
+          error,
+        };
+      }
+
+      const batch =
+        data ?? [];
+
+      allProducts.push(
+        ...batch
+      );
+
+      if (
+        batch.length <
+        PRODUCTS_PAGE_SIZE
+      ) {
+        break;
+      }
+
+      from +=
+        PRODUCTS_PAGE_SIZE;
+    }
+
+    return {
+      data: allProducts,
+      error: null,
+    };
+  }
 
   // ============================================================
   // تحميل البيانات
@@ -152,41 +241,7 @@ export default async function TransfersPage() {
       )
       .order("name"),
 
-    supabase
-      .from("products")
-      .select(`
-        id,
-        company_id,
-        name,
-        sku,
-        is_active,
-
-        product_units (
-          id,
-          unit_id,
-          conversion_factor,
-          is_base,
-
-          units (
-            id,
-            name,
-            symbol
-          )
-        ),
-
-        product_barcodes (
-          barcode
-        )
-      `)
-      .eq(
-        "company_id",
-        companyId
-      )
-      .eq(
-        "is_active",
-        true
-      )
-      .order("name"),
+    loadAllProducts(),
   ]);
 
   // ============================================================
@@ -289,6 +344,10 @@ export default async function TransfersPage() {
           ?.length ?? 0,
     }));
 
+  // ============================================================
+  // تجهيز المنتجات
+  // ============================================================
+
   const normalizedProducts = (
     products ?? []
   ).map(
@@ -297,16 +356,31 @@ export default async function TransfersPage() {
 
       product_units: (
         product.product_units ?? []
-      ).map((productUnit) => ({
-        ...productUnit,
-        units: firstRelation(
-          productUnit.units
-        ),
-      })),
+      ).map(
+        (productUnit: any) => ({
+          ...productUnit,
 
-      barcodes: (product.product_barcodes ?? [])
-        .map((item) => item.barcode?.trim())
-        .filter((barcode): barcode is string => Boolean(barcode)),
+          units:
+            firstRelation(
+              productUnit.units
+            ),
+        })
+      ),
+
+      barcodes: (
+        product.product_barcodes ??
+        []
+      )
+        .map(
+          (item: any) =>
+            item.barcode?.trim()
+        )
+        .filter(
+          (
+            barcode: string | undefined
+          ): barcode is string =>
+            Boolean(barcode)
+        ),
     })
   );
 
