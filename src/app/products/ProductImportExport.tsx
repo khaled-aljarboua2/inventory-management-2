@@ -29,12 +29,14 @@ type ImportSummary = {
 
 type ImportPreview = {
   valid: boolean;
+  source: "Daftra Products Export" | "Daftra Stocktaking Report" | "ملف النظام";
   productRows: number;
   inventoryRows: number;
   productsToCreate: number;
   productsToUpdate: number;
   inventoryToAdjust: number;
   unchangedBalances: number;
+  skippedRows: number;
   targetLocation: Location | null;
   issues: string[];
 };
@@ -77,8 +79,8 @@ export default function ProductImportExport({
     event.target.value = "";
 
     if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".xlsx")) {
-      setError("اختر ملف Excel بصيغة .xlsx.");
+    if (!/\.(xlsx|csv)$/i.test(file.name)) {
+      setError("اختر ملف Excel بصيغة .xlsx أو CSV.");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -92,7 +94,7 @@ export default function ProductImportExport({
 
   async function sendFile(mode: "preview" | "apply") {
     if (!selectedFile) {
-      setError("اختر ملف Excel أولًا.");
+      setError("اختر ملف Excel أو CSV أولًا.");
       return;
     }
 
@@ -178,12 +180,12 @@ export default function ProductImportExport({
             className="inline-flex h-9 items-center gap-2 rounded-lg bg-teal-600 px-3 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Upload size={15} />
-            اختر ملف Excel
+            اختر ملف Excel أو CSV
           </button>
           <input
             ref={inputRef}
             type="file"
-            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
             onChange={handleFileChange}
             className="hidden"
           />
@@ -218,7 +220,7 @@ export default function ProductImportExport({
       </div>
 
       <div className="mt-3 rounded-xl border border-teal-100 bg-white/80 px-3 py-2 text-xs leading-5 text-slate-500">
-        ورقة <strong>المنتجات</strong> اختيارية: sku، name، description، minimum_quantity، is_active، unit، barcode. ورقة <strong>المخزون</strong>: sku، available_quantity. الفرع يُختار من الشاشة، ولا تحتاج كتابة رمزه داخل الملف.
+        يدعم ملف النظام وملفات دفترة مباشرة: <strong>تصدير المنتجات</strong> للإضافة أو التحديث، و<strong>تقرير الجرد</strong> للتسوية. يُكتشف النوع من العناوين، والفرع يُختار من الشاشة.
       </div>
 
       {selectedFile ? (
@@ -253,13 +255,19 @@ export default function ProductImportExport({
         <div className={`mt-3 rounded-xl border p-3 text-xs ${preview.valid ? "border-teal-200 bg-teal-50 text-teal-900" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
           <div className="flex items-center gap-2 font-bold">
             {preview.valid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-            {preview.valid ? "المعاينة جاهزة للاعتماد" : "المعاينة تحتوي ملاحظات — لم يُنفذ أي تعديل"}
+            {preview.valid
+              ? preview.issues.length > 0
+                ? "المعاينة جاهزة — ستُتجاهل الصفوف ذات الملاحظات"
+                : "المعاينة جاهزة للاعتماد"
+              : "لا توجد صفوف آمنة للاعتماد — لم يُنفذ أي تعديل"}
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <p className="mt-2 text-slate-600">نوع الملف: <strong>{preview.source}</strong></p>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
             <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">منتجات جديدة</p><p className="mt-1 font-mono text-base font-bold">{preview.productsToCreate}</p></div>
             <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">منتجات محدثة</p><p className="mt-1 font-mono text-base font-bold">{preview.productsToUpdate}</p></div>
             <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">تسويات الرصيد</p><p className="mt-1 font-mono text-base font-bold">{preview.inventoryToAdjust}</p></div>
             <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">أرصدة بلا تغيير</p><p className="mt-1 font-mono text-base font-bold">{preview.unchangedBalances}</p></div>
+            <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">صفوف متجاهلة</p><p className="mt-1 font-mono text-base font-bold">{preview.skippedRows}</p></div>
           </div>
           {preview.targetLocation ? <p className="mt-3">الفرع: <strong>{preview.targetLocation.name}</strong> ({preview.targetLocation.code})</p> : null}
           {preview.issues.length > 0 ? (
@@ -283,7 +291,7 @@ export default function ProductImportExport({
             <CheckCircle2 size={16} />
             {summary.inventoryUpdated > 0 ? "اكتمل الاستيراد والتسويات" : "اكتمل الاستيراد دون حركة مخزون"}
           </div>
-          <p className="mt-1.5">جديد: {summary.created} · محدّث: {summary.updated} · أرصدة مسوّاة: {summary.inventoryUpdated}</p>
+          <p className="mt-1.5">جديد: {summary.created} · محدّث: {summary.updated} · أرصدة مسوّاة: {summary.inventoryUpdated} · متجاهل: {summary.skipped}</p>
           {summary.inventoryUpdated === 0 ? (
             <p className="mt-1 text-emerald-700">
               لم يُسجل سجل حركة لأن الكمية المستوردة لم تغيّر الرصيد الحالي. استخدم كمية مختلفة عن الرصيد لإنشاء تسوية وحركة مخزون.
