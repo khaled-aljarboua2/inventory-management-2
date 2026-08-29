@@ -19,7 +19,7 @@ export default async function EditProductPage({ params }: Props) {
     supabase
       .from("products")
       .select(
-        "id, sku, name, description, category_id, brand_id, minimum_quantity"
+        "id, sku, name, description, category_id, brand_id, minimum_quantity, is_made_to_order"
       )
       .eq("id", id)
       .single(),

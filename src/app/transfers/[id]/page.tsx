@@ -36,6 +36,7 @@ type Product = {
   sku: string;
   is_active: boolean;
   product_units: ProductUnit[];
+  barcodes: string[];
 };
 
 type TransferItem = {
@@ -304,6 +305,10 @@ export default async function TransferDetailsPage({
             name,
             symbol
           )
+        ),
+
+        product_barcodes (
+          barcode
         )
       `)
       .eq(
@@ -399,6 +404,12 @@ export default async function TransferDetailsPage({
         productUnit.units
       ),
     })),
+    barcodes: (product.product_barcodes ?? [])
+      .map((item) => item.barcode?.trim())
+      .filter(
+        (barcode): barcode is string =>
+          Boolean(barcode)
+      ),
   }));
 
   const fromCompanyId =

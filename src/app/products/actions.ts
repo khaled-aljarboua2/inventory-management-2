@@ -9,6 +9,7 @@ type CreateProductInput = {
   category_id?: string;
   brand_id?: string;
   minimum_quantity: number;
+  is_made_to_order?: boolean;
 
   unit_id: string;
   conversion_factor: number;
@@ -297,6 +298,9 @@ export async function createProduct(
             Number(
               input.minimum_quantity
             ) || 0,
+
+          is_made_to_order:
+            input.is_made_to_order ?? false,
         })
         .select("id")
         .single();
@@ -557,6 +561,7 @@ export async function updateProduct(
     category_id?: string;
     brand_id?: string;
     minimum_quantity: number;
+    is_made_to_order?: boolean;
   }
 ) {
   const supabase =
@@ -766,6 +771,13 @@ export async function updateProduct(
             Number(
               input.minimum_quantity
             ) || 0,
+
+          ...(input.is_made_to_order === undefined
+            ? {}
+            : {
+                is_made_to_order:
+                  input.is_made_to_order,
+              }),
         })
         .eq(
           "id",

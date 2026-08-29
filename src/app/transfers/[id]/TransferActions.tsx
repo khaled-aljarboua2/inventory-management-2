@@ -1,6 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useDeferredValue,
+  useId,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -11,6 +16,7 @@ import {
   Loader2,
   Pencil,
   Plus,
+  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -43,6 +49,7 @@ type Product = {
   sku: string;
   is_active: boolean;
   product_units: ProductUnit[];
+  barcodes: string[];
 };
 
 type TransferItem = {
@@ -674,40 +681,18 @@ function TransferEditModal({
                         className="transition hover:bg-slate-50/50"
                       >
                         <td className="px-5 py-4">
-                          <select
-                            value={
-                              row.product_id
-                            }
-                            onChange={(event) =>
+                          <ProductSearchPicker
+                            products={activeProducts}
+                            value={row.product_id}
+                            disabled={loading}
+                            onChange={(productId) =>
                               updateRow(
                                 row.id,
                                 "product_id",
-                                event.target.value
+                                productId
                               )
                             }
-                            disabled={loading}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
-                          >
-                            <option value="">
-                              اختر المنتج
-                            </option>
-
-                            {activeProducts.map(
-                              (product) => (
-                                <option
-                                  key={
-                                    product.id
-                                  }
-                                  value={
-                                    product.id
-                                  }
-                                >
-                                  {product.name} —{" "}
-                                  {product.sku}
-                                </option>
-                              )
-                            )}
-                          </select>
+                          />
                         </td>
 
                         <td className="px-5 py-4">
@@ -845,6 +830,161 @@ function TransferEditModal({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ProductSearchPicker({
+  products,
+  value,
+  disabled,
+  onChange,
+}: {
+  products: Product[];
+  value: string;
+  disabled: boolean;
+  onChange: (productId: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const resultsId = useId();
+  const deferredQuery = useDeferredValue(query);
+
+  const selectedProduct = useMemo(
+    () =>
+      products.find(
+        (product) => product.id === value
+      ) ?? null,
+    [products, value]
+  );
+
+  const selectedLabel = selectedProduct
+    ? `${selectedProduct.name} — ${selectedProduct.sku}`
+    : "";
+
+  const matchingProducts = useMemo(() => {
+    const normalizedQuery =
+      deferredQuery.trim().toLowerCase();
+
+    return products
+      .filter((product) => {
+        if (!normalizedQuery) {
+          return true;
+        }
+
+        return (
+          product.name
+            .toLowerCase()
+            .includes(normalizedQuery) ||
+          product.sku
+            .toLowerCase()
+            .includes(normalizedQuery) ||
+          product.barcodes.some((barcode) =>
+            barcode
+              .toLowerCase()
+              .includes(normalizedQuery)
+          )
+        );
+      })
+      .slice(0, 50);
+  }, [products, deferredQuery]);
+
+  function selectProduct(product: Product) {
+    onChange(product.id);
+    setQuery(`${product.name} — ${product.sku}`);
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative min-w-[260px]">
+      <div className="relative">
+        <Search
+          size={17}
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+        />
+
+        <input
+          type="search"
+          value={open ? query : selectedLabel}
+          onFocus={() => {
+            setQuery(selectedLabel);
+            setOpen(true);
+          }}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setOpen(false);
+            }
+          }}
+          disabled={disabled || products.length === 0}
+          placeholder={
+            products.length === 0
+              ? "لا توجد منتجات"
+              : "ابحث بالاسم أو SKU أو الباركود"
+          }
+          aria-label="اختر المنتج"
+          role="combobox"
+          aria-controls={resultsId}
+          aria-expanded={open}
+          className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-9 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+        />
+
+        {value ? (
+          <button
+            type="button"
+            onClick={() => {
+              onChange("");
+              setQuery("");
+              setOpen(true);
+            }}
+            disabled={disabled}
+            className="absolute left-2 top-1/2 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed"
+            aria-label="إزالة المنتج المختار"
+          >
+            <X size={14} />
+          </button>
+        ) : null}
+      </div>
+
+      {open && !disabled ? (
+        <div
+          id={resultsId}
+          className="mt-2 max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+        >
+          {matchingProducts.length === 0 ? (
+            <p className="px-3 py-4 text-center text-xs text-slate-400">
+              لا توجد منتجات مطابقة
+            </p>
+          ) : (
+            matchingProducts.map((product) => (
+              <button
+                key={product.id}
+                type="button"
+                onClick={() => selectProduct(product)}
+                className={`w-full rounded-lg px-3 py-2.5 text-right transition hover:bg-teal-50 ${
+                  product.id === value
+                    ? "bg-teal-50 text-teal-800"
+                    : "text-slate-700"
+                }`}
+              >
+                <span className="block truncate text-sm font-semibold">
+                  {product.name}
+                </span>
+
+                <span className="mt-1 block font-mono text-[11px] text-slate-400">
+                  {product.sku}
+                  {product.barcodes[0]
+                    ? ` · ${product.barcodes[0]}`
+                    : ""}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

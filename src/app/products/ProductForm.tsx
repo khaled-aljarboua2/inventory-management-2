@@ -52,6 +52,8 @@ export default function ProductForm({
     useState("");
   const [minimumQuantity, setMinimumQuantity] =
     useState("0");
+  const [isMadeToOrder, setIsMadeToOrder] =
+    useState(false);
 
   // الوحدة
   const [units, setUnits] =
@@ -161,6 +163,8 @@ export default function ProductForm({
           brandId || undefined,
         minimum_quantity:
           Number(minimumQuantity),
+        is_made_to_order:
+          isMadeToOrder,
 
         unit_id: unitId,
         conversion_factor: factor,
@@ -644,6 +648,30 @@ export default function ProductForm({
                 "
               />
             </div>
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={isMadeToOrder}
+                onChange={(event) =>
+                  setIsMadeToOrder(
+                    event.target.checked
+                  )
+                }
+                disabled={loading}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 disabled:cursor-not-allowed"
+              />
+
+              <span>
+                <span className="block text-xs font-semibold text-slate-700">
+                  يُجهّز عند الطلب
+                </span>
+
+                <span className="mt-0.5 block text-[11px] text-slate-500">
+                  يُستخدم للمنتجات التي يمكن تجهيزها دون رصيد مسجل مسبقًا.
+                </span>
+              </span>
+            </label>
           </div>
         </section>
 

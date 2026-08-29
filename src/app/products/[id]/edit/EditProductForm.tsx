@@ -29,6 +29,7 @@ type Product = {
   category_id: string | null;
   brand_id: string | null;
   minimum_quantity: number | null;
+  is_made_to_order: boolean | null;
 };
 
 type Props = {
@@ -58,6 +59,10 @@ export default function EditProductForm({
   const [minimumQuantity, setMinimumQuantity] =
     useState(
       String(product.minimum_quantity ?? 0)
+    );
+  const [isMadeToOrder, setIsMadeToOrder] =
+    useState(
+      Boolean(product.is_made_to_order)
     );
 
   const [loading, setLoading] = useState(false);
@@ -97,6 +102,8 @@ export default function EditProductForm({
         brand_id:
           brandId || undefined,
         minimum_quantity: minimum,
+        is_made_to_order:
+          isMadeToOrder,
       }
     );
 
@@ -344,6 +351,30 @@ export default function EditProductForm({
                 className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-all duration-200 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:opacity-50 md:max-w-md"
               />
             </div>
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={isMadeToOrder}
+                onChange={(event) =>
+                  setIsMadeToOrder(
+                    event.target.checked
+                  )
+                }
+                disabled={loading}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 disabled:cursor-not-allowed"
+              />
+
+              <span>
+                <span className="block text-sm font-semibold text-slate-700">
+                  يُجهّز عند الطلب
+                </span>
+
+                <span className="mt-0.5 block text-xs text-slate-500">
+                  يُستخدم للمنتجات التي يمكن تجهيزها دون رصيد مسجل مسبقًا.
+                </span>
+              </span>
+            </label>
           </div>
         </section>
 
