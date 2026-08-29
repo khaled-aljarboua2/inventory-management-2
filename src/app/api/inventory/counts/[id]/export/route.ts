@@ -24,18 +24,6 @@ type CountItem = {
   }[] | null;
 };
 
-function getRoleName(
-  roles: { name: string } | { name: string }[] | null
-) {
-  const role = Array.isArray(roles)
-    ? roles[0] ?? null
-    : roles;
-
-  return String(role?.name ?? "")
-    .trim()
-    .toLowerCase();
-}
-
 function formatCountDate(value: string | null) {
   if (!value) {
     return "—";
@@ -99,7 +87,7 @@ export async function GET(
       );
     }
 
-    const [profileResult, permissionResult] = await Promise.all([
+    const [profileResult, permissionResult, fullAccessResult] = await Promise.all([
       supabase
         .from("users")
         .select("company_id, location_id, is_active, roles(name)")
@@ -109,6 +97,7 @@ export async function GET(
       supabase.rpc("has_permission", {
         permission_code: "stock.count",
       }),
+      supabase.rpc("has_full_location_access"),
     ]);
 
     const profile = profileResult.data;
@@ -164,9 +153,7 @@ export async function GET(
     }
 
     const location = firstRelation(stockCount.locations);
-    const roleName = getRoleName(profile.roles);
-    const canAccessAllLocations =
-      roleName === "admin" || roleName === "general manager";
+    const canAccessAllLocations = fullAccessResult.data === true;
 
     if (
       !location ||

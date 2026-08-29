@@ -141,17 +141,23 @@ export default async function InventoryPage() {
     return <ErrorBox>المستخدم غير مرتبط بشركة.</ErrorBox>;
   }
 
-  const { data: role, error: roleError } = await supabase
-    .from("roles")
-    .select("name")
-    .eq("id", dbUser.role_id)
-    .single();
+  const [
+    { data: role, error: roleError },
+    { data: hasFullAccess, error: fullAccessError },
+  ] = await Promise.all([
+    supabase
+      .from("roles")
+      .select("name")
+      .eq("id", dbUser.role_id)
+      .single(),
+    supabase.rpc("has_full_location_access"),
+  ]);
 
-  if (roleError || !role) {
+  if (roleError || !role || fullAccessError) {
     return <ErrorBox>تعذر تحديد صلاحية المستخدم.</ErrorBox>;
   }
 
-  const isAdmin = role.name === "admin";
+  const isAdmin = hasFullAccess === true;
   const currentLocationId = dbUser.location_id ?? null;
 
   if (!isAdmin && !currentLocationId) {

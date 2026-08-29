@@ -118,16 +118,21 @@ export default async function UsersPage() {
       data: canViewUsers,
       error: permissionError,
     },
+    {
+      data: hasFullAccess,
+      error: fullAccessError,
+    },
   ] = await Promise.all([
     supabase
       .from("users")
-      .select("id, company_id, role_id, is_active")
+      .select("id, company_id, role_id, location_id, is_active")
       .eq("auth_user_id", user.id)
       .eq("is_active", true)
       .single(),
     supabase.rpc("has_permission", {
       permission_code: "users.view",
     }),
+    supabase.rpc("has_full_location_access"),
   ]);
 
   if (
@@ -152,6 +157,7 @@ export default async function UsersPage() {
 
   if (
     permissionError ||
+    fullAccessError ||
     canViewUsers !== true
   ) {
     return (
@@ -173,6 +179,49 @@ export default async function UsersPage() {
   const admin =
     getAdminClient();
 
+  let usersQuery = admin
+    .from("users")
+    .select(
+      `
+        id,
+        auth_user_id,
+        company_id,
+        role_id,
+        location_id,
+        full_name,
+        username,
+        email,
+        phone,
+        is_active,
+        created_at,
+        updated_at,
+        roles (id, name, description),
+        locations (id, name, code, type)
+      `
+    )
+    .eq("company_id", currentUser.company_id);
+
+  let locationsQuery = admin
+    .from("locations")
+    .select("id, name, code, type")
+    .eq("company_id", currentUser.company_id)
+    .eq("is_active", true);
+
+  if (hasFullAccess !== true) {
+    if (!currentUser.location_id) {
+      return (
+        <DashboardLayout>
+          <div dir="rtl" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+            المستخدم غير مرتبط بفرع صالح.
+          </div>
+        </DashboardLayout>
+      );
+    }
+
+    usersQuery = usersQuery.eq("location_id", currentUser.location_id);
+    locationsQuery = locationsQuery.eq("id", currentUser.location_id);
+  }
+
   // ============================================================
   // تحميل المستخدمين
   // ============================================================
@@ -191,57 +240,12 @@ export default async function UsersPage() {
       error: locationsError,
     },
   ] = await Promise.all([
-    admin
-    .from("users")
-    .select(
-      `
-        id,
-        auth_user_id,
-        company_id,
-        role_id,
-        location_id,
-        full_name,
-        username,
-        email,
-        phone,
-        is_active,
-        created_at,
-        updated_at,
-
-        roles (
-          id,
-          name,
-          description
-        ),
-
-        locations (
-          id,
-          name,
-          code,
-          type
-        )
-      `
-    )
-    .eq(
-      "company_id",
-      currentUser.company_id
-    )
-    .order(
-      "created_at",
-      {
-        ascending: false,
-      }
-    ),
+    usersQuery.order("created_at", { ascending: false }),
     admin
       .from("roles")
       .select("id, name, description")
       .order("name"),
-    admin
-      .from("locations")
-      .select("id, name, code, type")
-      .eq("company_id", currentUser.company_id)
-      .eq("is_active", true)
-      .order("name"),
+    locationsQuery.order("name"),
   ]);
 
   if (usersError) {

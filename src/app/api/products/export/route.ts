@@ -166,12 +166,10 @@ async function getImportLocations(
   supabase: Awaited<ReturnType<typeof createClient>>,
   profile: { company_id: string; role_id: string; location_id: string | null }
 ) {
-  const { data: role, error: roleError } = await supabase
-    .from("roles")
-    .select("name")
-    .eq("id", profile.role_id)
-    .single();
-  if (roleError || !role) throw roleError ?? new Error("تعذر التحقق من الدور.");
+  const { data: hasFullAccess, error: accessError } = await supabase.rpc(
+    "has_full_location_access"
+  );
+  if (accessError) throw accessError;
 
   let query = supabase
     .from("locations")
@@ -179,7 +177,7 @@ async function getImportLocations(
     .eq("company_id", profile.company_id)
     .eq("is_active", true)
     .order("name");
-  if (role.name !== "admin") {
+  if (hasFullAccess !== true) {
     if (!profile.location_id) return [];
     query = query.eq("id", profile.location_id);
   }

@@ -222,47 +222,12 @@ async function validateCountAccess(
     };
   }
 
-  const {
-    data: role,
-    error: roleError,
-  } = await supabase
-    .from("roles")
-    .select("id, name")
-    .eq("id", dbUser.role_id)
-    .single();
-
-  if (roleError || !role) {
-    return {
-      error:
-        "تعذر تحديد دور المستخدم.",
-      status: 403,
-      stockCount: null,
-    };
-  }
-
-  // ==========================================================
-  // Admin + General Manager
-  // يستطيعون إدارة جرد أي موقع داخل نفس الشركة.
-  //
-  // بقية المستخدمين:
-  // يستطيعون إدارة موقعهم فقط.
-  // ==========================================================
-
-  const roleName = String(
-    role.name ?? ""
-  )
-    .trim()
-    .toLowerCase();
-
-  const isAdmin =
-    roleName === "admin";
-
-  const isGeneralManager =
-    roleName === "general manager";
+  const { data: hasFullAccess } = await supabase.rpc(
+    "has_full_location_access"
+  );
 
   if (
-    !isAdmin &&
-    !isGeneralManager &&
+    hasFullAccess !== true &&
     dbUser.location_id !==
       stockCount.location_id
   ) {

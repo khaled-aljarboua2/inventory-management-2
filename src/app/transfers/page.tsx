@@ -77,10 +77,11 @@ export default async function TransfersPage() {
   const currentLocationId =
     dbUser.location_id;
 
-  const roleName =
-    firstRelation(dbUser.roles)?.name;
+  const { data: hasFullAccess } = await supabase.rpc(
+    "has_full_location_access"
+  );
 
-  const isGeneralManager = roleName?.trim().toLowerCase() === "admin";
+  const isGeneralManager = hasFullAccess === true;
 
   // ============================================================
   // تحميل البيانات

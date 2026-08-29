@@ -69,6 +69,7 @@ async function getCurrentUser() {
           auth_user_id,
           company_id,
           role_id,
+          location_id,
           is_active,
           roles (
             id,
@@ -186,6 +187,28 @@ export async function createUser({
       success: false,
       error:
         "ليس لديك صلاحية إنشاء المستخدمين.",
+    };
+  }
+
+  const {
+    data: hasFullAccess,
+    error: fullAccessError,
+  } = await supabase.rpc("has_full_location_access");
+
+  if (fullAccessError) {
+    return {
+      success: false,
+      error: "تعذر التحقق من نطاق وصول المستخدم.",
+    };
+  }
+
+  if (
+    hasFullAccess !== true &&
+    location_id !== currentUser.location_id
+  ) {
+    return {
+      success: false,
+      error: "يمكنك إنشاء مستخدمين في فرعك فقط.",
     };
   }
 
@@ -440,7 +463,7 @@ export async function updateUser({
   username?: string;
   password?: string;
   role_id: string;
-  location_id: string;
+  location_id: string | null;
   is_active: boolean;
 }) {
   const currentUser =
@@ -460,17 +483,18 @@ export async function updateUser({
   const {
     data: canUpdate,
     error: permissionError,
-  } =
-    await supabase.rpc(
-      "has_permission",
-      {
-        permission_code:
-          "users.update",
-      }
-    );
+  } = await supabase.rpc("has_permission", {
+    permission_code: "users.update",
+  });
+
+  const {
+    data: hasFullAccess,
+    error: fullAccessError,
+  } = await supabase.rpc("has_full_location_access");
 
   if (
     permissionError ||
+    fullAccessError ||
     canUpdate !== true
   ) {
     return {
@@ -532,10 +556,6 @@ export async function updateUser({
     };
   }
 
-  /* ==========================================================
-     حماية General Manager
-  ========================================================== */
-
   const targetRole =
     Array.isArray(
       targetUser.roles
@@ -543,14 +563,35 @@ export async function updateUser({
       ? targetUser.roles[0]
       : targetUser.roles;
 
+  const targetRoleName =
+    targetRole?.name?.trim().toLowerCase();
+
+  const targetIsSystemAdmin =
+    targetUser.location_id === null &&
+    (targetRoleName === "admin" ||
+      targetRoleName === "general manager");
+
   if (
-    targetRole?.name?.trim().toLowerCase() === "admin" &&
-    targetUser.id !== currentUser.id
+    hasFullAccess !== true &&
+    targetUser.location_id !== currentUser.location_id
   ) {
     return {
       success: false,
       error:
-        "لا يمكن تعديل حساب General Manager.",
+        "يمكنك تعديل مستخدمي فرعك فقط.",
+    };
+  }
+
+  const requestedLocationId =
+    location_id?.trim() || null;
+
+  if (
+    hasFullAccess !== true &&
+    requestedLocationId !== currentUser.location_id
+  ) {
+    return {
+      success: false,
+      error: "لا يمكنك نقل المستخدم إلى فرع آخر.",
     };
   }
 
@@ -666,38 +707,28 @@ export async function updateUser({
      التحقق من الموقع
   ========================================================== */
 
-  const {
-    data: location,
-    error: locationError,
-  } =
-    await admin
+  if (!targetIsSystemAdmin) {
+    if (!requestedLocationId) {
+      return {
+        success: false,
+        error: "الموقع المحدد مطلوب.",
+      };
+    }
+
+    const { data: location, error: locationError } = await admin
       .from("locations")
-      .select(
-        "id, company_id, is_active"
-      )
-      .eq(
-        "id",
-        location_id
-      )
-      .eq(
-        "company_id",
-        currentUser.company_id
-      )
-      .eq(
-        "is_active",
-        true
-      )
+      .select("id, company_id, is_active")
+      .eq("id", requestedLocationId)
+      .eq("company_id", currentUser.company_id)
+      .eq("is_active", true)
       .single();
 
-  if (
-    locationError ||
-    !location
-  ) {
-    return {
-      success: false,
-      error:
-        "الموقع المحدد غير صالح.",
-    };
+    if (locationError || !location) {
+      return {
+        success: false,
+        error: "الموقع المحدد غير صالح.",
+      };
+    }
   }
 
   /* ==========================================================
@@ -816,9 +847,13 @@ export async function updateUser({
         username:
           cleanUsername,
 
-        role_id,
+        role_id: targetIsSystemAdmin
+          ? targetUser.role_id
+          : role_id,
 
-        location_id,
+        location_id: targetIsSystemAdmin
+          ? null
+          : requestedLocationId,
 
         is_active,
 
@@ -921,6 +956,7 @@ export async function deleteUser(
           id,
           auth_user_id,
           role_id,
+          location_id,
           roles (
             id,
             name
@@ -948,10 +984,6 @@ export async function deleteUser(
     };
   }
 
-  /* ==========================================================
-     حماية General Manager
-  ========================================================== */
-
   const targetRole =
     Array.isArray(
       targetUser.roles
@@ -959,11 +991,33 @@ export async function deleteUser(
       ? targetUser.roles[0]
       : targetUser.roles;
 
-  if (targetRole?.name?.trim().toLowerCase() === "admin") {
+  const targetRoleName =
+    targetRole?.name?.trim().toLowerCase();
+
+  const targetIsSystemAdmin =
+    targetUser.location_id === null &&
+    (targetRoleName === "admin" ||
+      targetRoleName === "general manager");
+
+  if (targetIsSystemAdmin) {
     return {
       success: false,
       error:
-        "لا يمكن حذف حساب General Manager.",
+        "لا يمكن حذف حساب الأدمن العام.",
+    };
+  }
+
+  const { data: hasFullAccess } = await supabase.rpc(
+    "has_full_location_access"
+  );
+
+  if (
+    hasFullAccess !== true &&
+    targetUser.location_id !== currentUser.location_id
+  ) {
+    return {
+      success: false,
+      error: "يمكنك حذف مستخدمي فرعك فقط.",
     };
   }
 
@@ -1069,7 +1123,13 @@ export async function getUserPermissions(
     await admin
       .from("users")
       .select(
-        "id, company_id, role_id"
+        `
+          id,
+          company_id,
+          role_id,
+          location_id,
+          roles (name)
+        `
       )
       .eq(
         "id",
@@ -1096,6 +1156,20 @@ export async function getUserPermissions(
       success: false,
       error:
         "لا يمكنك إدارة مستخدم خارج شركتك.",
+    };
+  }
+
+  const { data: hasFullAccess } = await (
+    await createClient()
+  ).rpc("has_full_location_access");
+
+  if (
+    hasFullAccess !== true &&
+    targetUser.location_id !== currentUser.location_id
+  ) {
+    return {
+      success: false,
+      error: "يمكنك إدارة صلاحيات مستخدمي فرعك فقط.",
     };
   }
 
@@ -1234,7 +1308,7 @@ export async function saveUserPermissions(
     await admin
       .from("users")
       .select(
-        "id, company_id"
+        "id, company_id, location_id"
       )
       .eq(
         "id",
@@ -1261,6 +1335,20 @@ export async function saveUserPermissions(
       success: false,
       error:
         "لا يمكنك تعديل صلاحيات مستخدم خارج شركتك.",
+    };
+  }
+
+  const { data: hasFullAccess } = await (
+    await createClient()
+  ).rpc("has_full_location_access");
+
+  if (
+    hasFullAccess !== true &&
+    targetUser.location_id !== currentUser.location_id
+  ) {
+    return {
+      success: false,
+      error: "يمكنك تعديل صلاحيات مستخدمي فرعك فقط.",
     };
   }
 

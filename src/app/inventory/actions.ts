@@ -53,23 +53,26 @@ export async function adjustProductStock(input: {
       };
     }
 
-    const {
-      data: role,
-      error: roleError,
-    } = await supabase
-      .from("roles")
-      .select("name")
-      .eq("id", profile.role_id)
-      .single();
+    const [
+      { data: role, error: roleError },
+      { data: hasFullAccess, error: fullAccessError },
+    ] = await Promise.all([
+      supabase
+        .from("roles")
+        .select("name")
+        .eq("id", profile.role_id)
+        .single(),
+      supabase.rpc("has_full_location_access"),
+    ]);
 
-    if (roleError || !role) {
+    if (roleError || !role || fullAccessError) {
       return {
         success: false,
         error: "تعذر التحقق من صلاحية المستخدم.",
       };
     }
 
-    const isAdmin = role.name === "admin";
+    const isAdmin = hasFullAccess === true;
 
     if (!isAdmin && profile.location_id !== input.locationId) {
       return {

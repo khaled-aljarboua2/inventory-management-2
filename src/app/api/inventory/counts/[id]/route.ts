@@ -42,28 +42,16 @@ async function getCurrentUser(supabase: any) {
   return dbUser;
 }
 
-function getRoleName(dbUser: any) {
-  const role = Array.isArray(dbUser.roles)
-    ? dbUser.roles[0]
-    : dbUser.roles;
-
-  return String(role?.name ?? "")
-    .trim()
-    .toLowerCase();
-}
-
 async function canAccessCount(
   supabase: any,
   dbUser: any,
   locationId: string
 ) {
-  const roleName = getRoleName(dbUser);
+  const { data: hasFullAccess } = await supabase.rpc(
+    "has_full_location_access"
+  );
 
-  // Admin والمدير العام يستطيعان إدارة أي فرع
-  if (
-    roleName === "admin" ||
-    roleName === "general manager"
-  ) {
+  if (hasFullAccess === true) {
     return true;
   }
 

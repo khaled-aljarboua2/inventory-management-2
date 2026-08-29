@@ -53,6 +53,15 @@ export default function EditUserModal({
   locations,
   onClose,
 }: Props) {
+  const roleName = roles
+    .find((role) => role.id === user.role_id)
+    ?.name.trim()
+    .toLowerCase();
+
+  const isSystemAdmin =
+    user.location_id === null &&
+    (roleName === "admin" || roleName === "general manager");
+
   const [fullName, setFullName] =
     useState(user.full_name);
 
@@ -322,7 +331,7 @@ export default function EditUserModal({
                     )
                   }
                   required
-                  disabled={saving}
+                  disabled={saving || isSystemAdmin}
                   className="select"
                 >
 
@@ -354,13 +363,15 @@ export default function EditUserModal({
                       event.target.value
                     )
                   }
-                  required
-                  disabled={saving}
+                  required={!isSystemAdmin}
+                  disabled={saving || isSystemAdmin}
                   className="select"
                 >
 
                   <option value="">
-                    اختر الموقع
+                    {isSystemAdmin
+                      ? "وصول عام — جميع الفروع"
+                      : "اختر الموقع"}
                   </option>
 
                   {locations.map(

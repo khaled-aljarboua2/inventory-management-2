@@ -141,54 +141,17 @@ export async function POST(
       );
     }
 
-    // ============================================================
-    // 5) الدور
-    // ============================================================
+    const { data: hasFullAccess, error: fullAccessError } =
+      await supabase.rpc("has_full_location_access");
 
-    const {
-      data: role,
-      error: roleError,
-    } = await supabase
-      .from("roles")
-      .select(
-        "id, name"
-      )
-      .eq(
-        "id",
-        dbUser.role_id
-      )
-      .single();
-
-    if (
-      roleError ||
-      !role
-    ) {
+    if (fullAccessError) {
       return NextResponse.json(
-        {
-          error:
-            "تعذر تحديد دور المستخدم.",
-        },
+        { error: "تعذر التحقق من نطاق وصول المستخدم." },
         { status: 403 }
       );
     }
 
-    // ============================================================
-    // 6) صلاحية اختيار الموقع
-    //
-    // admin:
-    // يستطيع إنشاء جرد لأي موقع داخل الشركة.
-    //
-    // باقي الأدوار:
-    // يستطيعون إنشاء جرد لموقعهم فقط.
-    // ============================================================
-
-    const roleName =
-      String(role.name || "")
-        .trim()
-        .toLowerCase();
-
-    const canCountAnyLocation =
-      roleName === "admin";
+    const canCountAnyLocation = hasFullAccess === true;
 
     if (
       !canCountAnyLocation &&

@@ -449,13 +449,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "تعذر العثور على الشركة المرتبطة بالمستخدم." }, { status: 403 });
   }
 
-  const [{ data: role, error: roleError }, { data: canCreate }, { data: canUpdate }, { data: canAdjustStock }] = await Promise.all([
+  const [{ data: role, error: roleError }, { data: canCreate }, { data: canUpdate }, { data: canAdjustStock }, { data: hasFullAccess, error: fullAccessError }] = await Promise.all([
     supabase.from("roles").select("name").eq("id", profile.role_id).single(),
     supabase.rpc("has_permission", { permission_code: "products.create" }),
     supabase.rpc("has_permission", { permission_code: "products.update" }),
     supabase.rpc("has_permission", { permission_code: "stock.adjust" }),
+    supabase.rpc("has_full_location_access"),
   ]);
-  if (roleError || !role) return NextResponse.json({ error: "تعذر التحقق من صلاحية المستخدم." }, { status: 403 });
+  if (roleError || !role || fullAccessError) return NextResponse.json({ error: "تعذر التحقق من صلاحية المستخدم." }, { status: 403 });
 
   try {
     const formData = await request.formData();
@@ -479,7 +480,7 @@ export async function POST(request: Request) {
     const prepared = await prepareImport({
       supabase,
       companyId: profile.company_id,
-      isAdmin: role.name === "admin",
+      isAdmin: hasFullAccess === true,
       userLocationId: profile.location_id ?? null,
       canCreate,
       canUpdate,

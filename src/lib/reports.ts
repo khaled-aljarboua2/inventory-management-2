@@ -151,12 +151,17 @@ export async function getReportAccess(): Promise<
     return { supabase: null, access: null, error: "تعذر التحقق من بيانات المستخدم." };
   }
 
-  const [{ data: role, error: roleError }, { data: canViewStock }] = await Promise.all([
+  const [
+    { data: role, error: roleError },
+    { data: canViewStock },
+    { data: hasFullAccess, error: fullAccessError },
+  ] = await Promise.all([
     supabase.from("roles").select("name").eq("id", dbUser.role_id).single(),
     supabase.rpc("has_permission", { permission_code: "stock.view" }),
+    supabase.rpc("has_full_location_access"),
   ]);
 
-  if (roleError || !role) {
+  if (roleError || !role || fullAccessError) {
     return { supabase: null, access: null, error: "تعذر التحقق من صلاحية المستخدم." };
   }
 
@@ -164,7 +169,7 @@ export async function getReportAccess(): Promise<
     return { supabase: null, access: null, error: "ليس لديك صلاحية عرض تقارير المخزون." };
   }
 
-  const isAdmin = role.name === "admin";
+  const isAdmin = hasFullAccess === true;
 
   if (!isAdmin && !dbUser.location_id) {
     return { supabase: null, access: null, error: "المستخدم غير مرتبط بموقع." };
@@ -461,4 +466,3 @@ export async function loadReportData(
     }),
   };
 }
-

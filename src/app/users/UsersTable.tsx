@@ -133,9 +133,14 @@ export default function UsersTable({
       return;
     }
 
-    if (user.roles?.name === "General Manager") {
+    const roleName = user.roles?.name.trim().toLowerCase();
+    const isSystemAdmin =
+      user.location_id === null &&
+      (roleName === "admin" || roleName === "general manager");
+
+    if (isSystemAdmin) {
       window.alert(
-        "لا يمكن حذف حساب General Manager من هذه الصفحة."
+        "لا يمكن حذف حساب الأدمن العام من هذه الصفحة."
       );
       return;
     }
@@ -364,8 +369,13 @@ export default function UsersTable({
                   const isCurrentUser =
                     user.id === currentUserId;
 
-                  const isGeneralManager =
-                    user.roles?.name === "General Manager";
+                  const roleName =
+                    user.roles?.name.trim().toLowerCase();
+
+                  const isSystemAdmin =
+                    user.location_id === null &&
+                    (roleName === "admin" ||
+                      roleName === "general manager");
 
                   const isDeleting =
                     deletingUserId === user.id;
@@ -497,21 +507,19 @@ export default function UsersTable({
 
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2">
-                          {!isGeneralManager && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setEditUser(user)
-                              }
-                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-600"
-                            >
-                              <Pencil size={15} />
-                              تعديل
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditUser(user)
+                            }
+                            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-600"
+                          >
+                            <Pencil size={15} />
+                            تعديل
+                          </button>
 
                           {!isCurrentUser &&
-                            !isGeneralManager && (
+                            !isSystemAdmin && (
                               <button
                                 type="button"
                                 onClick={() =>
@@ -525,7 +533,7 @@ export default function UsersTable({
                             )}
 
                           {isCurrentUser ||
-                          isGeneralManager ? (
+                          isSystemAdmin ? (
                             <span className="px-2 text-xs text-slate-300">
                               —
                             </span>
