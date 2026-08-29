@@ -226,15 +226,22 @@ export function resolveDaftraStocktakingFactor({
     for (const unit of productUnits) {
       if (unit.unitId !== measuredUnitId) continue;
       candidates.set(`measured:${unit.unitId}`, unit.conversionFactor * parsed.multiplier);
-      if (programQuantity !== null) candidates.set(`confirmed-pack:${unit.unitId}`, unit.conversionFactor);
     }
   }
 
   const factors = Array.from(new Set(
     Array.from(candidates.values())
       .filter((factor) => Number.isFinite(factor) && factor > 0)
-      .filter((factor) => programQuantity === null || numbersClose(countedQuantity * factor, programQuantity))
       .map(String)
   )).map(Number);
-  return factors.length === 1 ? factors[0] : null;
+  if (factors.length === 1) return factors[0];
+
+  // The current balance may legitimately differ from the counted quantity.
+  // Use it only to disambiguate multiple configured factors, never to reject
+  // one confirmed product-unit conversion.
+  if (programQuantity !== null) {
+    const confirmed = factors.filter((factor) => numbersClose(countedQuantity * factor, programQuantity));
+    if (confirmed.length === 1) return confirmed[0];
+  }
+  return null;
 }

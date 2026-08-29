@@ -31,6 +31,7 @@ type ProductImportRow = {
 type InventoryImportRow = {
   rowNumber: number; sourceRowKey: string; source: ImportKind; sku: string; barcode: string;
   locationReference: string; inputQuantity: number; unitName: string; programQuantity: number | null;
+  productName?: string; legacyIdentifier?: string;
 };
 type ExistingProduct = {
   id: string; sku: string; name: string; description: string | null;
@@ -191,6 +192,8 @@ function readDaftraStocktakingSheet(worksheet: ExcelJS.Worksheet): ParsedImport 
       locationReference: field(row, headers, ["الرقم التعريفي للفرع"]).trim(), inputQuantity: quantity,
       unitName: field(row, headers, ["اسم الوحدة"]).trim(),
       programQuantity: parseNonNegativeNumber(field(row, headers, ["العدد بالبرنامج"])),
+      productName: field(row, headers, ["منتج", "الاسم"]).trim(),
+      legacyIdentifier: field(row, headers, ["الرقم التسلسلي"], cellIdentifier),
     });
   }
   return { kind: "daftra_stocktaking", productRows: [], inventoryRows, issues, skippedRows };
@@ -514,9 +517,41 @@ async function prepareImport({
       continue;
     }
     let product = row.sku ? productsBySku.get(skuKey(row.sku)) ?? null : null;
-    if (!product && row.source === "daftra_stocktaking" && row.barcode) {
-      const productId = barcodeProductIdByKey.get(barcodeKey(row.barcode));
-      product = productId ? productsById.get(productId) ?? null : null;
+    if (row.source === "daftra_stocktaking") {
+      const candidates = new Map<string, { product: ExistingProduct; sources: string[] }>();
+      const addCandidate = (candidate: ExistingProduct | null, source: string) => {
+        if (!candidate) return;
+        const existing = candidates.get(candidate.id);
+        if (existing) existing.sources.push(source);
+        else candidates.set(candidate.id, { product: candidate, sources: [source] });
+      };
+
+      addCandidate(product, "SKU");
+      if (row.barcode) {
+        const productId = barcodeProductIdByKey.get(barcodeKey(row.barcode));
+        addCandidate(productId ? productsById.get(productId) ?? null : null, "الباركود");
+      }
+      if (row.legacyIdentifier) {
+        addCandidate(productsBySku.get(skuKey(row.legacyIdentifier)) ?? null, "الرقم التسلسلي القديم");
+      }
+
+      if (candidates.size === 1) {
+        product = candidates.values().next().value?.product ?? null;
+      } else if (candidates.size > 1) {
+        const nameKey = skuKey(row.productName ?? "");
+        const confirmed = Array.from(candidates.values()).filter(
+          (candidate) => nameKey && skuKey(candidate.product.name) === nameKey
+        );
+        if (confirmed.length !== 1) {
+          skippedRows += 1;
+          addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): المعرّفات تشير إلى منتجات مختلفة ولم يمكن تأكيد المنتج؛ تم تجاهل الصف بأمان.`);
+          continue;
+        }
+        product = confirmed[0].product;
+        addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): عولج اختلاف المعرّفات باستخدام ${confirmed[0].sources.join(" و")} بعد تأكيد اسم المنتج.`);
+      } else {
+        product = null;
+      }
     }
     const newProduct = !product && row.source !== "daftra_stocktaking" ? newProductRowsBySku.get(skuKey(row.sku)) ?? null : null;
     if (!product && !newProduct) {
