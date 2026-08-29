@@ -66,6 +66,13 @@ export default function ProductImportExport({
 
   const activeFileKey = fileKey(selectedFile, targetLocationId);
   const canApply = Boolean(selectedFile && preview?.valid && previewKey === activeFileKey);
+  const previewHasChanges = Boolean(
+    preview &&
+      preview.productsToCreate + preview.productsToUpdate + preview.inventoryToAdjust > 0
+  );
+  const summaryHasChanges = Boolean(
+    summary && summary.created + summary.updated + summary.inventoryUpdated > 0
+  );
 
   function resetResult() {
     setPreview(null);
@@ -252,26 +259,28 @@ export default function ProductImportExport({
       ) : null}
 
       {preview ? (
-        <div className={`mt-3 rounded-xl border p-3 text-xs ${preview.valid ? "border-teal-200 bg-teal-50 text-teal-900" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
+        <div className={`mt-3 rounded-xl border p-3 text-xs ${previewHasChanges ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-red-300 bg-red-50 text-red-900"}`}>
           <div className="flex items-center gap-2 font-bold">
-            {preview.valid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-            {preview.valid
+            {previewHasChanges ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            {previewHasChanges
               ? preview.issues.length > 0
-                ? "المعاينة جاهزة — ستُتجاهل الصفوف ذات الملاحظات"
-                : "المعاينة جاهزة للاعتماد"
-              : "لا توجد صفوف آمنة للاعتماد — لم يُنفذ أي تعديل"}
+                ? "توجد عمليات جاهزة للإضافة — ستُتجاهل الصفوف ذات الملاحظات"
+                : "توجد عمليات جاهزة للإضافة والاعتماد"
+              : preview.valid
+                ? "لا توجد إضافات أو تسويات جديدة — البيانات مطابقة للمسجل"
+                : "لم تتم الإضافة — لا توجد صفوف آمنة للاعتماد"}
           </div>
           <p className="mt-2 text-slate-600">نوع الملف: <strong>{preview.source}</strong></p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-            <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">منتجات جديدة</p><p className="mt-1 font-mono text-base font-bold">{preview.productsToCreate}</p></div>
-            <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">منتجات محدثة</p><p className="mt-1 font-mono text-base font-bold">{preview.productsToUpdate}</p></div>
-            <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">تسويات الرصيد</p><p className="mt-1 font-mono text-base font-bold">{preview.inventoryToAdjust}</p></div>
+            <div className={`rounded-lg border p-2 ${preview.productsToCreate > 0 ? "border-emerald-200 bg-emerald-100/70" : "border-red-200 bg-red-100/70"}`}><p className="text-slate-600">منتجات جديدة</p><p className="mt-1 font-mono text-base font-bold">{preview.productsToCreate}</p></div>
+            <div className={`rounded-lg border p-2 ${preview.productsToUpdate > 0 ? "border-emerald-200 bg-emerald-100/70" : "border-red-200 bg-red-100/70"}`}><p className="text-slate-600">منتجات محدثة</p><p className="mt-1 font-mono text-base font-bold">{preview.productsToUpdate}</p></div>
+            <div className={`rounded-lg border p-2 ${preview.inventoryToAdjust > 0 ? "border-emerald-200 bg-emerald-100/70" : "border-red-200 bg-red-100/70"}`}><p className="text-slate-600">تسويات الرصيد</p><p className="mt-1 font-mono text-base font-bold">{preview.inventoryToAdjust}</p></div>
             <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">أرصدة بلا تغيير</p><p className="mt-1 font-mono text-base font-bold">{preview.unchangedBalances}</p></div>
-            <div className="rounded-lg bg-white/80 p-2"><p className="text-slate-500">صفوف متجاهلة</p><p className="mt-1 font-mono text-base font-bold">{preview.skippedRows}</p></div>
+            <div className={`rounded-lg border p-2 ${preview.skippedRows === 0 ? "border-emerald-200 bg-emerald-100/70" : "border-red-200 bg-red-100/70"}`}><p className="text-slate-600">صفوف متجاهلة</p><p className="mt-1 font-mono text-base font-bold">{preview.skippedRows}</p></div>
           </div>
           {preview.targetLocation ? <p className="mt-3">الفرع: <strong>{preview.targetLocation.name}</strong> ({preview.targetLocation.code})</p> : null}
           {preview.issues.length > 0 ? (
-            <ul className="mt-3 list-inside list-disc space-y-1 text-amber-800">
+            <ul className="mt-3 list-inside list-disc space-y-1 text-red-700">
               {preview.issues.map((issue) => <li key={issue}>{issue}</li>)}
             </ul>
           ) : null}
@@ -286,14 +295,14 @@ export default function ProductImportExport({
       ) : null}
 
       {summary ? (
-        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-xs text-emerald-800">
+        <div className={`mt-3 rounded-xl border px-3 py-3 text-xs ${summaryHasChanges ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-red-300 bg-red-50 text-red-800"}`}>
           <div className="flex items-center gap-2 font-semibold">
-            <CheckCircle2 size={16} />
-            {summary.inventoryUpdated > 0 ? "اكتمل الاستيراد والتسويات" : "اكتمل الاستيراد دون حركة مخزون"}
+            {summaryHasChanges ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            {summaryHasChanges ? "تمت الإضافة وظهرت التغييرات بنجاح" : "لم تتم إضافة أو تسوية أي سجل"}
           </div>
           <p className="mt-1.5">جديد: {summary.created} · محدّث: {summary.updated} · أرصدة مسوّاة: {summary.inventoryUpdated} · متجاهل: {summary.skipped}</p>
-          {summary.inventoryUpdated === 0 ? (
-            <p className="mt-1 text-emerald-700">
+          {!summaryHasChanges ? (
+            <p className="mt-1 text-red-700">
               لم يُسجل سجل حركة لأن الكمية المستوردة لم تغيّر الرصيد الحالي. استخدم كمية مختلفة عن الرصيد لإنشاء تسوية وحركة مخزون.
             </p>
           ) : null}
