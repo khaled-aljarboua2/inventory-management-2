@@ -9,6 +9,7 @@ import {
   numbersClose,
   parseCsvDocument,
   parseNonNegativeNumber,
+  productNameKey,
   resolveDaftraStocktakingFactor,
   skuKey,
   unitLookupKeys,
@@ -183,10 +184,11 @@ function readDaftraStocktakingSheet(worksheet: ExcelJS.Worksheet): ParsedImport 
     const daftraProductReference = field(row, headers, ["رقم المنتج"], cellIdentifier);
     const sku = field(row, headers, ["الرقم التسلسلي"], cellIdentifier);
     const barcode = field(row, headers, ["الباركود"], cellIdentifier);
+    const productName = field(row, headers, ["منتج", "الاسم"]).trim();
     const quantity = parseNonNegativeNumber(field(row, headers, ["العدد الفعلي"]));
-    if (!sku && !barcode) {
+    if (!sku && !barcode && !productName) {
       skippedRows += 1;
-      addIssue(issues, `الجرد - الصف ${rowNumber} (${daftraProductReference || "بدون رقم دفترة"}): الرقم التسلسلي والباركود فارغان؛ تم تجاهل الصف بأمان.`);
+      addIssue(issues, `الجرد - الصف ${rowNumber} (${daftraProductReference || "بدون رقم دفترة"}): الرقم التسلسلي والباركود واسم المنتج فارغة؛ تم تجاهل الصف بأمان.`);
       continue;
     }
     if (quantity === null) {
@@ -199,7 +201,7 @@ function readDaftraStocktakingSheet(worksheet: ExcelJS.Worksheet): ParsedImport 
       locationReference: field(row, headers, ["الرقم التعريفي للفرع"]).trim(), inputQuantity: quantity,
       unitName: field(row, headers, ["اسم الوحدة"]).trim(),
       programQuantity: parseNonNegativeNumber(field(row, headers, ["العدد بالبرنامج"])),
-      productName: field(row, headers, ["منتج", "الاسم"]).trim(),
+      productName,
       daftraProductReference,
     });
   }
@@ -447,6 +449,15 @@ async function prepareImport({
   const targetLocation = targetLocationId ? locations.find((location) => location.id === targetLocationId) ?? null : null;
   const productsBySku = new Map(existingProducts.map((product) => [skuKey(product.sku), product]));
   const productsById = new Map(existingProducts.map((product) => [product.id, product]));
+  const activeProductsByName = new Map<string, ExistingProduct[]>();
+  for (const product of existingProducts) {
+    if (product.is_active === false) continue;
+    const key = productNameKey(product.name);
+    if (!key) continue;
+    const matches = activeProductsByName.get(key) ?? [];
+    matches.push(product);
+    activeProductsByName.set(key, matches);
+  }
   const unitsByKey = new Map<string, string>();
   for (const unit of units) for (const key of unitLookupKeys(unit.name, unit.symbol)) unitsByKey.set(key, unit.id);
   const [allProductUnits, allProductBarcodes] = await Promise.all([
@@ -550,14 +561,31 @@ async function prepareImport({
       product = productBySerialNumber ?? productByBarcode;
 
       if (!product) {
-        skippedRows += 1;
-        addIssue(issues, `المخزون - الصف ${row.rowNumber} (${reference}): لم يطابق الرقم التسلسلي SKU محليًا ولم يطابق الباركود أي منتج؛ رقم دفترة الداخلي (${row.daftraProductReference || "غير متوفر"}) محفوظ للتشخيص فقط.`);
-        continue;
+        const canUseNameFallback = !row.sku && !row.barcode && Boolean(row.productName);
+        const nameMatches = canUseNameFallback
+          ? (activeProductsByName.get(productNameKey(row.productName ?? "")) ?? [])
+            .filter((candidate) => resolveStocktakingFactor(row, productUnitsByProductId.get(candidate.id) ?? [], unitsByKey) !== null)
+          : [];
+
+        if (nameMatches.length === 1) {
+          product = nameMatches[0];
+          addNotice(notices, "info", `المخزون - الصف ${row.rowNumber}: تمت مطابقة المنتج بأمان بالاسم والوحدة بعد غياب الرقم التسلسلي والباركود (${product.sku}).`);
+        } else {
+          skippedRows += 1;
+          if (canUseNameFallback && nameMatches.length > 1) {
+            addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.productName}): الاسم والوحدة يطابقان أكثر من منتج نشط؛ تم تجاهل الصف بأمان.`);
+          } else if (canUseNameFallback) {
+            addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.productName}): لم توجد مطابقة فريدة لاسم المنتج والوحدة؛ تم تجاهل الصف بأمان.`);
+          } else {
+            addIssue(issues, `المخزون - الصف ${row.rowNumber} (${reference}): لم يطابق الرقم التسلسلي SKU محليًا ولم يطابق الباركود أي منتج؛ رقم دفترة الداخلي (${row.daftraProductReference || "غير متوفر"}) محفوظ للتشخيص فقط.`);
+          }
+          continue;
+        }
       }
 
       if (productBySerialNumber && productByBarcode) {
         addNotice(notices, "info", `المخزون - الصف ${row.rowNumber}: تمت مطابقة الرقم التسلسلي والباركود مع المنتج نفسه (${product.sku}).`);
-      } else {
+      } else if (productBySerialNumber || productByBarcode) {
         addNotice(notices, "info", `المخزون - الصف ${row.rowNumber}: تمت مطابقة المنتج بأمان باستخدام ${productBySerialNumber ? "الرقم التسلسلي" : "الباركود"}.`);
       }
     }

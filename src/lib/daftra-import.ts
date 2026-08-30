@@ -56,6 +56,17 @@ export function barcodeKey(value: string) {
   return normalizeTextKey(value);
 }
 
+export function productNameKey(value: string) {
+  return normalizeTextKey(value)
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/ـ/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
 export function expandScientificNotation(value: string) {
   const text = normalizeDigits(value).trim();
   const match = text.match(/^([+-]?)(\d+)(?:\.(\d+))?[eE]([+-]?\d+)$/);
