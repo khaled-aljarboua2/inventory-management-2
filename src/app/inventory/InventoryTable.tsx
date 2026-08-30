@@ -70,6 +70,7 @@ function formatDate(value: string | null) {
 
   return new Intl.DateTimeFormat("ar-SA", {
     dateStyle: "medium",
+    timeZone: "Asia/Riyadh",
   }).format(new Date(value));
 }
 

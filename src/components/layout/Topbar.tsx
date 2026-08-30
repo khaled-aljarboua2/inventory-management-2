@@ -56,6 +56,7 @@ export default function Topbar({
     () => createClient(),
     []
   );
+  const profileId = profile?.id ?? null;
   const searchRef =
     useRef<HTMLInputElement>(null);
   const notificationsRef =
@@ -77,7 +78,7 @@ export default function Topbar({
   const [
     notificationsLoading,
     setNotificationsLoading,
-  ] = useState(false);
+  ] = useState(Boolean(profileId));
   const [
     markingReadId,
     setMarkingReadId,
@@ -112,11 +113,9 @@ export default function Topbar({
   const loadNotifications =
     useCallback(
       async () => {
-        if (!profile?.id) {
-          setNotifications([]);
+        if (!profileId) {
           return;
         }
-        setNotificationsLoading(true);
         try {
           const {
             data,
@@ -133,7 +132,7 @@ export default function Topbar({
             `)
             .eq(
               "user_id",
-              profile.id
+              profileId
             )
             .order(
               "created_at",
@@ -164,7 +163,7 @@ export default function Topbar({
         }
       },
       [
-        profile?.id,
+        profileId,
         supabase,
       ]
     );
@@ -172,7 +171,13 @@ export default function Topbar({
   // التحميل الأولي
   // ==========================================================
   useEffect(() => {
-    void loadNotifications();
+    const timer = window.setTimeout(() => {
+      void loadNotifications();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [loadNotifications]);
   // ==========================================================
   // Supabase Realtime
@@ -182,13 +187,13 @@ export default function Topbar({
   // لا يحتاج Refresh.
   // ==========================================================
   useEffect(() => {
-    if (!profile?.id) {
+    if (!profileId) {
       return;
     }
     let cancelled = false;
     const channel = supabase
       .channel(
-        `notifications-${profile.id}`
+        `notifications-${profileId}`
       )
       .on(
         "postgres_changes",
@@ -196,7 +201,7 @@ export default function Topbar({
           event: "INSERT",
           schema: "public",
           table: "notifications",
-          filter: `user_id=eq.${profile.id}`,
+          filter: `user_id=eq.${profileId}`,
         },
         (payload) => {
           if (cancelled) {
@@ -237,7 +242,7 @@ export default function Topbar({
       );
     };
   }, [
-    profile?.id,
+    profileId,
     supabase,
   ]);
   // ==========================================================

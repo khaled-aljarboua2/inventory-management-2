@@ -197,6 +197,7 @@ export default function TransfersList({
         day: "2-digit",
         month: "short",
         year: "numeric",
+        timeZone: "Asia/Riyadh",
       }
     ).format(new Date(date));
   }

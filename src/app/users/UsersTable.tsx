@@ -122,6 +122,7 @@ export default function UsersTable({
   function formatDate(value: string) {
     return new Intl.DateTimeFormat("ar-SA", {
       dateStyle: "medium",
+      timeZone: "Asia/Riyadh",
     }).format(new Date(value));
   }
 

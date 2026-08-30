@@ -128,9 +128,6 @@ export default function CountDetail({
     useState("");
 
   const loadCount = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
     try {
       const response = await fetch(
         `/api/inventory/counts/${countId}`,
@@ -224,7 +221,13 @@ export default function CountDetail({
   );
 
   useEffect(() => {
-    void loadCount();
+    const timer = window.setTimeout(() => {
+      void loadCount();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [loadCount]);
 
   useEffect(() => {

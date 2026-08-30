@@ -436,6 +436,7 @@ export default async function TransferDetailsPage({
       {
         dateStyle: "medium",
         timeStyle: "short",
+        timeZone: "Asia/Riyadh",
       }
     ).format(
       new Date(date)

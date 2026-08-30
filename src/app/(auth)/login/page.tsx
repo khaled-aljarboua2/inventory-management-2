@@ -35,12 +35,18 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (
-      new URLSearchParams(window.location.search).get("error") ===
-      "account_disabled"
-    ) {
-      setError("حسابك غير نشط، يرجى التواصل مع مسؤول النظام.");
-    }
+    const animationFrame = window.requestAnimationFrame(() => {
+      if (
+        new URLSearchParams(window.location.search).get("error") ===
+        "account_disabled"
+      ) {
+        setError("حسابك غير نشط، يرجى التواصل مع مسؤول النظام.");
+      }
+    });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
   }, []);
 
   /* ==========================================================

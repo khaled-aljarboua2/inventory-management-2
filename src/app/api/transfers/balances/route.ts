@@ -58,7 +58,7 @@ export async function GET() {
     let from = 0;
 
     while (true) {
-      let query = session.supabase
+      const query = session.supabase
         .from("stock_balances")
         .select(`
           id,
@@ -136,7 +136,7 @@ export async function GET() {
       }
     }
 
-    let locationsQuery = session.supabase
+    const locationsQuery = session.supabase
       .from("locations")
       .select("id, name, code")
       .eq("company_id", session.access.companyId)

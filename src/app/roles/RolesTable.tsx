@@ -102,6 +102,7 @@ export default function RolesTable({
       "ar-SA",
       {
         dateStyle: "medium",
+        timeZone: "Asia/Riyadh",
       }
     ).format(new Date(value));
   }

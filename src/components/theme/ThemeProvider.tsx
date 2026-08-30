@@ -32,21 +32,27 @@ export function ThemeProvider({
     useState<Theme>("light");
 
   useEffect(() => {
-    const savedTheme =
-      localStorage.getItem(
-        "inventory-theme"
-      ) as Theme | null;
+    const animationFrame = window.requestAnimationFrame(() => {
+      const savedTheme =
+        localStorage.getItem(
+          "inventory-theme"
+        ) as Theme | null;
 
-    if (
-      savedTheme === "light" ||
-      savedTheme === "dark" ||
-      savedTheme === "system"
-    ) {
-      setThemeState(savedTheme);
-      applyTheme(savedTheme);
-    } else {
-      applyTheme("light");
-    }
+      if (
+        savedTheme === "light" ||
+        savedTheme === "dark" ||
+        savedTheme === "system"
+      ) {
+        setThemeState(savedTheme);
+        applyTheme(savedTheme);
+      } else {
+        applyTheme("light");
+      }
+    });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
   }, []);
 
   function setTheme(

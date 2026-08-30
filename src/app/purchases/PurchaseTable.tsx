@@ -230,6 +230,7 @@ export default function PurchaseTable({
       "ar-SA",
       {
         dateStyle: "medium",
+        timeZone: "Asia/Riyadh",
       }
     ).format(new Date(value));
   }
