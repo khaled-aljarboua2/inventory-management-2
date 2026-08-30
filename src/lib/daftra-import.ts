@@ -18,14 +18,61 @@ const UNIT_ALIASES: Record<string, string> = {
   "كيلوجرام": "كيلوغرام",
   "كجم": "كيلوغرام",
   "kg": "كيلوغرام",
+  "kgs": "كيلوغرام",
+  "kilogram": "كيلوغرام",
+  "kilograms": "كيلوغرام",
   "جرام": "غرام",
   "جم": "غرام",
   "gram": "غرام",
+  "grams": "غرام",
   "g": "غرام",
+  "ملجم": "مليغرام",
+  "mg": "مليغرام",
+  "milligram": "مليغرام",
+  "milligrams": "مليغرام",
+  "ل": "لتر",
+  "ltr": "لتر",
+  "liter": "لتر",
+  "liters": "لتر",
+  "litre": "لتر",
+  "litres": "لتر",
   "مللي": "ملليلتر",
   "ملي": "ملليلتر",
   "مل": "ملليلتر",
   "ml": "ملليلتر",
+  "milliliter": "ملليلتر",
+  "milliliters": "ملليلتر",
+  "millilitre": "ملليلتر",
+  "millilitres": "ملليلتر",
+  "م": "متر",
+  "meter": "متر",
+  "meters": "متر",
+  "metre": "متر",
+  "metres": "متر",
+  "سم": "سنتيمتر",
+  "cm": "سنتيمتر",
+  "centimeter": "سنتيمتر",
+  "centimeters": "سنتيمتر",
+  "ملم": "مليمتر",
+  "mm": "مليمتر",
+  "millimeter": "مليمتر",
+  "millimeters": "مليمتر",
+  "كرتونه": "كرتون",
+  "carton": "كرتون",
+  "cartons": "كرتون",
+  "عبوه": "عبوة",
+  "package": "عبوة",
+  "packages": "عبوة",
+  "pack": "عبوة",
+  "علبه": "علبة",
+  "box": "علبة",
+  "boxes": "علبة",
+  "حبه": "حبة",
+  "قطعه": "قطعة",
+  "piece": "قطعة",
+  "pieces": "قطعة",
+  "bag": "كيس",
+  "bags": "كيس",
 };
 
 export function normalizeDigits(value: string) {
@@ -210,7 +257,25 @@ export function unwrapNestedCsvRows(rows: CsvRow[]) {
 export type DaftraProductUnit = {
   unitId: string;
   conversionFactor: number;
+  unitName?: string;
+  unitSymbol?: string | null;
 };
+
+type FixedMeasurement = { family: "mass" | "volume" | "length"; scale: number };
+
+function fixedMeasurement(value: string | null | undefined): FixedMeasurement | null {
+  const rawKey = normalizeHeader(value ?? "");
+  const key = normalizeHeader(UNIT_ALIASES[rawKey] ?? rawKey);
+  if (key === "مليغرام") return { family: "mass", scale: 0.001 };
+  if (key === "غرام") return { family: "mass", scale: 1 };
+  if (["كيلوغرام", "طن"].includes(key)) return { family: "mass", scale: key === "طن" ? 1_000_000 : 1000 };
+  if (key === "ملليلتر") return { family: "volume", scale: 1 };
+  if (key === "لتر") return { family: "volume", scale: 1000 };
+  if (key === "مليمتر") return { family: "length", scale: 1 };
+  if (key === "سنتيمتر") return { family: "length", scale: 10 };
+  if (key === "متر") return { family: "length", scale: 1000 };
+  return null;
+}
 
 export function resolveDaftraStocktakingFactor({
   unitName,
@@ -237,6 +302,22 @@ export function resolveDaftraStocktakingFactor({
     for (const unit of productUnits) {
       if (unit.unitId !== measuredUnitId) continue;
       candidates.set(`measured:${unit.unitId}`, unit.conversionFactor * parsed.multiplier);
+    }
+  }
+
+  // Fixed physical units can be converted safely even when Daftra and the
+  // product use different scales, such as 500 grams versus kilograms.
+  // Packaging units still rely on the product-specific conversion factor.
+  const importedMeasurement = fixedMeasurement(parsed.unitText);
+  if (importedMeasurement) {
+    const importedAmount = importedMeasurement.scale * parsed.multiplier;
+    for (const unit of productUnits) {
+      const configuredMeasurement = fixedMeasurement(unit.unitName) ?? fixedMeasurement(unit.unitSymbol);
+      if (!configuredMeasurement || configuredMeasurement.family !== importedMeasurement.family) continue;
+      candidates.set(
+        `physical:${unit.unitId}`,
+        unit.conversionFactor * (importedAmount / configuredMeasurement.scale)
+      );
     }
   }
 

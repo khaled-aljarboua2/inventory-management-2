@@ -405,12 +405,25 @@ function resolveProductBalanceFactor(unitName: string, productUnits: ProductUnit
   return Number.isFinite(factor) && factor > 0 ? factor : null;
 }
 
-function resolveStocktakingFactor(row: InventoryImportRow, productUnits: ProductUnit[], unitsByKey: Map<string, string>) {
+function resolveStocktakingFactor(
+  row: InventoryImportRow,
+  productUnits: ProductUnit[],
+  unitsByKey: Map<string, string>,
+  unitsById: Map<string, Unit>
+) {
   return resolveDaftraStocktakingFactor({
     unitName: row.unitName,
     countedQuantity: row.inputQuantity,
     programQuantity: row.programQuantity,
-    productUnits: productUnits.map((unit) => ({ unitId: unit.unit_id, conversionFactor: Number(unit.conversion_factor) })),
+    productUnits: productUnits.map((unit) => {
+      const configuredUnit = unitsById.get(unit.unit_id);
+      return {
+        unitId: unit.unit_id,
+        conversionFactor: Number(unit.conversion_factor),
+        unitName: configuredUnit?.name,
+        unitSymbol: configuredUnit?.symbol,
+      };
+    }),
     resolveUnitId: (value) => findUnitId(value, unitsByKey),
   });
 }
@@ -459,6 +472,7 @@ async function prepareImport({
     activeProductsByName.set(key, matches);
   }
   const unitsByKey = new Map<string, string>();
+  const unitsById = new Map(units.map((unit) => [unit.id, unit]));
   for (const unit of units) for (const key of unitLookupKeys(unit.name, unit.symbol)) unitsByKey.set(key, unit.id);
   const [allProductUnits, allProductBarcodes] = await Promise.all([
     getProductUnits(supabase, existingProducts.map((product) => product.id)),
@@ -564,7 +578,7 @@ async function prepareImport({
         const canUseNameFallback = !row.sku && !row.barcode && Boolean(row.productName);
         const nameMatches = canUseNameFallback
           ? (activeProductsByName.get(productNameKey(row.productName ?? "")) ?? [])
-            .filter((candidate) => resolveStocktakingFactor(row, productUnitsByProductId.get(candidate.id) ?? [], unitsByKey) !== null)
+            .filter((candidate) => resolveStocktakingFactor(row, productUnitsByProductId.get(candidate.id) ?? [], unitsByKey, unitsById) !== null)
           : [];
 
         if (nameMatches.length === 1) {
@@ -597,7 +611,7 @@ async function prepareImport({
     }
     let factor = 1;
     if (product && row.source === "daftra_products") factor = resolveProductBalanceFactor(row.unitName, productUnitsByProductId.get(product.id) ?? [], unitsByKey) ?? 0;
-    if (product && row.source === "daftra_stocktaking") factor = resolveStocktakingFactor(row, productUnitsByProductId.get(product.id) ?? [], unitsByKey) ?? 0;
+    if (product && row.source === "daftra_stocktaking") factor = resolveStocktakingFactor(row, productUnitsByProductId.get(product.id) ?? [], unitsByKey, unitsById) ?? 0;
     if (!factor) {
       skippedRows += 1;
       addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): وحدة "${row.unitName || "غير محددة"}" أو معامل التحويل غير مؤكد؛ لم يُعدّل الرصيد.`);
