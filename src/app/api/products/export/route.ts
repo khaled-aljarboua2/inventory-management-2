@@ -154,7 +154,7 @@ function addLocationsSheet(workbook: ExcelJS.Workbook, locations: ImportLocation
 
 function createTemplate(location: ImportLocation | null, locations: ImportLocation[]) {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "نظام إدارة المخزون";
+  workbook.creator = "WAREVANCE";
   addInstructionsSheet(workbook, location);
   addProductSheet(workbook, []);
   addInventorySheet(workbook, [], false);
@@ -271,7 +271,7 @@ export async function GET(request: Request) {
     }
 
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = "نظام إدارة المخزون";
+    workbook.creator = "WAREVANCE";
     addProductSheet(workbook, products.map((product) => ({
       sku: product.sku,
       name: product.name,

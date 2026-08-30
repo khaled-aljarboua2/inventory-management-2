@@ -13,34 +13,34 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "نظام إدارة المخزون",
-  description: "نظام إدارة المخزون متعدد الفروع",
+  title: "WAREVANCE",
+  description: "WAREVANCE لإدارة المخزون والفروع",
 
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: "/warevance-favicon.png",
+    shortcut: "/warevance-favicon.png",
+    apple: "/warevance-favicon.png",
   },
 
   openGraph: {
-    title: "نظام إدارة المخزون",
-    description: "نظام إدارة المخزون متعدد الفروع",
+    title: "WAREVANCE",
+    description: "WAREVANCE لإدارة المخزون والفروع",
     type: "website",
     images: [
       {
-        url: "/logo.png",
+        url: "/warevance-favicon.png",
         width: 512,
         height: 512,
-        alt: "شعار نظام إدارة المخزون",
+        alt: "شعار WAREVANCE",
       },
     ],
   },
 
   twitter: {
     card: "summary",
-    title: "نظام إدارة المخزون",
-    description: "نظام إدارة المخزون متعدد الفروع",
-    images: ["/logo.png"],
+    title: "WAREVANCE",
+    description: "WAREVANCE لإدارة المخزون والفروع",
+    images: ["/warevance-favicon.png"],
   },
 };
 

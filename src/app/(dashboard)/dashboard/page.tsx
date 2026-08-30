@@ -50,7 +50,7 @@ export default function DashboardPage() {
                 "
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-teal-600" />
-                نظام إدارة المخزون
+                WAREVANCE
               </div>
 
               <h1

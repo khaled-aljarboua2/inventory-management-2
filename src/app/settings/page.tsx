@@ -268,7 +268,7 @@ export default async function SettingsPage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-400">
-                  التحكم في السلوك العام لنظام إدارة المخزون.
+                  التحكم في السلوك العام لـ WAREVANCE.
                 </p>
               </div>
             </div>

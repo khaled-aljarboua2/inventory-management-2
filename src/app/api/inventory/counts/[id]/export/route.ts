@@ -177,7 +177,7 @@ export async function GET(
     const items = (stockCount.stock_count_items ?? []) as CountItem[];
 
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = "نظام إدارة المخزون";
+    workbook.creator = "WAREVANCE";
     workbook.created = new Date();
 
     const worksheet = workbook.addWorksheet("تقرير الجرد");
