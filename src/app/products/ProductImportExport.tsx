@@ -39,6 +39,10 @@ type ImportPreview = {
   skippedRows: number;
   targetLocation: Location | null;
   issues: string[];
+  notices: Array<{
+    level: "info" | "warning";
+    text: string;
+  }>;
 };
 
 function fileKey(file: File | null, locationId: string) {
@@ -283,6 +287,22 @@ export default function ProductImportExport({
             <ul className="mt-3 list-inside list-disc space-y-1 text-red-700">
               {preview.issues.map((issue) => <li key={issue}>{issue}</li>)}
             </ul>
+          ) : null}
+          {preview.notices.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {preview.notices.map((notice) => (
+                <p
+                  key={`${notice.level}-${notice.text}`}
+                  className={`rounded-lg border px-3 py-2 ${
+                    notice.level === "warning"
+                      ? "border-amber-200 bg-amber-50 text-amber-800"
+                      : "border-sky-200 bg-sky-50 text-sky-800"
+                  }`}
+                >
+                  {notice.text}
+                </p>
+              ))}
+            </div>
           ) : null}
         </div>
       ) : null}

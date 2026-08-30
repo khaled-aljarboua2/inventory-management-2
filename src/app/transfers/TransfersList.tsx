@@ -29,15 +29,6 @@ type Location = {
   is_active: boolean;
 };
 
-type Product = {
-  id: string;
-  name: string;
-  sku: string;
-  is_active: boolean;
-  product_units: any[];
-  barcodes: string[];
-};
-
 type Transfer = {
   id: string;
   request_number: string;
@@ -56,7 +47,6 @@ type Transfer = {
 type Props = {
   transfers: Transfer[];
   locations: Location[];
-  products: Product[];
 
   currentLocationId: string | null;
   isGeneralManager: boolean;
@@ -116,7 +106,6 @@ const statusConfig: Record<
 export default function TransfersList({
   transfers,
   locations,
-  products,
   currentLocationId,
   isGeneralManager,
 }: Props) {
@@ -691,7 +680,6 @@ export default function TransfersList({
       {modalOpen && (
         <TransferModal
           locations={locations}
-          products={products}
           currentLocationId={
             currentLocationId
           }

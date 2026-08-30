@@ -10,6 +10,10 @@ import {
   X,
 } from "lucide-react";
 
+import ProductSearchPicker, {
+  type ProductSearchResult,
+} from "@/components/products/ProductSearchPicker";
+
 import {
   approvePurchaseOrder,
   cancelPurchaseOrder,
@@ -30,13 +34,6 @@ type Location = {
   name: string;
   code: string;
   type: string;
-};
-
-type Product = {
-  id: string;
-  name: string;
-  sku: string;
-  is_active: boolean;
 };
 
 type Unit = {
@@ -103,7 +100,6 @@ type Props = {
   orders: Order[];
   suppliers: Supplier[];
   locations: Location[];
-  products: Product[];
   units: Unit[];
 };
 
@@ -125,7 +121,6 @@ export default function PurchaseTable({
   orders,
   suppliers,
   locations,
-  products,
   units,
 }: Props) {
   const [search, setSearch] = useState("");
@@ -175,6 +170,10 @@ export default function PurchaseTable({
 
   const [message, setMessage] =
     useState<string | null>(null);
+
+  const [selectedProducts, setSelectedProducts] = useState<
+    Map<string, ProductSearchResult>
+  >(() => new Map());
 
   const filteredOrders = useMemo(() => {
     const query =
@@ -313,6 +312,21 @@ export default function PurchaseTable({
           : item
       )
     );
+  }
+
+  function selectProduct(
+    index: number,
+    product: ProductSearchResult | null
+  ) {
+    updateItem(index, "product_id", product?.id ?? "");
+
+    if (product) {
+      setSelectedProducts((current) => {
+        const next = new Map(current);
+        next.set(product.id, product);
+        return next;
+      });
+    }
   }
 
   function resetCreate() {
@@ -1019,45 +1033,14 @@ export default function PurchaseTable({
                     className="rounded-2xl border border-slate-200 bg-slate-50/40 p-4"
                   >
                     <div className="grid gap-3 md:grid-cols-4">
-                      <select
-                        value={
-                          item.product_id
+                      <ProductSearchPicker
+                        value={item.product_id}
+                        initialProduct={
+                          selectedProducts.get(item.product_id) ?? null
                         }
-                        onChange={(event) =>
-                          updateItem(
-                            index,
-                            "product_id",
-                            event.target
-                              .value
-                          )
-                        }
-                        className="input"
-                      >
-                        <option value="">
-                          المنتج
-                        </option>
-
-                        {products.map(
-                          (product) => (
-                            <option
-                              key={
-                                product.id
-                              }
-                              value={
-                                product.id
-                              }
-                            >
-                              {
-                                product.name
-                              }{" "}
-                              —{" "}
-                              {
-                                product.sku
-                              }
-                            </option>
-                          )
-                        )}
-                      </select>
+                        disabled={loading}
+                        onChange={(product) => selectProduct(index, product)}
+                      />
 
                       <select
                         value={

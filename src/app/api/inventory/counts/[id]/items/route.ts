@@ -16,6 +16,7 @@ type RouteParams = {
 };
 
 const PRODUCT_BATCH_SIZE = 500;
+const PRODUCT_RESULT_LIMIT = 100;
 
 async function getCompanyProducts(
   supabase: any,
@@ -42,33 +43,67 @@ async function getCompanyProducts(
     return { data: products, error: null };
   }
 
-  let from = 0;
-
-  while (true) {
-    let query = supabase
+  const baseQuery = () =>
+    supabase
       .from("products")
       .select("id, name, sku")
       .eq("company_id", companyId)
       .eq("is_active", true)
       .order("name")
-      .range(from, from + PRODUCT_BATCH_SIZE - 1);
+      .limit(PRODUCT_RESULT_LIMIT);
 
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
-    }
-
-    const { data, error } = await query;
-
-    if (error) return { data: null, error };
-
-    const batch = data ?? [];
-    products.push(...batch);
-
-    if (batch.length < PRODUCT_BATCH_SIZE) break;
-    from += PRODUCT_BATCH_SIZE;
+  if (!search) {
+    const { data, error } = await baseQuery();
+    return { data: data ?? [], error };
   }
 
-  return { data: products, error: null };
+  const [byName, bySku, barcodeMatches] = await Promise.all([
+    baseQuery().ilike("name", `%${search}%`),
+    baseQuery().ilike("sku", `%${search}%`),
+    supabase
+      .from("product_barcodes")
+      .select("product_id")
+      .ilike("barcode", `%${search}%`)
+      .limit(PRODUCT_RESULT_LIMIT),
+  ]);
+
+  if (byName.error || bySku.error || barcodeMatches.error) {
+    return {
+      data: null,
+      error: byName.error ?? bySku.error ?? barcodeMatches.error,
+    };
+  }
+
+  const barcodeProductIds = Array.from(
+    new Set(
+      (barcodeMatches.data ?? []).map(
+        (item: { product_id: string | null }) => item.product_id
+      )
+    )
+  ).filter((productId): productId is string => Boolean(productId));
+  const byBarcode = barcodeProductIds.length
+    ? await baseQuery().in("id", barcodeProductIds)
+    : { data: [], error: null };
+
+  if (byBarcode.error) {
+    return { data: null, error: byBarcode.error };
+  }
+
+  const productsById = new Map<string, { id: string; name: string; sku: string }>();
+  for (const product of [
+    ...(byName.data ?? []),
+    ...(bySku.data ?? []),
+    ...(byBarcode.data ?? []),
+  ]) {
+    productsById.set(product.id, product);
+  }
+
+  return {
+    data: Array.from(productsById.values())
+      .sort((left, right) => left.name.localeCompare(right.name))
+      .slice(0, PRODUCT_RESULT_LIMIT),
+    error: null,
+  };
 }
 
 async function getAuthenticatedUser() {

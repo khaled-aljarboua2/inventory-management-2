@@ -39,6 +39,17 @@ type Product = {
   barcodes: string[];
 };
 
+type RawProduct = Omit<Product, "product_units" | "barcodes"> & {
+  product_units?: Array<
+    Omit<ProductUnit, "units"> & {
+      units: ProductUnit["units"] | ProductUnit["units"][];
+    }
+  >;
+  product_barcodes?: Array<{
+    barcode: string | null;
+  }>;
+};
+
 type TransferItem = {
   id: string;
   product_id: string;
@@ -49,13 +60,7 @@ type TransferItem = {
   received_quantity: number | null;
   notes: string | null;
 
-  products:
-    | {
-        id: string;
-        name: string;
-        sku: string;
-      }
-    | null;
+  products: Product | null;
 
   units:
     | {
@@ -99,6 +104,26 @@ type Transfer = {
 
   transfer_items: TransferItem[];
 };
+
+function normalizeProduct(product: RawProduct | null): Product | null {
+  if (!product) {
+    return null;
+  }
+
+  return {
+    id: product.id,
+    name: product.name,
+    sku: product.sku,
+    is_active: product.is_active !== false,
+    product_units: (product.product_units ?? []).map((unit) => ({
+      ...unit,
+      units: firstRelation(unit.units) as ProductUnit["units"],
+    })),
+    barcodes: (product.product_barcodes ?? [])
+      .map((barcode) => barcode.barcode?.trim())
+      .filter((barcode: string | undefined): barcode is string => Boolean(barcode)),
+  };
+}
 
 const statusConfig: Record<
   string,
@@ -218,19 +243,12 @@ export default async function TransferDetailsPage({
     );
   }
 
-  const [
-    {
-      data: transfer,
-      error: transferError,
-    },
-    {
-      data: products,
-      error: productsError,
-    },
-  ] = await Promise.all([
-    supabase
-      .from("transfer_requests")
-      .select(`
+  const {
+    data: transfer,
+    error: transferError,
+  } = await supabase
+    .from("transfer_requests")
+    .select(`
         id,
         request_number,
         from_location_id,
@@ -270,7 +288,25 @@ export default async function TransferDetailsPage({
           products (
             id,
             name,
-            sku
+            sku,
+            is_active,
+
+            product_units (
+              id,
+              unit_id,
+              conversion_factor,
+              is_base,
+
+              units (
+                id,
+                name,
+                symbol
+              )
+            ),
+
+            product_barcodes (
+              barcode
+            )
           ),
 
           units (
@@ -280,47 +316,11 @@ export default async function TransferDetailsPage({
           )
         )
       `)
-      .eq(
-        "id",
-        id
-      )
-      .single(),
-
-    supabase
-      .from("products")
-      .select(`
-        id,
-        name,
-        sku,
-        is_active,
-
-        product_units (
-          id,
-          unit_id,
-          conversion_factor,
-          is_base,
-
-          units (
-            id,
-            name,
-            symbol
-          )
-        ),
-
-        product_barcodes (
-          barcode
-        )
-      `)
-      .eq(
-        "company_id",
-        dbUser.company_id
-      )
-      .eq(
-        "is_active",
-        true
-      )
-      .order("name"),
-  ]);
+    .eq(
+      "id",
+      id
+    )
+    .single();
 
   if (
     transferError ||
@@ -348,29 +348,6 @@ export default async function TransferDetailsPage({
     );
   }
 
-  if (productsError) {
-    return (
-      <DashboardLayout>
-        <div
-          dir="rtl"
-          className="space-y-5"
-        >
-          <Link
-            href="/transfers"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-teal-600"
-          >
-            <ArrowRight size={16} />
-            العودة إلى طلبات النقل
-          </Link>
-
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-            تعذر تحميل المنتجات المستخدمة في تعديل الطلب.
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   const normalizedTransfer: Transfer = {
     ...transfer,
     from_location: firstRelation(
@@ -383,34 +360,21 @@ export default async function TransferDetailsPage({
       transfer.transfer_items ?? []
     ).map((item) => ({
       ...item,
-      products: firstRelation(
-        item.products
-      ),
+      products: normalizeProduct(firstRelation(item.products)),
       units: firstRelation(
         item.units
       ),
     })),
   };
 
-  const normalizedProducts: Product[] = (
-    products ?? []
-  ).map((product) => ({
-    ...product,
-    product_units: (
-      product.product_units ?? []
-    ).map((productUnit) => ({
-      ...productUnit,
-      units: firstRelation(
-        productUnit.units
-      ),
-    })),
-    barcodes: (product.product_barcodes ?? [])
-      .map((item) => item.barcode?.trim())
-      .filter(
-        (barcode): barcode is string =>
-          Boolean(barcode)
-      ),
-  }));
+  const initialProducts = Array.from(
+    new Map(
+      normalizedTransfer.transfer_items
+        .map((item) => item.products)
+        .filter((product): product is Product => Boolean(product))
+        .map((product) => [product.id, product])
+    ).values()
+  );
 
   const fromCompanyId =
     normalizedTransfer
@@ -563,9 +527,7 @@ export default async function TransferDetailsPage({
               items={
                 normalizedTransfer.transfer_items
               }
-              products={
-                normalizedProducts
-              }
+              products={initialProducts}
               notes={
                 normalizedTransfer.notes
               }

@@ -31,7 +31,7 @@ type ProductImportRow = {
 type InventoryImportRow = {
   rowNumber: number; sourceRowKey: string; source: ImportKind; sku: string; barcode: string;
   locationReference: string; inputQuantity: number; unitName: string; programQuantity: number | null;
-  productName?: string; legacyIdentifier?: string;
+  productName?: string; daftraProductReference?: string;
 };
 type ExistingProduct = {
   id: string; sku: string; name: string; description: string | null;
@@ -43,15 +43,16 @@ type ProductBarcode = { product_id: string; barcode: string };
 type ImportLocation = { id: string; name: string; code: string };
 type ParsedImport = {
   kind: ImportKind; productRows: ProductImportRow[]; inventoryRows: InventoryImportRow[];
-  issues: string[]; skippedRows: number;
+  issues: string[]; notices?: PreviewNotice[]; skippedRows: number;
 };
+type PreviewNotice = { level: "info" | "warning"; text: string };
 type ResolvedInventoryRow = { row: InventoryImportRow; productSku: string; targetQuantity: number };
 type Summary = { created: number; updated: number; inventoryUpdated: number; skipped: number; errors: string[] };
 type ImportPreview = {
   valid: boolean; source: "Daftra Products Export" | "Daftra Stocktaking Report" | "ملف النظام";
   productRows: number; inventoryRows: number; productsToCreate: number; productsToUpdate: number;
   inventoryToAdjust: number; unchangedBalances: number; skippedRows: number;
-  targetLocation: ImportLocation | null; issues: string[];
+  targetLocation: ImportLocation | null; issues: string[]; notices: PreviewNotice[];
 };
 type PreparedImport = {
   productRows: ProductImportRow[]; inventoryAdjustments: ResolvedInventoryRow[];
@@ -62,6 +63,10 @@ type PreparedImport = {
 
 function addIssue(issues: string[], message: string) {
   if (issues.length < 30) issues.push(message);
+}
+
+function addNotice(notices: PreviewNotice[], level: PreviewNotice["level"], text: string) {
+  if (notices.length < 30) notices.push({ level, text });
 }
 
 function cellText(cell: ExcelJS.Cell) {
@@ -129,6 +134,7 @@ function readDaftraProductsSheet(worksheet: ExcelJS.Worksheet): ParsedImport {
   const productRows: ProductImportRow[] = [];
   const inventoryRows: InventoryImportRow[] = [];
   const issues: string[] = [];
+  const notices: PreviewNotice[] = [];
   const headers = getHeaders(worksheet);
   let skippedRows = 0;
   for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
@@ -144,7 +150,7 @@ function readDaftraProductsSheet(worksheet: ExcelJS.Worksheet): ParsedImport {
     const minimumQuantity = parseNonNegativeNumber(lowStockText);
     const stockBalance = parseNonNegativeNumber(stockBalanceText);
     if (lowStockText.trim() && minimumQuantity === null) {
-      addIssue(issues, `دفترة - الصف ${rowNumber} (${sku}): LowStockThershol غير صالح؛ لم يتم تعديل الحد الأدنى.`);
+      addNotice(notices, "warning", `دفترة - الصف ${rowNumber} (${sku}): LowStockThershol غير صالح؛ لم يتم تعديل الحد الأدنى.`);
     }
     productRows.push({
       rowNumber, sourceRowKey: `daftra-products:${rowNumber}`, sku,
@@ -155,7 +161,7 @@ function readDaftraProductsSheet(worksheet: ExcelJS.Worksheet): ParsedImport {
       barcode: field(row, headers, ["Barcode"], cellIdentifier),
     });
     if (stockBalanceText.trim() && stockBalance === null) {
-      addIssue(issues, `دفترة - الصف ${rowNumber} (${sku}): StockBalance غير صالح؛ لم يتم تعديل الرصيد.`);
+      addNotice(notices, "warning", `دفترة - الصف ${rowNumber} (${sku}): StockBalance غير صالح؛ لم يتم تعديل الرصيد.`);
     } else if (stockBalance !== null) {
       inventoryRows.push({
         rowNumber, sourceRowKey: `daftra-products:${rowNumber}`, source: "daftra_products", sku, barcode: "",
@@ -164,7 +170,7 @@ function readDaftraProductsSheet(worksheet: ExcelJS.Worksheet): ParsedImport {
       });
     }
   }
-  return { kind: "daftra_products", productRows, inventoryRows, issues, skippedRows };
+  return { kind: "daftra_products", productRows, inventoryRows, issues, notices, skippedRows };
 }
 
 function readDaftraStocktakingSheet(worksheet: ExcelJS.Worksheet): ParsedImport {
@@ -174,17 +180,18 @@ function readDaftraStocktakingSheet(worksheet: ExcelJS.Worksheet): ParsedImport 
   let skippedRows = 0;
   for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
     const row = worksheet.getRow(rowNumber);
-    const sku = field(row, headers, ["رقم المنتج"], cellIdentifier);
+    const daftraProductReference = field(row, headers, ["رقم المنتج"], cellIdentifier);
+    const sku = field(row, headers, ["الرقم التسلسلي"], cellIdentifier);
     const barcode = field(row, headers, ["الباركود"], cellIdentifier);
     const quantity = parseNonNegativeNumber(field(row, headers, ["العدد الفعلي"]));
     if (!sku && !barcode) {
       skippedRows += 1;
-      addIssue(issues, `الجرد - الصف ${rowNumber}: رقم المنتج والباركود فارغان؛ تم تجاهل الصف.`);
+      addIssue(issues, `الجرد - الصف ${rowNumber} (${daftraProductReference || "بدون رقم دفترة"}): الرقم التسلسلي والباركود فارغان؛ تم تجاهل الصف بأمان.`);
       continue;
     }
     if (quantity === null) {
       skippedRows += 1;
-      addIssue(issues, `الجرد - الصف ${rowNumber} (${sku || barcode}): العدد الفعلي غير صالح؛ تم تجاهل الصف.`);
+      addIssue(issues, `الجرد - الصف ${rowNumber} (${sku || barcode || daftraProductReference}): العدد الفعلي غير صالح؛ تم تجاهل الصف.`);
       continue;
     }
     inventoryRows.push({
@@ -193,7 +200,7 @@ function readDaftraStocktakingSheet(worksheet: ExcelJS.Worksheet): ParsedImport 
       unitName: field(row, headers, ["اسم الوحدة"]).trim(),
       programQuantity: parseNonNegativeNumber(field(row, headers, ["العدد بالبرنامج"])),
       productName: field(row, headers, ["منتج", "الاسم"]).trim(),
-      legacyIdentifier: field(row, headers, ["الرقم التسلسلي"], cellIdentifier),
+      daftraProductReference,
     });
   }
   return { kind: "daftra_stocktaking", productRows: [], inventoryRows, issues, skippedRows };
@@ -416,6 +423,7 @@ async function prepareImport({
   if (parsed.productRows.length > MAX_IMPORT_ROWS || parsed.inventoryRows.length > MAX_IMPORT_ROWS) throw new Error(`الحد الأقصى هو ${MAX_IMPORT_ROWS} صف في كل ملف.`);
 
   const issues = [...parsed.issues];
+  const notices = [...(parsed.notices ?? [])];
   let skippedRows = parsed.skippedRows;
   const seenProductSkus = new Set<string>();
   const uniqueProductRows: ProductImportRow[] = [];
@@ -466,8 +474,8 @@ async function prepareImport({
     const barcodeOwner = row.barcode ? barcodeProductIdByKey.get(barcodeKey(row.barcode)) : null;
     const duplicateBarcode = row.barcode && (barcodeCounts.get(barcodeKey(row.barcode)) ?? 0) > 1;
     const safeBarcode = !duplicateBarcode && (!barcodeOwner || barcodeOwner === existing?.id) ? row.barcode : "";
-    if (duplicateBarcode) addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): الباركود مكرر داخل الملف؛ لن يتم ربطه.`);
-    if (barcodeOwner && barcodeOwner !== existing?.id) addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): الباركود مرتبط بمنتج آخر؛ لن يتم ربطه.`);
+    if (duplicateBarcode) addNotice(notices, "warning", `المنتجات - الصف ${row.rowNumber} (${row.sku}): الباركود مكرر داخل الملف؛ لن يتم ربطه.`);
+    if (barcodeOwner && barcodeOwner !== existing?.id) addNotice(notices, "warning", `المنتجات - الصف ${row.rowNumber} (${row.sku}): الباركود مرتبط بمنتج آخر؛ لن يتم ربطه.`);
     if (existing) {
       if (canUpdate === true) {
         productRows.push({ ...row, barcode: safeBarcode });
@@ -518,45 +526,45 @@ async function prepareImport({
     }
     let product = row.sku ? productsBySku.get(skuKey(row.sku)) ?? null : null;
     if (row.source === "daftra_stocktaking") {
-      const candidates = new Map<string, { product: ExistingProduct; sources: string[] }>();
-      const addCandidate = (candidate: ExistingProduct | null, source: string) => {
-        if (!candidate) return;
-        const existing = candidates.get(candidate.id);
-        if (existing) existing.sources.push(source);
-        else candidates.set(candidate.id, { product: candidate, sources: [source] });
-      };
+      const productBySerialNumber = row.sku
+        ? productsBySku.get(skuKey(row.sku)) ?? null
+        : null;
+      const barcodeProductId = row.barcode
+        ? barcodeProductIdByKey.get(barcodeKey(row.barcode))
+        : null;
+      const productByBarcode = barcodeProductId
+        ? productsById.get(barcodeProductId) ?? null
+        : null;
+      const reference = row.sku || row.barcode || row.daftraProductReference || "بدون معرّف";
 
-      addCandidate(product, "SKU");
-      if (row.barcode) {
-        const productId = barcodeProductIdByKey.get(barcodeKey(row.barcode));
-        addCandidate(productId ? productsById.get(productId) ?? null : null, "الباركود");
-      }
-      if (row.legacyIdentifier) {
-        addCandidate(productsBySku.get(skuKey(row.legacyIdentifier)) ?? null, "الرقم التسلسلي القديم");
+      if (
+        productBySerialNumber &&
+        productByBarcode &&
+        productBySerialNumber.id !== productByBarcode.id
+      ) {
+        skippedRows += 1;
+        addIssue(issues, `المخزون - الصف ${row.rowNumber} (${reference}): الرقم التسلسلي والباركود يشيران إلى منتجين مختلفين؛ تم تجاهل الصف بأمان دون الاعتماد على اسم المنتج.`);
+        continue;
       }
 
-      if (candidates.size === 1) {
-        product = candidates.values().next().value?.product ?? null;
-      } else if (candidates.size > 1) {
-        const nameKey = skuKey(row.productName ?? "");
-        const confirmed = Array.from(candidates.values()).filter(
-          (candidate) => nameKey && skuKey(candidate.product.name) === nameKey
-        );
-        if (confirmed.length !== 1) {
-          skippedRows += 1;
-          addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): المعرّفات تشير إلى منتجات مختلفة ولم يمكن تأكيد المنتج؛ تم تجاهل الصف بأمان.`);
-          continue;
-        }
-        product = confirmed[0].product;
-        addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): عولج اختلاف المعرّفات باستخدام ${confirmed[0].sources.join(" و")} بعد تأكيد اسم المنتج.`);
+      product = productBySerialNumber ?? productByBarcode;
+
+      if (!product) {
+        skippedRows += 1;
+        addIssue(issues, `المخزون - الصف ${row.rowNumber} (${reference}): لم يطابق الرقم التسلسلي SKU محليًا ولم يطابق الباركود أي منتج؛ رقم دفترة الداخلي (${row.daftraProductReference || "غير متوفر"}) محفوظ للتشخيص فقط.`);
+        continue;
+      }
+
+      if (productBySerialNumber && productByBarcode) {
+        addNotice(notices, "info", `المخزون - الصف ${row.rowNumber}: تمت مطابقة الرقم التسلسلي والباركود مع المنتج نفسه (${product.sku}).`);
       } else {
-        product = null;
+        addNotice(notices, "info", `المخزون - الصف ${row.rowNumber}: تمت مطابقة المنتج بأمان باستخدام ${productBySerialNumber ? "الرقم التسلسلي" : "الباركود"}.`);
       }
     }
     const newProduct = !product && row.source !== "daftra_stocktaking" ? newProductRowsBySku.get(skuKey(row.sku)) ?? null : null;
     if (!product && !newProduct) {
       skippedRows += 1;
-      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): لم تُطابق SKU أو الباركود مع منتج موجود.`);
+      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode || row.daftraProductReference}): لم تُطابق SKU أو الباركود مع منتج موجود.`);
       continue;
     }
     let factor = 1;
@@ -586,7 +594,7 @@ async function prepareImport({
     preview: {
       valid: productRows.length > 0 || resolvedRows.length > 0, source: sourceLabel(parsed.kind),
       productRows: parsed.productRows.length, inventoryRows: parsed.inventoryRows.length,
-      productsToCreate, productsToUpdate, inventoryToAdjust, unchangedBalances, skippedRows, targetLocation, issues,
+      productsToCreate, productsToUpdate, inventoryToAdjust, unchangedBalances, skippedRows, targetLocation, issues, notices,
     },
   };
 }

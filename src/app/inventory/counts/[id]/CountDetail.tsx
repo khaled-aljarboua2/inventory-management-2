@@ -1106,7 +1106,7 @@ export default function CountDetail({
                       event.target.value
                     )
                   }
-                  placeholder="ابحث باسم المنتج أو SKU..."
+                  placeholder="ابحث باسم المنتج أو SKU أو الباركود..."
                   className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/70 pr-10 pl-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50"
                 />
               </div>

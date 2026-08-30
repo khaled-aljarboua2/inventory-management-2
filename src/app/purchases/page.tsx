@@ -54,7 +54,6 @@ export default async function PurchasesPage() {
     { data: orders, error: ordersError },
     { data: suppliers, error: suppliersError },
     { data: locations, error: locationsError },
-    { data: products, error: productsError },
     { data: units, error: unitsError },
   ] = await Promise.all([
     // =========================================================
@@ -135,18 +134,6 @@ export default async function PurchasesPage() {
       .order("name"),
 
     // =========================================================
-    // المنتجات
-    // =========================================================
-    supabase
-      .from("products")
-      .select(
-        "id, name, sku, is_active"
-      )
-      .eq("company_id", companyId)
-      .eq("is_active", true)
-      .order("name"),
-
-    // =========================================================
     // الوحدات
     // =========================================================
     supabase
@@ -166,7 +153,6 @@ export default async function PurchasesPage() {
     ordersError,
     suppliersError,
     locationsError,
-    productsError,
     unitsError,
   ].filter(Boolean);
 
@@ -246,15 +232,6 @@ export default async function PurchasesPage() {
                 </p>
               )}
 
-              {productsError && (
-                <p>
-                  المنتجات:
-                  <span className="mr-1 font-medium">
-                    {productsError.message}
-                  </span>
-                </p>
-              )}
-
               {unitsError && (
                 <p>
                   الوحدات:
@@ -275,7 +252,6 @@ export default async function PurchasesPage() {
           orders={normalizedOrders}
           suppliers={suppliers ?? []}
           locations={locations ?? []}
-          products={products ?? []}
           units={units ?? []}
         />
       </div>

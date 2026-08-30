@@ -1,14 +1,16 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowLeftRight,
   Plus,
-  Search,
   Trash2,
   X,
 } from "lucide-react";
 
+import ProductSearchPicker, {
+  type ProductSearchResult,
+} from "@/components/products/ProductSearchPicker";
 import { createTransfer } from "./actions";
 
 type Location = {
@@ -17,27 +19,6 @@ type Location = {
   code: string;
   type: string;
   is_active: boolean;
-};
-
-type ProductUnit = {
-  id: string;
-  unit_id: string;
-  conversion_factor: number;
-  is_base: boolean;
-  units: {
-    id: string;
-    name: string;
-    symbol: string | null;
-  } | null;
-};
-
-type Product = {
-  id: string;
-  name: string;
-  sku: string;
-  is_active: boolean;
-  product_units: ProductUnit[];
-  barcodes: string[];
 };
 
 type TransferRow = {
@@ -49,7 +30,6 @@ type TransferRow = {
 
 type Props = {
   locations: Location[];
-  products: Product[];
   currentLocationId: string | null;
   isGeneralManager: boolean;
   onClose: () => void;
@@ -57,7 +37,6 @@ type Props = {
 
 export default function TransferModal({
   locations,
-  products,
   onClose,
 }: Props) {
   const [fromLocation, setFromLocation] = useState("");
@@ -76,20 +55,16 @@ export default function TransferModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [selectedProducts, setSelectedProducts] = useState<
+    Map<string, ProductSearchResult>
+  >(() => new Map());
+
   const activeLocations = useMemo(
     () =>
       (locations ?? []).filter(
         (location) => location.is_active !== false
       ),
     [locations]
-  );
-
-  const activeProducts = useMemo(
-    () =>
-      (products ?? []).filter(
-        (product) => product.is_active !== false
-      ),
-    [products]
   );
 
   function addRow() {
@@ -123,29 +98,39 @@ export default function TransferModal({
           return row;
         }
 
-        if (field === "product_id") {
-          const product = activeProducts.find(
-            (item) => item.id === value
-          );
-
-          return {
-            ...row,
-            product_id: value,
-            unit_id:
-              product?.product_units?.find(
-                (unit) => unit.is_base
-              )?.unit_id ??
-              product?.product_units?.[0]?.unit_id ??
-              "",
-          };
-        }
-
         return {
           ...row,
           [field]: value,
         };
       })
     );
+  }
+
+  function selectProduct(rowId: string, product: ProductSearchResult | null) {
+    setRows((current) =>
+      current.map((row) => {
+        if (row.id !== rowId) {
+          return row;
+        }
+
+        return {
+          ...row,
+          product_id: product?.id ?? "",
+          unit_id:
+            product?.product_units.find((unit) => unit.is_base)?.unit_id ??
+            product?.product_units[0]?.unit_id ??
+            "",
+        };
+      })
+    );
+
+    if (product) {
+      setSelectedProducts((current) => {
+        const next = new Map(current);
+        next.set(product.id, product);
+        return next;
+      });
+    }
   }
 
   async function handleSubmit(
@@ -391,8 +376,7 @@ export default function TransferModal({
                 type="button"
                 onClick={addRow}
                 disabled={
-                  loading ||
-                  activeProducts.length === 0
+                  loading
                 }
                 className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -423,11 +407,7 @@ export default function TransferModal({
 
                 <tbody className="divide-y divide-slate-100">
                   {rows.map((row) => {
-                    const product =
-                      activeProducts.find(
-                        (item) =>
-                          item.id === row.product_id
-                      );
+                    const product = selectedProducts.get(row.product_id);
 
                     const units =
                       product?.product_units ?? [];
@@ -439,15 +419,11 @@ export default function TransferModal({
                       >
                         <td className="px-5 py-4">
                           <ProductSearchPicker
-                            products={activeProducts}
                             value={row.product_id}
+                            initialProduct={product ?? null}
                             disabled={loading}
-                            onChange={(productId) =>
-                              updateRow(
-                                row.id,
-                                "product_id",
-                                productId
-                              )
+                            onChange={(selectedProduct) =>
+                              selectProduct(row.id, selectedProduct)
                             }
                           />
                         </td>
@@ -562,7 +538,6 @@ export default function TransferModal({
               disabled={
                 loading ||
                 activeLocations.length < 2 ||
-                activeProducts.length === 0 ||
                 !fromLocation ||
                 !toLocation
               }
@@ -575,147 +550,6 @@ export default function TransferModal({
           </div>
         </form>
       </div>
-    </div>
-  );
-}
-
-function ProductSearchPicker({
-  products,
-  value,
-  disabled,
-  onChange,
-}: {
-  products: Product[];
-  value: string;
-  disabled: boolean;
-  onChange: (productId: string) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const deferredQuery = useDeferredValue(query);
-
-  const selectedProduct = useMemo(
-    () => products.find((product) => product.id === value) ?? null,
-    [products, value]
-  );
-
-  const selectedLabel = selectedProduct
-    ? `${selectedProduct.name} — ${selectedProduct.sku}`
-    : "";
-
-  useEffect(() => {
-    if (!open) {
-      setQuery(selectedLabel);
-    }
-  }, [open, selectedLabel]);
-
-  const matchingProducts = useMemo(() => {
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
-
-    return products
-      .filter((product) => {
-        if (!normalizedQuery) {
-          return true;
-        }
-
-        return (
-          product.name.toLowerCase().includes(normalizedQuery) ||
-          product.sku.toLowerCase().includes(normalizedQuery) ||
-          product.barcodes.some((barcode) =>
-            barcode.toLowerCase().includes(normalizedQuery)
-          )
-        );
-      })
-      .slice(0, 50);
-  }, [products, deferredQuery]);
-
-  function selectProduct(product: Product) {
-    onChange(product.id);
-    setQuery(`${product.name} — ${product.sku}`);
-    setOpen(false);
-  }
-
-  return (
-    <div className="relative min-w-[260px]">
-      <div className="relative">
-        <Search
-          size={17}
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-        />
-
-        <input
-          type="search"
-          value={query}
-          onFocus={() => setOpen(true)}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setOpen(true);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setOpen(false);
-            }
-          }}
-          disabled={disabled || products.length === 0}
-          placeholder={
-            products.length === 0
-              ? "لا توجد منتجات"
-              : "ابحث بالاسم أو SKU أو الباركود"
-          }
-          aria-label="اختر المنتج"
-          aria-expanded={open}
-          className="h-11 w-full rounded-xl border border-slate-200 bg-white pr-10 pl-9 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:cursor-not-allowed disabled:bg-slate-100"
-        />
-
-        {value ? (
-          <button
-            type="button"
-            onClick={() => {
-              onChange("");
-              setQuery("");
-              setOpen(true);
-            }}
-            disabled={disabled}
-            className="absolute left-2 top-1/2 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed"
-            aria-label="إزالة المنتج المختار"
-          >
-            <X size={14} />
-          </button>
-        ) : null}
-      </div>
-
-      {open && !disabled ? (
-        <div className="mt-2 max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
-          {matchingProducts.length === 0 ? (
-            <p className="px-3 py-4 text-center text-xs text-slate-400">
-              لا توجد منتجات مطابقة
-            </p>
-          ) : (
-            matchingProducts.map((product) => (
-              <button
-                key={product.id}
-                type="button"
-                onClick={() => selectProduct(product)}
-                className={`w-full rounded-lg px-3 py-2.5 text-right transition hover:bg-teal-50 ${
-                  product.id === value
-                    ? "bg-teal-50 text-teal-800"
-                    : "text-slate-700"
-                }`}
-              >
-                <span className="block truncate text-sm font-semibold">
-                  {product.name}
-                </span>
-                <span className="mt-1 block font-mono text-[11px] text-slate-400">
-                  {product.sku}
-                  {product.barcodes[0]
-                    ? ` · ${product.barcodes[0]}`
-                    : ""}
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      ) : null}
     </div>
   );
 }
