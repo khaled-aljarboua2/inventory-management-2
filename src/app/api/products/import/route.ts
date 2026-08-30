@@ -42,13 +42,32 @@ type Unit = { id: string; name: string; symbol: string | null };
 type ProductUnit = { product_id: string; unit_id: string; conversion_factor: number | string; is_base: boolean | null };
 type ProductBarcode = { product_id: string; barcode: string };
 type ImportLocation = { id: string; name: string; code: string };
+type ImportReportRow = {
+  status: "settled" | "unchanged" | "skipped";
+  rowNumber: number;
+  source: string;
+  productName: string;
+  sku: string;
+  barcode: string;
+  daftraProductReference: string;
+  unitName: string;
+  importedQuantity: number | null;
+  programQuantity: number | null;
+  beforeQuantity: number | null;
+  afterQuantity: number | null;
+  difference: number | null;
+  reason: string;
+};
 type ParsedImport = {
   kind: ImportKind; productRows: ProductImportRow[]; inventoryRows: InventoryImportRow[];
-  issues: string[]; notices?: PreviewNotice[]; skippedRows: number;
+  issues: string[]; notices?: PreviewNotice[]; skippedRows: number; rejectedRows: ImportReportRow[];
 };
 type PreviewNotice = { level: "info" | "warning"; text: string };
 type ResolvedInventoryRow = { row: InventoryImportRow; productSku: string; targetQuantity: number };
-type Summary = { created: number; updated: number; inventoryUpdated: number; skipped: number; errors: string[] };
+type Summary = {
+  created: number; updated: number; inventoryUpdated: number; skipped: number; errors: string[];
+  settledRows: ImportReportRow[]; unsettledRows: ImportReportRow[];
+};
 type ImportPreview = {
   valid: boolean; source: "Daftra Products Export" | "Daftra Stocktaking Report" | "ملف النظام";
   productRows: number; inventoryRows: number; productsToCreate: number; productsToUpdate: number;
@@ -59,7 +78,7 @@ type PreparedImport = {
   productRows: ProductImportRow[]; inventoryAdjustments: ResolvedInventoryRow[];
   productsBySku: Map<string, ExistingProduct>; unitsByKey: Map<string, string>;
   baseUnitByProduct: Map<string, string>; balancesByProductId: Map<string, number>;
-  targetLocation: ImportLocation | null; preview: ImportPreview;
+  targetLocation: ImportLocation | null; preview: ImportPreview; rejectedRows: ImportReportRow[];
 };
 
 function addIssue(issues: string[], message: string) {
@@ -68,6 +87,51 @@ function addIssue(issues: string[], message: string) {
 
 function addNotice(notices: PreviewNotice[], level: PreviewNotice["level"], text: string) {
   if (notices.length < 30) notices.push({ level, text });
+}
+
+function rejectedReportRow({
+  rowNumber,
+  source,
+  productName = "",
+  sku = "",
+  barcode = "",
+  daftraProductReference = "",
+  unitName = "",
+  importedQuantity = null,
+  programQuantity = null,
+  reason,
+}: Pick<ImportReportRow, "rowNumber" | "source" | "reason"> & Partial<Pick<ImportReportRow, "productName" | "sku" | "barcode" | "daftraProductReference" | "unitName" | "importedQuantity" | "programQuantity">>): ImportReportRow {
+  return {
+    status: "skipped", rowNumber, source, productName, sku, barcode, daftraProductReference, unitName,
+    importedQuantity, programQuantity, beforeQuantity: null, afterQuantity: null, difference: null, reason,
+  };
+}
+
+function rejectedInventoryRow(row: InventoryImportRow, reason: string): ImportReportRow {
+  return rejectedReportRow({
+    rowNumber: row.rowNumber,
+    source: sourceLabel(row.source),
+    productName: row.productName ?? "",
+    sku: row.sku,
+    barcode: row.barcode,
+    daftraProductReference: row.daftraProductReference ?? "",
+    unitName: row.unitName,
+    importedQuantity: row.inputQuantity,
+    programQuantity: row.programQuantity,
+    reason,
+  });
+}
+
+function rejectedProductRow(row: ProductImportRow, reason: string): ImportReportRow {
+  return rejectedReportRow({
+    rowNumber: row.rowNumber,
+    source: "بيانات المنتجات",
+    productName: row.name,
+    sku: row.sku,
+    barcode: row.barcode,
+    unitName: row.unit,
+    reason,
+  });
 }
 
 function cellText(cell: ExcelJS.Cell) {
@@ -136,6 +200,7 @@ function readDaftraProductsSheet(worksheet: ExcelJS.Worksheet): ParsedImport {
   const inventoryRows: InventoryImportRow[] = [];
   const issues: string[] = [];
   const notices: PreviewNotice[] = [];
+  const rejectedRows: ImportReportRow[] = [];
   const headers = getHeaders(worksheet);
   let skippedRows = 0;
   for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
@@ -143,7 +208,9 @@ function readDaftraProductsSheet(worksheet: ExcelJS.Worksheet): ParsedImport {
     const sku = field(row, headers, ["ProductCode"], cellIdentifier);
     if (!sku) {
       skippedRows += 1;
-      addIssue(issues, `دفترة - الصف ${rowNumber}: ProductCode فارغ، لذلك تم تجاهل الصف بأمان.`);
+      const reason = "ProductCode فارغ، لذلك تم تجاهل الصف بأمان.";
+      addIssue(issues, `دفترة - الصف ${rowNumber}: ${reason}`);
+      rejectedRows.push(rejectedReportRow({ rowNumber, source: "Daftra Products Export", productName: field(row, headers, ["Name"]).trim(), reason }));
       continue;
     }
     const lowStockText = field(row, headers, ["LowStockThershol"]);
@@ -171,12 +238,13 @@ function readDaftraProductsSheet(worksheet: ExcelJS.Worksheet): ParsedImport {
       });
     }
   }
-  return { kind: "daftra_products", productRows, inventoryRows, issues, notices, skippedRows };
+  return { kind: "daftra_products", productRows, inventoryRows, issues, notices, skippedRows, rejectedRows };
 }
 
 function readDaftraStocktakingSheet(worksheet: ExcelJS.Worksheet): ParsedImport {
   const inventoryRows: InventoryImportRow[] = [];
   const issues: string[] = [];
+  const rejectedRows: ImportReportRow[] = [];
   const headers = getHeaders(worksheet);
   let skippedRows = 0;
   for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
@@ -185,33 +253,39 @@ function readDaftraStocktakingSheet(worksheet: ExcelJS.Worksheet): ParsedImport 
     const sku = field(row, headers, ["الرقم التسلسلي"], cellIdentifier);
     const barcode = field(row, headers, ["الباركود"], cellIdentifier);
     const productName = field(row, headers, ["منتج", "الاسم"]).trim();
+    const unitName = field(row, headers, ["اسم الوحدة"]).trim();
+    const locationReference = field(row, headers, ["الرقم التعريفي للفرع"]).trim();
+    const programQuantity = parseNonNegativeNumber(field(row, headers, ["العدد بالبرنامج"]));
     const quantity = parseNonNegativeNumber(field(row, headers, ["العدد الفعلي"]));
     if (!sku && !barcode && !productName) {
       skippedRows += 1;
-      addIssue(issues, `الجرد - الصف ${rowNumber} (${daftraProductReference || "بدون رقم دفترة"}): الرقم التسلسلي والباركود واسم المنتج فارغة؛ تم تجاهل الصف بأمان.`);
+      const reason = "الرقم التسلسلي والباركود واسم المنتج فارغة؛ تم تجاهل الصف بأمان.";
+      addIssue(issues, `الجرد - الصف ${rowNumber} (${daftraProductReference || "بدون رقم دفترة"}): ${reason}`);
+      rejectedRows.push(rejectedReportRow({ rowNumber, source: "Daftra Stocktaking Report", productName, sku, barcode, daftraProductReference, unitName, importedQuantity: quantity, programQuantity, reason }));
       continue;
     }
     if (quantity === null) {
       skippedRows += 1;
-      addIssue(issues, `الجرد - الصف ${rowNumber} (${sku || barcode || daftraProductReference}): العدد الفعلي غير صالح؛ تم تجاهل الصف.`);
+      const reason = "العدد الفعلي غير صالح؛ تم تجاهل الصف.";
+      addIssue(issues, `الجرد - الصف ${rowNumber} (${sku || barcode || daftraProductReference}): ${reason}`);
+      rejectedRows.push(rejectedReportRow({ rowNumber, source: "Daftra Stocktaking Report", productName, sku, barcode, daftraProductReference, unitName, importedQuantity: null, programQuantity, reason }));
       continue;
     }
     inventoryRows.push({
       rowNumber, sourceRowKey: `daftra-stocktaking:${rowNumber}`, source: "daftra_stocktaking", sku, barcode,
-      locationReference: field(row, headers, ["الرقم التعريفي للفرع"]).trim(), inputQuantity: quantity,
-      unitName: field(row, headers, ["اسم الوحدة"]).trim(),
-      programQuantity: parseNonNegativeNumber(field(row, headers, ["العدد بالبرنامج"])),
+      locationReference, inputQuantity: quantity, unitName, programQuantity,
       productName,
       daftraProductReference,
     });
   }
-  return { kind: "daftra_stocktaking", productRows: [], inventoryRows, issues, skippedRows };
+  return { kind: "daftra_stocktaking", productRows: [], inventoryRows, issues, skippedRows, rejectedRows };
 }
 
 function readStandardProductsSheet(worksheet: ExcelJS.Worksheet | undefined): ParsedImport {
   const productRows: ProductImportRow[] = [];
   const issues: string[] = [];
-  if (!worksheet) return { kind: "standard", productRows, inventoryRows: [], issues, skippedRows: 0 };
+  const rejectedRows: ImportReportRow[] = [];
+  if (!worksheet) return { kind: "standard", productRows, inventoryRows: [], issues, skippedRows: 0, rejectedRows };
   const headers = getHeaders(worksheet);
   let skippedRows = 0;
   for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
@@ -222,7 +296,9 @@ function readStandardProductsSheet(worksheet: ExcelJS.Worksheet | undefined): Pa
     const minimumQuantity = parseNonNegativeNumber(minimumText);
     if (minimumText.trim() && minimumQuantity === null) {
       skippedRows += 1;
-      addIssue(issues, `المنتجات - الصف ${rowNumber} (${sku}): minimum_quantity غير صالح؛ تم تجاهل الصف.`);
+      const reason = "minimum_quantity غير صالح؛ تم تجاهل الصف.";
+      addIssue(issues, `المنتجات - الصف ${rowNumber} (${sku}): ${reason}`);
+      rejectedRows.push(rejectedReportRow({ rowNumber, source: "بيانات المنتجات", sku, productName: field(row, headers, ["name", "productname", "product_name", "اسم المنتج"]).trim(), reason }));
       continue;
     }
     try {
@@ -236,16 +312,19 @@ function readStandardProductsSheet(worksheet: ExcelJS.Worksheet | undefined): Pa
       });
     } catch (error) {
       skippedRows += 1;
-      addIssue(issues, error instanceof Error ? error.message : `المنتجات - الصف ${rowNumber}: بيانات غير صالحة.`);
+      const reason = error instanceof Error ? error.message : "بيانات غير صالحة.";
+      addIssue(issues, reason);
+      rejectedRows.push(rejectedReportRow({ rowNumber, source: "بيانات المنتجات", sku, productName: field(row, headers, ["name", "productname", "product_name", "اسم المنتج"]).trim(), reason }));
     }
   }
-  return { kind: "standard", productRows, inventoryRows: [], issues, skippedRows };
+  return { kind: "standard", productRows, inventoryRows: [], issues, skippedRows, rejectedRows };
 }
 
 function readStandardInventorySheet(worksheet: ExcelJS.Worksheet | undefined): ParsedImport {
   const inventoryRows: InventoryImportRow[] = [];
   const issues: string[] = [];
-  if (!worksheet) return { kind: "standard", productRows: [], inventoryRows, issues, skippedRows: 0 };
+  const rejectedRows: ImportReportRow[] = [];
+  if (!worksheet) return { kind: "standard", productRows: [], inventoryRows, issues, skippedRows: 0, rejectedRows };
   const headers = getHeaders(worksheet);
   let skippedRows = 0;
   for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
@@ -255,7 +334,9 @@ function readStandardInventorySheet(worksheet: ExcelJS.Worksheet | undefined): P
     const quantity = parseNonNegativeNumber(field(row, headers, ["available_quantity", "availablequantity", "quantity", "الكمية المتاحة", "الكمية"]));
     if (quantity === null) {
       skippedRows += 1;
-      addIssue(issues, `المخزون - الصف ${rowNumber} (${sku}): available_quantity مطلوب ويجب أن يكون رقمًا صفر أو أكبر.`);
+      const reason = "available_quantity مطلوب ويجب أن يكون رقمًا صفر أو أكبر.";
+      addIssue(issues, `المخزون - الصف ${rowNumber} (${sku}): ${reason}`);
+      rejectedRows.push(rejectedReportRow({ rowNumber, source: "ملف النظام", sku, importedQuantity: null, reason }));
       continue;
     }
     inventoryRows.push({
@@ -264,7 +345,7 @@ function readStandardInventorySheet(worksheet: ExcelJS.Worksheet | undefined): P
       inputQuantity: quantity, unitName: "", programQuantity: null,
     });
   }
-  return { kind: "standard", productRows: [], inventoryRows, issues, skippedRows };
+  return { kind: "standard", productRows: [], inventoryRows, issues, skippedRows, rejectedRows };
 }
 
 function detectImport(workbook: ExcelJS.Workbook): ParsedImport {
@@ -283,7 +364,11 @@ function detectImport(workbook: ExcelJS.Workbook): ParsedImport {
   if (products.productRows.length + inventory.inventoryRows.length === 0) {
     throw new Error("تعذر التعرف على عناوين ملف دفترة أو ورقة المنتجات/المخزون في النظام.");
   }
-  return { kind: "standard", productRows: products.productRows, inventoryRows: inventory.inventoryRows, issues: [...products.issues, ...inventory.issues], skippedRows: products.skippedRows + inventory.skippedRows };
+  return {
+    kind: "standard", productRows: products.productRows, inventoryRows: inventory.inventoryRows,
+    issues: [...products.issues, ...inventory.issues], skippedRows: products.skippedRows + inventory.skippedRows,
+    rejectedRows: [...products.rejectedRows, ...inventory.rejectedRows],
+  };
 }
 
 async function loadWorkbook(file: File) {
@@ -439,6 +524,7 @@ async function prepareImport({
 
   const issues = [...parsed.issues];
   const notices = [...(parsed.notices ?? [])];
+  const rejectedRows = [...parsed.rejectedRows];
   let skippedRows = parsed.skippedRows;
   const seenProductSkus = new Set<string>();
   const uniqueProductRows: ProductImportRow[] = [];
@@ -446,7 +532,9 @@ async function prepareImport({
     const key = skuKey(row.sku);
     if (seenProductSkus.has(key)) {
       skippedRows += 1;
-      addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): SKU مكرر داخل الملف؛ تم تجاهل التكرار.`);
+      const reason = "SKU مكرر داخل الملف؛ تم تجاهل التكرار.";
+      addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): ${reason}`);
+      rejectedRows.push(rejectedProductRow(row, reason));
     } else {
       seenProductSkus.add(key);
       uniqueProductRows.push(row);
@@ -506,15 +594,22 @@ async function prepareImport({
         productRows.push({ ...row, barcode: safeBarcode });
         productsToUpdate += 1;
       } else {
-        addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): لا تملك صلاحية تحديث بيانات المنتج.`);
+        skippedRows += 1;
+        const reason = "لا تملك صلاحية تحديث بيانات المنتج.";
+        addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): ${reason}`);
+        rejectedRows.push(rejectedProductRow(row, reason));
       }
       continue;
     }
     if (canCreate !== true || !row.name || !findUnitId(row.unit, unitsByKey)) {
       skippedRows += 1;
-      if (canCreate !== true) addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): لا تملك صلاحية إضافة منتج جديد.`);
-      else if (!row.name) addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): اسم المنتج مطلوب.`);
-      else addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): الوحدة "${row.unit}" غير موجودة في النظام.`);
+      const reason = canCreate !== true
+        ? "لا تملك صلاحية إضافة منتج جديد."
+        : !row.name
+          ? "اسم المنتج مطلوب."
+          : `الوحدة "${row.unit}" غير موجودة في النظام.`;
+      addIssue(issues, `المنتجات - الصف ${row.rowNumber} (${row.sku}): ${reason}`);
+      rejectedRows.push(rejectedProductRow(row, reason));
       continue;
     }
     productRows.push({ ...row, barcode: safeBarcode });
@@ -534,19 +629,25 @@ async function prepareImport({
   for (const row of inventoryRows) {
     if (canAdjustStock !== true) {
       skippedRows += 1;
-      addIssue(issues, `المخزون - الصف ${row.rowNumber}: لا تملك صلاحية تسوية المخزون.`);
+      const reason = "لا تملك صلاحية تسوية المخزون.";
+      addIssue(issues, `المخزون - الصف ${row.rowNumber}: ${reason}`);
+      rejectedRows.push(rejectedInventoryRow(row, reason));
       continue;
     }
     if (!targetLocation) {
       skippedRows += 1;
-      addIssue(issues, "اختر فرعًا صالحًا قبل اعتماد استيراد المخزون.");
+      const reason = "اختر فرعًا صالحًا قبل اعتماد استيراد المخزون.";
+      addIssue(issues, reason);
+      rejectedRows.push(rejectedInventoryRow(row, reason));
       continue;
     }
     const invalidStandardLocation = row.source === "standard" && row.locationReference && skuKey(row.locationReference) !== skuKey(targetLocation.code);
     const invalidDaftraLocation = row.source === "daftra_stocktaking" && !locationMatchesDaftraReference(row.locationReference, targetLocation);
     if (invalidStandardLocation || invalidDaftraLocation) {
       skippedRows += 1;
-      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): فرع دفترة "${row.locationReference || "غير محدد"}" لا يطابق الفرع المختار (${targetLocation.name}).`);
+      const reason = `فرع دفترة "${row.locationReference || "غير محدد"}" لا يطابق الفرع المختار (${targetLocation.name}).`;
+      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): ${reason}`);
+      rejectedRows.push(rejectedInventoryRow(row, reason));
       continue;
     }
     let product = row.sku ? productsBySku.get(skuKey(row.sku)) ?? null : null;
@@ -568,7 +669,9 @@ async function prepareImport({
         productBySerialNumber.id !== productByBarcode.id
       ) {
         skippedRows += 1;
-        addIssue(issues, `المخزون - الصف ${row.rowNumber} (${reference}): الرقم التسلسلي والباركود يشيران إلى منتجين مختلفين؛ تم تجاهل الصف بأمان دون الاعتماد على اسم المنتج.`);
+        const reason = "الرقم التسلسلي والباركود يشيران إلى منتجين مختلفين؛ تم تجاهل الصف بأمان دون الاعتماد على اسم المنتج.";
+        addIssue(issues, `المخزون - الصف ${row.rowNumber} (${reference}): ${reason}`);
+        rejectedRows.push(rejectedInventoryRow(row, reason));
         continue;
       }
 
@@ -586,13 +689,16 @@ async function prepareImport({
           addNotice(notices, "info", `المخزون - الصف ${row.rowNumber}: تمت مطابقة المنتج بأمان بالاسم والوحدة بعد غياب الرقم التسلسلي والباركود (${product.sku}).`);
         } else {
           skippedRows += 1;
+          let reason: string;
           if (canUseNameFallback && nameMatches.length > 1) {
-            addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.productName}): الاسم والوحدة يطابقان أكثر من منتج نشط؛ تم تجاهل الصف بأمان.`);
+            reason = "الاسم والوحدة يطابقان أكثر من منتج نشط؛ تم تجاهل الصف بأمان.";
           } else if (canUseNameFallback) {
-            addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.productName}): لم توجد مطابقة فريدة لاسم المنتج والوحدة؛ تم تجاهل الصف بأمان.`);
+            reason = "لم توجد مطابقة فريدة لاسم المنتج والوحدة؛ تم تجاهل الصف بأمان.";
           } else {
-            addIssue(issues, `المخزون - الصف ${row.rowNumber} (${reference}): لم يطابق الرقم التسلسلي SKU محليًا ولم يطابق الباركود أي منتج؛ رقم دفترة الداخلي (${row.daftraProductReference || "غير متوفر"}) محفوظ للتشخيص فقط.`);
+            reason = `لم يطابق الرقم التسلسلي SKU محليًا ولم يطابق الباركود أي منتج؛ رقم دفترة الداخلي (${row.daftraProductReference || "غير متوفر"}) محفوظ للتشخيص فقط.`;
           }
+          addIssue(issues, `المخزون - الصف ${row.rowNumber} (${canUseNameFallback ? row.productName : reference}): ${reason}`);
+          rejectedRows.push(rejectedInventoryRow(row, reason));
           continue;
         }
       }
@@ -606,7 +712,9 @@ async function prepareImport({
     const newProduct = !product && row.source !== "daftra_stocktaking" ? newProductRowsBySku.get(skuKey(row.sku)) ?? null : null;
     if (!product && !newProduct) {
       skippedRows += 1;
-      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode || row.daftraProductReference}): لم تُطابق SKU أو الباركود مع منتج موجود.`);
+      const reason = "لم تُطابق SKU أو الباركود مع منتج موجود.";
+      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode || row.daftraProductReference}): ${reason}`);
+      rejectedRows.push(rejectedInventoryRow(row, reason));
       continue;
     }
     let factor = 1;
@@ -614,13 +722,17 @@ async function prepareImport({
     if (product && row.source === "daftra_stocktaking") factor = resolveStocktakingFactor(row, productUnitsByProductId.get(product.id) ?? [], unitsByKey, unitsById) ?? 0;
     if (!factor) {
       skippedRows += 1;
-      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): وحدة "${row.unitName || "غير محددة"}" أو معامل التحويل غير مؤكد؛ لم يُعدّل الرصيد.`);
+      const reason = `وحدة "${row.unitName || "غير محددة"}" أو معامل التحويل غير مؤكد؛ لم يُعدّل الرصيد.`;
+      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): ${reason}`);
+      rejectedRows.push(rejectedInventoryRow(row, reason));
       continue;
     }
     const identity = product?.id ?? `new:${skuKey(newProduct!.sku)}`;
     if (seenAdjustmentProducts.has(identity)) {
       skippedRows += 1;
-      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): المنتج مكرر في نفس الاستيراد؛ تم تجاهل التكرار.`);
+      const reason = "المنتج مكرر في نفس الاستيراد؛ تم تجاهل التكرار.";
+      addIssue(issues, `المخزون - الصف ${row.rowNumber} (${row.sku || row.barcode}): ${reason}`);
+      rejectedRows.push(rejectedInventoryRow(row, reason));
       continue;
     }
     seenAdjustmentProducts.add(identity);
@@ -632,7 +744,7 @@ async function prepareImport({
   }
 
   return {
-    productRows, inventoryAdjustments: resolvedRows, productsBySku, unitsByKey, baseUnitByProduct, balancesByProductId, targetLocation,
+    productRows, inventoryAdjustments: resolvedRows, productsBySku, unitsByKey, baseUnitByProduct, balancesByProductId, targetLocation, rejectedRows,
     preview: {
       valid: productRows.length > 0 || resolvedRows.length > 0, source: sourceLabel(parsed.kind),
       productRows: parsed.productRows.length, inventoryRows: parsed.inventoryRows.length,
@@ -670,7 +782,10 @@ export async function POST(request: Request) {
     if (mode === "preview") return NextResponse.json({ preview: prepared.preview });
     if (!prepared.preview.valid) return NextResponse.json({ error: "لا توجد صفوف آمنة يمكن اعتمادها. راجع الملاحظات في المعاينة.", preview: prepared.preview }, { status: 422 });
 
-    const summary: Summary = { created: 0, updated: 0, inventoryUpdated: 0, skipped: prepared.preview.skippedRows, errors: [] };
+    const summary: Summary = {
+      created: 0, updated: 0, inventoryUpdated: 0, skipped: prepared.preview.skippedRows, errors: [],
+      settledRows: [], unsettledRows: [...prepared.rejectedRows],
+    };
     const productResults = await inBatches(prepared.productRows, async (row) => {
       const existing = prepared.productsBySku.get(skuKey(row.sku));
       if (existing) {
@@ -719,19 +834,50 @@ export async function POST(request: Request) {
     if (targetLocation) {
       const adjustments = await inBatches(prepared.inventoryAdjustments, async (adjustment) => {
         const product = prepared.productsBySku.get(skuKey(adjustment.productSku));
-        if (!product) throw new Error(`تعذر إيجاد المنتج ${adjustment.productSku} بعد تجهيز الاستيراد.`);
+        if (!product) {
+          const reason = `تعذر إيجاد المنتج ${adjustment.productSku} بعد تجهيز الاستيراد.`;
+          return { updated: false, report: rejectedInventoryRow(adjustment.row, reason), error: reason };
+        }
         const currentQuantity = prepared.balancesByProductId.get(product.id) ?? 0;
         const delta = adjustment.targetQuantity - currentQuantity;
-        if (numbersClose(delta, 0)) return 0;
+        const baseReport = {
+          rowNumber: adjustment.row.rowNumber,
+          source: sourceLabel(adjustment.row.source),
+          productName: product.name,
+          sku: product.sku,
+          barcode: adjustment.row.barcode,
+          daftraProductReference: adjustment.row.daftraProductReference ?? "",
+          unitName: adjustment.row.unitName,
+          importedQuantity: adjustment.row.inputQuantity,
+          programQuantity: adjustment.row.programQuantity,
+          beforeQuantity: currentQuantity,
+          afterQuantity: adjustment.targetQuantity,
+          difference: delta,
+        };
+        if (numbersClose(delta, 0)) {
+          return {
+            updated: false,
+            report: { ...baseReport, status: "unchanged" as const, reason: "تم التحقق: الرصيد الحالي مطابق للملف، لذلك لم تُنشأ حركة مخزون." },
+          };
+        }
         const { error } = await supabase.rpc("adjust_stock", {
           target_product_id: product.id, target_location_id: targetLocation.id, adjustment_delta: delta,
           adjustment_reason: `تسوية من استيراد ${prepared.preview.source}`,
         });
-        if (error) throw error;
+        if (error) {
+          const reason = `تعذر تنفيذ التسوية: ${error.message}`;
+          return { updated: false, report: { ...baseReport, status: "skipped" as const, reason }, error: reason };
+        }
         prepared.balancesByProductId.set(product.id, adjustment.targetQuantity);
-        return 1;
+        return { updated: true, report: { ...baseReport, status: "settled" as const, reason: "تمت تسوية الرصيد وتسجيل حركة مخزون." } };
       });
-      summary.inventoryUpdated = adjustments.reduce<number>((total, value) => total + value, 0);
+      for (const adjustment of adjustments) {
+        if (adjustment.report.status === "skipped") summary.unsettledRows.push(adjustment.report);
+        else summary.settledRows.push(adjustment.report);
+        if (adjustment.updated) summary.inventoryUpdated += 1;
+        if (adjustment.error) summary.errors.push(adjustment.error);
+      }
+      summary.skipped += summary.unsettledRows.length - prepared.rejectedRows.length;
     }
     return NextResponse.json({ success: true, summary });
   } catch (error) {

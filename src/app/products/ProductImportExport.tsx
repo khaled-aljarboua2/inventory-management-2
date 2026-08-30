@@ -25,6 +25,25 @@ type ImportSummary = {
   inventoryUpdated: number;
   skipped: number;
   errors: string[];
+  settledRows: ImportReportRow[];
+  unsettledRows: ImportReportRow[];
+};
+
+type ImportReportRow = {
+  status: "settled" | "unchanged" | "skipped";
+  rowNumber: number;
+  source: string;
+  productName: string;
+  sku: string;
+  barcode: string;
+  daftraProductReference: string;
+  unitName: string;
+  importedQuantity: number | null;
+  programQuantity: number | null;
+  beforeQuantity: number | null;
+  afterQuantity: number | null;
+  difference: number | null;
+  reason: string;
 };
 
 type ImportPreview = {
@@ -47,6 +66,40 @@ type ImportPreview = {
 
 function fileKey(file: File | null, locationId: string) {
   return file ? `${file.name}-${file.size}-${file.lastModified}-${locationId}` : "";
+}
+
+function csvValue(value: string | number | null) {
+  const text = value === null ? "" : String(value);
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function exportSettlementReport(
+  kind: "settled" | "unsettled",
+  rows: ImportReportRow[]
+) {
+  const title = kind === "settled" ? "تقرير الصفوف التي تمت تسويتها" : "تقرير الصفوف التي لم تتم تسويتها";
+  const headers = [
+    "الحالة", "الصف", "المصدر", "اسم المنتج", "SKU / الرقم التسلسلي", "الباركود", "رقم دفترة",
+    "الوحدة", "كمية الملف", "كمية البرنامج", "الرصيد قبل", "الرصيد بعد", "فرق التسوية", "السبب / النتيجة",
+  ];
+  const values: Array<Array<string | number | null>> = rows.map((row) => [
+    row.status === "settled" ? "تمت التسوية" : row.status === "unchanged" ? "مطابق - بلا حركة" : "لم تتم التسوية",
+    row.rowNumber, row.source, row.productName, row.sku, row.barcode, row.daftraProductReference,
+    row.unitName, row.importedQuantity, row.programQuantity, row.beforeQuantity, row.afterQuantity, row.difference, row.reason,
+  ]);
+  const lines: Array<Array<string | number | null>> = [[title], [`تاريخ الإصدار: ${new Date().toLocaleString("ar-SA")}`], [], headers, ...values];
+  const csv = lines
+    .map((line) => line.map(csvValue).join(","))
+    .join("\r\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = `${kind === "settled" ? "تمت-التسوية" : "لم-تتم-التسوية"}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(href);
 }
 
 export default function ProductImportExport({
@@ -75,7 +128,7 @@ export default function ProductImportExport({
       preview.productsToCreate + preview.productsToUpdate + preview.inventoryToAdjust > 0
   );
   const summaryHasChanges = Boolean(
-    summary && summary.created + summary.updated + summary.inventoryUpdated > 0
+    summary && summary.created + summary.updated + summary.inventoryUpdated + summary.settledRows.length > 0
   );
 
   function resetResult() {
@@ -318,9 +371,39 @@ export default function ProductImportExport({
         <div className={`mt-3 rounded-xl border px-3 py-3 text-xs ${summaryHasChanges ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-red-300 bg-red-50 text-red-800"}`}>
           <div className="flex items-center gap-2 font-semibold">
             {summaryHasChanges ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-            {summaryHasChanges ? "تمت الإضافة وظهرت التغييرات بنجاح" : "لم تتم إضافة أو تسوية أي سجل"}
+            {summaryHasChanges ? "تم اعتماد الملف وظهرت نتائج التسوية" : "لم تتم إضافة أو تسوية أي سجل"}
           </div>
           <p className="mt-1.5">جديد: {summary.created} · محدّث: {summary.updated} · أرصدة مسوّاة: {summary.inventoryUpdated} · متجاهل: {summary.skipped}</p>
+          <div className="mt-3 rounded-lg border border-slate-200 bg-white/80 p-3 text-slate-700">
+            <p className="font-bold">تقارير نتيجة الاعتماد</p>
+            <p className="mt-1 text-slate-500">الصفوف غير المقبولة لا تدخل في حركة المخزون؛ يظهر سبب كل صف في تقريرها.</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => exportSettlementReport("settled", summary.settledRows)}
+                disabled={summary.settledRows.length === 0}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Download size={15} />
+                تصدير ما تمت تسويته ({summary.settledRows.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => exportSettlementReport("unsettled", summary.unsettledRows)}
+                disabled={summary.unsettledRows.length === 0}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Download size={15} />
+                تصدير ما لم تتم تسويته ({summary.unsettledRows.length})
+              </button>
+              <a
+                href="/inventory/transactions"
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                عرض حركة المخزون
+              </a>
+            </div>
+          </div>
           {!summaryHasChanges ? (
             <p className="mt-1 text-red-700">
               لم يُسجل سجل حركة لأن الكمية المستوردة لم تغيّر الرصيد الحالي. استخدم كمية مختلفة عن الرصيد لإنشاء تسوية وحركة مخزون.
