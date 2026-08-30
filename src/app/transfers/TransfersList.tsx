@@ -15,6 +15,7 @@ import {
   Ban,
   Trash2,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import TransferModal from "./TransferModal";
 import TransferBalances from "./TransferBalances";
@@ -57,7 +58,7 @@ const statusConfig: Record<
   {
     label: string;
     className: string;
-    icon: any;
+    icon: LucideIcon;
   }
 > = {
   draft: {

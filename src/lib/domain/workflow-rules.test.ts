@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateCountAdjustment,
+  canEditTransferStatus,
   canManageUserScope,
   getNextTransferStatus,
   validatePurchaseReceipt,
@@ -14,26 +15,41 @@ describe("الجرد", () => {
       calculateCountAdjustment({
         systemQuantity: 10,
         countedQuantity: 8,
-        currentAvailable: 12,
+        currentAvailable: 10,
       })
     ).toEqual({
       difference: -2,
-      quantityAfter: 10,
+      quantityAfter: 8,
     });
   });
 
-  it("يمنع تسوية تجعل الرصيد سالبًا", () => {
+  it("يمنع إكمال الجرد إذا تغير الرصيد بعد أخذ اللقطة", () => {
     expect(() =>
       calculateCountAdjustment({
         systemQuantity: 10,
-        countedQuantity: 0,
-        currentAvailable: 5,
+        countedQuantity: 8,
+        currentAvailable: 12,
       })
-    ).toThrow("تسوية الجرد ستجعل الرصيد سالبًا");
+    ).toThrow("تغير الرصيد بعد بدء الجرد");
+  });
+
+  it("يمنع إدخال كمية جرد سالبة", () => {
+    expect(() =>
+      calculateCountAdjustment({
+        systemQuantity: 10,
+        countedQuantity: -1,
+        currentAvailable: 10,
+      })
+    ).toThrow("كميات الجرد يجب أن تكون أرقامًا غير سالبة");
   });
 });
 
 describe("طلبات النقل", () => {
+  it("يمنع تعديل الطلب بعد الشحن", () => {
+    expect(canEditTransferStatus("preparing")).toBe(true);
+    expect(canEditTransferStatus("shipped")).toBe(false);
+    expect(canEditTransferStatus("received")).toBe(false);
+  });
   it("يسمح فقط بتسلسل الحالات النظامي", () => {
     expect(getNextTransferStatus("pending", "approve")).toBe("approved");
     expect(getNextTransferStatus("approved", "prepare")).toBe("preparing");

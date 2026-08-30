@@ -18,6 +18,7 @@ import {
 import ProductSearchPicker, {
   type ProductSearchResult,
 } from "@/components/products/ProductSearchPicker";
+import { canEditTransferStatus, type TransferStatus } from "@/lib/domain/workflow-rules";
 
 import {
   approveTransfer,
@@ -83,12 +84,7 @@ export default function TransferActions({
     useState(false);
 
   function canEdit() {
-    return [
-      "pending",
-      "approved",
-      "preparing",
-      "shipped",
-    ].includes(status);
+    return canEditTransferStatus(status as TransferStatus);
   }
 
   async function execute(

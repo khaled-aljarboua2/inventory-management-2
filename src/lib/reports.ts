@@ -1,5 +1,10 @@
 import { firstRelation } from "@/lib/supabase/relations";
 import { createClient } from "@/lib/supabase/server";
+export {
+  formatReportDate,
+  hasPositiveBalance,
+  isLowStockBalance,
+} from "@/lib/domain/report-rules";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 type Relation<T> = T | T[] | null;
@@ -104,17 +109,6 @@ export function formatReportNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 2,
   }).format(value);
-}
-
-export function formatReportDate(value: string | null) {
-  if (!value) {
-    return "—";
-  }
-
-  return new Intl.DateTimeFormat("ar-SA", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 }
 
 function splitIntoBatches<T>(items: T[], batchSize = PRODUCT_METADATA_BATCH_SIZE) {
@@ -251,6 +245,7 @@ async function getAllBalances(
         locations!inner (id, name, code, company_id)
       `)
       .eq("products.company_id", access.companyId)
+      .eq("products.is_active", true)
       .eq("locations.company_id", access.companyId)
       .order("updated_at", { ascending: false })
       .order("id", { ascending: true })

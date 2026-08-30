@@ -43,6 +43,10 @@ export function getNextTransferStatus(
   return TRANSFER_TRANSITIONS[currentStatus][action] ?? null;
 }
 
+export function canEditTransferStatus(status: TransferStatus) {
+  return ["pending", "approved", "preparing"].includes(status);
+}
+
 export function validateTransferQuantities(input: {
   requested: number;
   approved?: number | null;
@@ -94,8 +98,12 @@ export function calculateCountAdjustment(input: {
     }
   }
 
+  if (currentAvailable !== systemQuantity) {
+    throw new Error("تغير الرصيد بعد بدء الجرد ويجب تحديث لقطة الجرد أولًا.");
+  }
+
   const difference = countedQuantity - systemQuantity;
-  const quantityAfter = currentAvailable + difference;
+  const quantityAfter = countedQuantity;
 
   if (quantityAfter < 0) {
     throw new Error("تسوية الجرد ستجعل الرصيد سالبًا.");

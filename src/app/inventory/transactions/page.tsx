@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 import TransactionsTable from "./TransactionsTable";
 import {
   Activity,
@@ -172,7 +173,7 @@ export default async function TransactionsPage() {
 
   const transactions: Transaction[] =
     (rawTransactions ?? []).map(
-      (item: any) => ({
+      (item) => ({
         id: item.id,
         company_id: item.company_id,
         product_id: item.product_id,
@@ -207,13 +208,13 @@ export default async function TransactionsPage() {
         created_at: item.created_at,
 
         products:
-          item.products ?? null,
+          firstRelation(item.products),
 
         locations:
-          item.locations ?? null,
+          firstRelation(item.locations),
 
         users:
-          item.users ?? null,
+          firstRelation(item.users),
       })
     );
 

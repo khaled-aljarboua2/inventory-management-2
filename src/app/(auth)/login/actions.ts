@@ -1,5 +1,9 @@
 "use server";
 
+import { createHash } from "node:crypto";
+
+import { headers } from "next/headers";
+
 import { createClient } from "../../../lib/supabase/server";
 import {
   createClient as createAdminClient,
@@ -61,6 +65,44 @@ export async function loginWithUsernameOrEmail(
 
   const admin =
     getAdminClient();
+
+  const requestHeaders = await headers();
+  const clientIp =
+    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    requestHeaders.get("x-real-ip")?.trim() ||
+    "unknown";
+  const normalizedIdentifier = value.toLowerCase();
+  const ipHash = createHash("sha256").update(clientIp).digest("hex");
+  const loginHash = createHash("sha256")
+    .update(`${clientIp}|${normalizedIdentifier}`)
+    .digest("hex");
+
+  const [ipLimit, accountLimit] = await Promise.all([
+    admin.rpc("consume_login_rate_limit", {
+      client_hash: ipHash,
+      request_scope: "login.ip",
+      max_requests: 30,
+      window_seconds: 900,
+    }),
+    admin.rpc("consume_login_rate_limit", {
+      client_hash: loginHash,
+      request_scope: "login.account",
+      max_requests: 5,
+      window_seconds: 900,
+    }),
+  ]);
+
+  if (
+    ipLimit.error ||
+    accountLimit.error ||
+    ipLimit.data !== true ||
+    accountLimit.data !== true
+  ) {
+    return {
+      success: false,
+      error: "محاولات تسجيل الدخول كثيرة جدًا. حاول مرة أخرى بعد 15 دقيقة.",
+    };
+  }
 
   let email = value;
 

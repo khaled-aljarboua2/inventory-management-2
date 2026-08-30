@@ -48,7 +48,7 @@ export async function POST(
           error:
             error.message,
         },
-        { status: 400 }
+        { status: error.message.includes("كثيرة جدًا") ? 429 : 400 }
       );
     }
 

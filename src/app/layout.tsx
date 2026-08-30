@@ -13,6 +13,10 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ??
+      "https://inventory-management-2-wheat.vercel.app"
+  ),
   title: "WAREVANCE",
   description: "WAREVANCE لإدارة المخزون والفروع",
 

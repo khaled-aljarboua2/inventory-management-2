@@ -14,6 +14,7 @@ import {
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 import ProductManagement from "./ProductManagement";
 
 type Props = {
@@ -428,10 +429,17 @@ export default async function ProductDetailsPage({
             productId={product.id}
             units={units ?? []}
             productUnits={
-              (productUnits ?? []) as any
+              (productUnits ?? []).map((item) => ({
+                ...item,
+                conversion_factor: Number(item.conversion_factor),
+                units: firstRelation(item.units),
+              }))
             }
             barcodes={
-              (barcodes ?? []) as any
+              (barcodes ?? []).map((item) => ({
+                ...item,
+                units: firstRelation(item.units),
+              }))
             }
           />
         </section>

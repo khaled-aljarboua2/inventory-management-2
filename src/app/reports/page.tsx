@@ -16,6 +16,8 @@ import ProductImportExport from "../products/ProductImportExport";
 import {
   formatReportDate,
   formatReportNumber,
+  hasPositiveBalance,
+  isLowStockBalance,
   getReportAccess,
   resolveReportLocation,
   loadReportData,
@@ -153,15 +155,13 @@ export default async function ReportsPage({
     const reservedTotals = new Map<string, number>();
     const productIds = new Set<string>();
     const lowStock = balances
-      .filter((balance) => {
-        const available = Number(balance.available_quantity ?? 0);
-        const minimum = Number(balance.minimum_quantity ?? 0);
-        return minimum > 0 && available <= minimum;
-      })
+      .filter(isLowStockBalance)
       .sort((left, right) => Number(left.available_quantity ?? 0) - Number(right.available_quantity ?? 0));
 
     for (const balance of balances) {
-      productIds.add(balance.product_id);
+      if (hasPositiveBalance(balance)) {
+        productIds.add(balance.product_id);
+      }
       addTotal(availableTotals, balance.unitName, Number(balance.available_quantity ?? 0));
       addTotal(reservedTotals, balance.unitName, Number(balance.reserved_quantity ?? 0));
     }
@@ -373,4 +373,3 @@ export default async function ReportsPage({
       </DashboardLayout>
   );
 }
-

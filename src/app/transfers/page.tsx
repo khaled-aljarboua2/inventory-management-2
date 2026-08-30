@@ -278,9 +278,7 @@ export default async function TransfersPage() {
         ======================================================= */}
 
         <TransfersList
-          transfers={
-            formattedTransfers as any
-          }
+          transfers={formattedTransfers}
           locations={
             locations ?? []
           }

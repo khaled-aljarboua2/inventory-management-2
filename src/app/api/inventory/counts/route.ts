@@ -69,28 +69,10 @@ export async function POST(
     // 3) صلاحية الجرد
     // ============================================================
 
-    const {
-      data: permission,
-      error:
-        permissionError,
-    } = await supabase
-      .from("role_permissions")
-      .select(`
-        permission_id,
-        permissions!inner (
-          id,
-          code
-        )
-      `)
-      .eq(
-        "role_id",
-        dbUser.role_id
-      )
-      .eq(
-        "permissions.code",
-        "stock.count"
-      )
-      .maybeSingle();
+    const { data: permission, error: permissionError } =
+      await supabase.rpc("has_permission", {
+        permission_code: "stock.count",
+      });
 
     if (
       permissionError
@@ -104,7 +86,7 @@ export async function POST(
       );
     }
 
-    if (!permission) {
+    if (permission !== true) {
       return NextResponse.json(
         {
           error:
@@ -300,6 +282,13 @@ export async function POST(
       createError ||
       !stockCount
     ) {
+      if (createError?.code === "23505") {
+        return NextResponse.json(
+          { error: "يوجد جرد مفتوح لهذا الموقع بالفعل." },
+          { status: 409 }
+        );
+      }
+
       return NextResponse.json(
         {
           error:

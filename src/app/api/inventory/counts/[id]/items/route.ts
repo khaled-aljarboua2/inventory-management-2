@@ -1,1010 +1,160 @@
 import { NextResponse } from "next/server";
+
 import { createClient } from "@/lib/supabase/server";
 
+type RouteParams = { params: Promise<{ id: string }> };
 type AddItemsBody =
   | { mode: "all" }
   | { mode: "with_stock" }
-  | {
-      mode: "selected";
-      productIds: string[];
-    };
+  | { mode: "selected"; productIds: string[] };
 
-type RouteParams = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
-const PRODUCT_BATCH_SIZE = 500;
-const PRODUCT_RESULT_LIMIT = 100;
-
-async function getCompanyProducts(
-  supabase: any,
-  companyId: string,
-  search = "",
-  productIds?: string[]
-) {
-  const products: Array<{ id: string; name: string; sku: string }> = [];
-
-  if (productIds?.length) {
-    for (let start = 0; start < productIds.length; start += PRODUCT_BATCH_SIZE) {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, name, sku")
-        .eq("company_id", companyId)
-        .eq("is_active", true)
-        .in("id", productIds.slice(start, start + PRODUCT_BATCH_SIZE))
-        .order("name");
-
-      if (error) return { data: null, error };
-      products.push(...(data ?? []));
-    }
-
-    return { data: products, error: null };
-  }
-
-  const baseQuery = () =>
-    supabase
-      .from("products")
-      .select("id, name, sku")
-      .eq("company_id", companyId)
-      .eq("is_active", true)
-      .order("name")
-      .limit(PRODUCT_RESULT_LIMIT);
-
-  if (!search) {
-    const { data, error } = await baseQuery();
-    return { data: data ?? [], error };
-  }
-
-  const [byName, bySku, barcodeMatches] = await Promise.all([
-    baseQuery().ilike("name", `%${search}%`),
-    baseQuery().ilike("sku", `%${search}%`),
-    supabase
-      .from("product_barcodes")
-      .select("product_id")
-      .ilike("barcode", `%${search}%`)
-      .limit(PRODUCT_RESULT_LIMIT),
-  ]);
-
-  if (byName.error || bySku.error || barcodeMatches.error) {
-    return {
-      data: null,
-      error: byName.error ?? bySku.error ?? barcodeMatches.error,
-    };
-  }
-
-  const barcodeProductIds = Array.from(
-    new Set(
-      (barcodeMatches.data ?? []).map(
-        (item: { product_id: string | null }) => item.product_id
-      )
-    )
-  ).filter((productId): productId is string => Boolean(productId));
-  const byBarcode = barcodeProductIds.length
-    ? await baseQuery().in("id", barcodeProductIds)
-    : { data: [], error: null };
-
-  if (byBarcode.error) {
-    return { data: null, error: byBarcode.error };
-  }
-
-  const productsById = new Map<string, { id: string; name: string; sku: string }>();
-  for (const product of [
-    ...(byName.data ?? []),
-    ...(bySku.data ?? []),
-    ...(byBarcode.data ?? []),
-  ]) {
-    productsById.set(product.id, product);
-  }
-
-  return {
-    data: Array.from(productsById.values())
-      .sort((left, right) => left.name.localeCompare(right.name))
-      .slice(0, PRODUCT_RESULT_LIMIT),
-    error: null,
-  };
+function databaseError(message: string) {
+  return NextResponse.json(
+    { error: message },
+    { status: message.includes("كثيرة جدًا") ? 429 : 400 }
+  );
 }
 
-async function getAuthenticatedUser() {
+async function requireUser() {
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      supabase,
-      dbUser: null,
-      response: NextResponse.json(
-        {
-          error: "يجب تسجيل الدخول أولًا.",
-        },
-        { status: 401 }
-      ),
-    };
-  }
-
-  const {
-    data: dbUser,
-    error,
-  } = await supabase
-    .from("users")
-    .select(`
-      id,
-      company_id,
-      location_id,
-      role_id,
-      is_active
-    `)
-    .eq("auth_user_id", user.id)
-    .eq("is_active", true)
-    .single();
-
-  if (error || !dbUser) {
-    return {
-      supabase,
-      dbUser: null,
-      response: NextResponse.json(
-        {
-          error:
-            "لم يتم العثور على المستخدم في النظام.",
-        },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return {
-    supabase,
-    dbUser,
-    response: null,
-  };
+  return { supabase, user };
 }
 
-async function validateCountAccess(
-  supabase: any,
-  dbUser: any,
-  countId: string
-) {
-  const {
-    data: permission,
-    error: permissionError,
-  } = await supabase
-    .from("role_permissions")
-    .select(`
-      permission_id,
-      permissions!inner (
-        id,
-        code
+function parseAddBody(value: unknown): AddItemsBody | null {
+  if (!value || typeof value !== "object" || !("mode" in value)) return null;
+
+  const input = value as Record<string, unknown>;
+  if (input.mode === "all" || input.mode === "with_stock") {
+    return { mode: input.mode };
+  }
+
+  if (input.mode !== "selected" || !Array.isArray(input.productIds)) return null;
+
+  const productIds = Array.from(
+    new Set(
+      input.productIds.filter(
+        (id): id is string => typeof id === "string" && Boolean(id.trim())
       )
-    `)
-    .eq("role_id", dbUser.role_id)
-    .eq("permissions.code", "stock.count")
-    .maybeSingle();
-
-  if (permissionError) {
-    return {
-      error:
-        "تعذر التحقق من صلاحية المستخدم.",
-      status: 500,
-      stockCount: null,
-    };
-  }
-
-  if (!permission) {
-    return {
-      error:
-        "ليس لديك صلاحية إدارة أصناف الجرد.",
-      status: 403,
-      stockCount: null,
-    };
-  }
-
-  const {
-    data: stockCount,
-    error: countError,
-  } = await supabase
-    .from("stock_counts")
-    .select(`
-      id,
-      location_id,
-      status,
-      locations (
-        id,
-        company_id,
-        is_active
-      )
-    `)
-    .eq("id", countId)
-    .single();
-
-  if (countError || !stockCount) {
-    return {
-      error: "الجرد غير موجود.",
-      status: 404,
-      stockCount: null,
-    };
-  }
-
-  const location = Array.isArray(
-    stockCount.locations
-  )
-    ? stockCount.locations[0]
-    : stockCount.locations;
-
-  if (
-    !location ||
-    location.company_id !==
-      dbUser.company_id ||
-    !location.is_active
-  ) {
-    return {
-      error:
-        "لا يمكنك الوصول إلى هذا الجرد.",
-      status: 403,
-      stockCount: null,
-    };
-  }
-
-  if (stockCount.status === "completed") {
-    return {
-      error:
-        "لا يمكن تعديل جرد مكتمل.",
-      status: 400,
-      stockCount: null,
-    };
-  }
-
-  const { data: hasFullAccess } = await supabase.rpc(
-    "has_full_location_access"
+    )
   );
 
-  if (
-    hasFullAccess !== true &&
-    dbUser.location_id !==
-      stockCount.location_id
-  ) {
-    return {
-      error:
-        "لا يمكنك إدارة جرد موقع آخر.",
-      status: 403,
-      stockCount: null,
-    };
-  }
-
-  return {
-    error: null,
-    status: 200,
-    stockCount,
-  };
+  return productIds.length ? { mode: "selected", productIds } : null;
 }
 
-// ============================================================
-// جلب أرصدة موقع الجرد
-//
-// مهم:
-// لا نقرأ stock_balances مباشرة من العميل بسبب RLS.
-// نستخدم RPC تتحقق من الشركة والصلاحية ثم ترجع
-// رصيد الموقع المحدد فقط.
-// ============================================================
-
-async function getCountBalances(
-  supabase: any,
-  locationId: string
-) {
-  const {
-    data,
-    error,
-  } = await supabase.rpc(
-    "get_stock_count_balances",
-    {
-      target_location_id:
-        locationId,
-    }
-  );
-
-  if (error) {
-    return {
-      data: null,
-      error,
-    };
-  }
-
-  return {
-    data: data ?? [],
-    error: null,
-  };
-}
-
-export async function GET(
-  request: Request,
-  { params }: RouteParams
-) {
+export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { id: countId } =
-      await params;
+    const { id: countId } = await params;
+    const { supabase, user } = await requireUser();
 
-    const auth =
-      await getAuthenticatedUser();
-
-    if (auth.response) {
-      return auth.response;
+    if (!user) {
+      return NextResponse.json({ error: "يجب تسجيل الدخول أولًا." }, { status: 401 });
     }
 
-    const access =
-      await validateCountAccess(
-        auth.supabase,
-        auth.dbUser,
-        countId
-      );
-
-    if (access.error) {
-      return NextResponse.json(
-        {
-          error:
-            access.error,
-        },
-        {
-          status:
-            access.status,
-        }
-      );
-    }
-
-    const url =
-      new URL(request.url);
-
-    const search =
-      url.searchParams
-        .get("search")
-        ?.trim() ?? "";
-
-    const withStock =
-      url.searchParams.get(
-        "withStock"
-      ) === "true";
-
-    // ==========================================================
-    // المنتجات الموجودة مسبقًا في الجرد
-    // ==========================================================
-
-    const {
-      data: existingItems,
-      error: existingError,
-    } = await auth.supabase
-      .from("stock_count_items")
-      .select("product_id")
-      .eq(
-        "stock_count_id",
-        countId
-      );
-
-    if (existingError) {
-      return NextResponse.json(
-        {
-          error:
-            existingError.message,
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    const existingIds =
-      new Set(
-        (existingItems ?? []).map(
-          (item: any) =>
-            item.product_id
-        )
-      );
-
-    // ==========================================================
-    // المنتجات
-    // ==========================================================
-
-    const {
-      data: products,
-      error: productsError,
-    } = await getCompanyProducts(
-      auth.supabase,
-      auth.dbUser.company_id,
-      search
-    );
-
-    if (productsError) {
-      return NextResponse.json(
-        {
-          error:
-            productsError.message,
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    // ==========================================================
-    // أرصدة الفرع الخاص بالجرد
-    // ==========================================================
-
-    const {
-      data: balances,
-      error: balancesError,
-    } =
-      await getCountBalances(
-        auth.supabase,
-        access.stockCount
-          .location_id
-      );
-
-    if (balancesError) {
-      return NextResponse.json(
-        {
-          error:
-            balancesError.message ||
-            "تعذر تحميل أرصدة الموقع.",
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    // ==========================================================
-    // تحويل الأرصدة إلى Map
-    // ==========================================================
-
-    const balanceMap =
-      new Map<
-        string,
-        number
-      >(
-        (balances ?? []).map(
-          (balance: any) => [
-            balance.product_id,
-            Number(
-              balance.available_quantity ??
-                0
-            ),
-          ]
-        )
-      );
-
-    // ==========================================================
-    // بناء قائمة المنتجات
-    // ==========================================================
-
-    let result =
-      (products ?? [])
-        .filter(
-          (product: any) =>
-            !existingIds.has(
-              product.id
-            )
-        )
-        .map(
-          (product: any) => ({
-            id: product.id,
-
-            name:
-              product.name,
-
-            sku:
-              product.sku,
-
-            // كمية النظام من نفس موقع الجرد
-            system_quantity:
-              balanceMap.get(
-                product.id
-              ) ?? 0,
-          })
-        );
-
-    // ==========================================================
-    // ذات رصيد
-    // ==========================================================
-
-    if (withStock) {
-      result =
-        result.filter(
-          (product: any) =>
-            Number(
-              product.system_quantity
-            ) > 0
-        );
-    }
-
-    return NextResponse.json({
-      success: true,
-      products: result,
+    const url = new URL(request.url);
+    const { data, error } = await supabase.rpc("search_stock_count_products", {
+      target_stock_count_id: countId,
+      search_query: url.searchParams.get("search")?.trim() ?? "",
+      with_stock_only: url.searchParams.get("withStock") === "true",
+      result_limit: 100,
     });
-  } catch (error) {
-    console.error(
-      "GET /api/inventory/counts/[id]/items:",
-      error
-    );
 
+    if (error) return databaseError(error.message);
+
+    return NextResponse.json({ success: true, products: data ?? [] });
+  } catch (error) {
+    console.error("GET /api/inventory/counts/[id]/items:", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "تعذر تحميل المنتجات.",
-      },
-      {
-        status: 500,
-      }
+      { error: error instanceof Error ? error.message : "تعذر تحميل المنتجات." },
+      { status: 500 }
     );
   }
 }
 
-export async function POST(
-  request: Request,
-  { params }: RouteParams
-) {
+export async function POST(request: Request, { params }: RouteParams) {
   try {
-    const { id: countId } =
-      await params;
+    const { id: countId } = await params;
+    const { supabase, user } = await requireUser();
 
-    const auth =
-      await getAuthenticatedUser();
-
-    if (auth.response) {
-      return auth.response;
+    if (!user) {
+      return NextResponse.json({ error: "يجب تسجيل الدخول أولًا." }, { status: 401 });
     }
 
-    const access =
-      await validateCountAccess(
-        auth.supabase,
-        auth.dbUser,
-        countId
-      );
-
-    if (access.error) {
+    const body = parseAddBody(await request.json());
+    if (!body) {
       return NextResponse.json(
-        {
-          error:
-            access.error,
-        },
-        {
-          status:
-            access.status,
-        }
+        { error: "طريقة إضافة المنتجات أو قائمة المنتجات غير صالحة." },
+        { status: 400 }
       );
     }
 
-    const body =
-      (await request.json()) as AddItemsBody;
+    const { data, error } = await supabase.rpc("add_stock_count_items", {
+      target_stock_count_id: countId,
+      add_mode: body.mode,
+      selected_product_ids: body.mode === "selected" ? body.productIds : null,
+    });
 
-    // ==========================================================
-    // التحقق من طريقة الإضافة
-    // ==========================================================
+    if (error) return databaseError(error.message);
 
-    if (
-      body.mode !== "all" &&
-      body.mode !== "with_stock" &&
-      body.mode !== "selected"
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "طريقة إضافة المنتجات غير صالحة.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    if (
-      body.mode === "selected" &&
-      (!Array.isArray(
-        body.productIds
-      ) ||
-        body.productIds.length ===
-          0)
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "اختر منتجًا واحدًا على الأقل.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    // ==========================================================
-    // المنتجات الموجودة مسبقًا
-    // ==========================================================
-
-    const {
-      data: existingItems,
-      error: existingError,
-    } = await auth.supabase
-      .from("stock_count_items")
-      .select("product_id")
-      .eq(
-        "stock_count_id",
-        countId
-      );
-
-    if (existingError) {
-      return NextResponse.json(
-        {
-          error:
-            existingError.message,
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    const existingIds =
-      new Set(
-        (existingItems ?? []).map(
-          (item: any) =>
-            item.product_id
-        )
-      );
-
-    // ==========================================================
-    // المنتجات
-    // ==========================================================
-
-    const {
-      data: products,
-      error: productsError,
-    } = await getCompanyProducts(
-      auth.supabase,
-      auth.dbUser.company_id,
-      "",
-      body.mode === "selected" ? body.productIds : undefined
-    );
-
-    if (productsError) {
-      return NextResponse.json(
-        {
-          error:
-            productsError.message,
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    // ==========================================================
-    // أرصدة نفس موقع الجرد
-    // ==========================================================
-
-    const {
-      data: balances,
-      error: balancesError,
-    } =
-      await getCountBalances(
-        auth.supabase,
-        access.stockCount
-          .location_id
-      );
-
-    if (balancesError) {
-      return NextResponse.json(
-        {
-          error:
-            balancesError.message ||
-            "تعذر تحميل أرصدة الموقع.",
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    // ==========================================================
-    // Map للأرصدة
-    // ==========================================================
-
-    const balanceMap =
-      new Map<
-        string,
-        number
-      >(
-        (balances ?? []).map(
-          (balance: any) => [
-            balance.product_id,
-            Number(
-              balance.available_quantity ??
-                0
-            ),
-          ]
-        )
-      );
-
-    // ==========================================================
-    // المنتجات المرشحة
-    // ==========================================================
-
-    let candidates =
-      products ?? [];
-
-    if (
-      body.mode === "with_stock"
-    ) {
-      candidates =
-        candidates.filter(
-          (product: any) =>
-            (
-              balanceMap.get(
-                product.id
-              ) ?? 0
-            ) > 0
-        );
-    }
-
-    // ==========================================================
-    // إنشاء بنود الجرد
-    // ==========================================================
-
-    const items =
-      candidates
-        .filter(
-          (product: any) =>
-            !existingIds.has(
-              product.id
-            )
-        )
-        .map(
-          (product: any) => ({
-            id:
-              crypto.randomUUID(),
-
-            stock_count_id:
-              countId,
-
-            product_id:
-              product.id,
-
-            // ==================================================
-            // كمية النظام الصحيحة من الفرع المحدد للجرد
-            // ==================================================
-
-            system_quantity:
-              balanceMap.get(
-                product.id
-              ) ?? 0,
-
-            counted_quantity:
-              null,
-
-            difference_quantity:
-              null,
-
-            notes:
-              null,
-          })
-        );
-
-    // ==========================================================
-    // لا توجد منتجات
-    // ==========================================================
-
-    if (!items.length) {
-      return NextResponse.json({
-        success: true,
-
-        addedCount: 0,
-
-        message:
-          "لا توجد منتجات جديدة لإضافتها إلى الجرد.",
-      });
-    }
-
-    // ==========================================================
-    // إدخال بنود الجرد
-    // ==========================================================
-
-    const {
-      error: insertError,
-    } = await auth.supabase
-      .from(
-        "stock_count_items"
-      )
-      .insert(items);
-
-    if (insertError) {
-      return NextResponse.json(
-        {
-          error:
-            insertError.message,
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
+    const addedCount = Number(data ?? 0);
     return NextResponse.json(
       {
         success: true,
-
-        addedCount:
-          items.length,
-
-        message:
-          `تمت إضافة ${items.length} منتج إلى الجرد.`,
+        addedCount,
+        message: addedCount
+          ? `تمت إضافة ${addedCount} منتج إلى الجرد.`
+          : "لا توجد منتجات جديدة لإضافتها إلى الجرد.",
       },
-      {
-        status: 201,
-      }
+      { status: addedCount ? 201 : 200 }
     );
   } catch (error) {
-    console.error(
-      "POST /api/inventory/counts/[id]/items:",
-      error
-    );
-
+    console.error("POST /api/inventory/counts/[id]/items:", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "تعذر إضافة المنتجات إلى الجرد.",
-      },
-      {
-        status: 500,
-      }
+      { error: error instanceof Error ? error.message : "تعذر إضافة المنتجات إلى الجرد." },
+      { status: 500 }
     );
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: RouteParams
-) {
+export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { id: countId } =
-      await params;
+    const { id: countId } = await params;
+    const { supabase, user } = await requireUser();
 
-    const auth =
-      await getAuthenticatedUser();
-
-    if (auth.response) {
-      return auth.response;
+    if (!user) {
+      return NextResponse.json({ error: "يجب تسجيل الدخول أولًا." }, { status: 401 });
     }
 
-    const access =
-      await validateCountAccess(
-        auth.supabase,
-        auth.dbUser,
-        countId
-      );
-
-    if (access.error) {
-      return NextResponse.json(
-        {
-          error:
-            access.error,
-        },
-        {
-          status:
-            access.status,
-        }
-      );
-    }
-
-    const body =
-      await request.json();
-
-    const itemId =
-      typeof body?.itemId ===
-      "string"
-        ? body.itemId.trim()
-        : "";
-
+    const value = (await request.json()) as { itemId?: unknown };
+    const itemId = typeof value.itemId === "string" ? value.itemId.trim() : "";
     if (!itemId) {
-      return NextResponse.json(
-        {
-          error:
-            "معرّف بند الجرد مطلوب.",
-        },
-        {
-          status: 400,
-        }
-      );
+      return NextResponse.json({ error: "معرّف بند الجرد مطلوب." }, { status: 400 });
     }
 
-    const {
-      data: item,
-      error: itemError,
-    } = await auth.supabase
-      .from(
-        "stock_count_items"
-      )
-      .select("id")
-      .eq("id", itemId)
-      .eq(
-        "stock_count_id",
-        countId
-      )
-      .maybeSingle();
+    const { data, error } = await supabase.rpc("remove_stock_count_item", {
+      target_stock_count_id: countId,
+      target_item_id: itemId,
+    });
 
-    if (itemError) {
+    if (error) return databaseError(error.message);
+    if (data !== true) {
       return NextResponse.json(
-        {
-          error:
-            itemError.message,
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    if (!item) {
-      return NextResponse.json(
-        {
-          error:
-            "المنتج غير موجود في عملية الجرد.",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
-
-    const {
-      error: deleteError,
-    } = await auth.supabase
-      .from(
-        "stock_count_items"
-      )
-      .delete()
-      .eq("id", itemId)
-      .eq(
-        "stock_count_id",
-        countId
-      );
-
-    if (deleteError) {
-      return NextResponse.json(
-        {
-          error:
-            deleteError.message,
-        },
-        {
-          status: 500,
-        }
+        { error: "المنتج غير موجود في عملية الجرد." },
+        { status: 404 }
       );
     }
 
     return NextResponse.json({
       success: true,
-
-      message:
-        "تم حذف المنتج من عملية الجرد.",
+      message: "تم حذف المنتج من عملية الجرد.",
     });
   } catch (error) {
-    console.error(
-      "DELETE /api/inventory/counts/[id]/items:",
-      error
-    );
-
+    console.error("DELETE /api/inventory/counts/[id]/items:", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "تعذر حذف المنتج من الجرد.",
-      },
-      {
-        status: 500,
-      }
+      { error: error instanceof Error ? error.message : "تعذر حذف المنتج من الجرد." },
+      { status: 500 }
     );
   }
 }

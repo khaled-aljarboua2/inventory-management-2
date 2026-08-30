@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 
 import {
   formatReportDate,
+  isLowStockBalance,
   getReportAccess,
   resolveReportLocation,
   loadReportData,
@@ -239,11 +240,7 @@ function buildTable(report: string, data: Awaited<ReturnType<typeof loadReportDa
 
   const balances =
     report === "low_stock"
-      ? data.balances.filter((item) => {
-          const available = Number(item.available_quantity ?? 0);
-          const minimum = Number(item.minimum_quantity ?? 0);
-          return minimum > 0 && available <= minimum;
-        })
+      ? data.balances.filter(isLowStockBalance)
       : data.balances;
 
   return {
@@ -352,4 +349,3 @@ export async function GET(request: Request) {
     );
   }
 }
-
