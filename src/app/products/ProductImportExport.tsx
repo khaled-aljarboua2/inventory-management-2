@@ -68,40 +68,6 @@ function fileKey(file: File | null, locationId: string) {
   return file ? `${file.name}-${file.size}-${file.lastModified}-${locationId}` : "";
 }
 
-function csvValue(value: string | number | null) {
-  const text = value === null ? "" : String(value);
-  return `"${text.replaceAll('"', '""')}"`;
-}
-
-function exportSettlementReport(
-  kind: "settled" | "unsettled",
-  rows: ImportReportRow[]
-) {
-  const title = kind === "settled" ? "تقرير الصفوف التي تمت تسويتها" : "تقرير الصفوف التي لم تتم تسويتها";
-  const headers = [
-    "الحالة", "الصف", "المصدر", "اسم المنتج", "SKU / الرقم التسلسلي", "الباركود", "رقم دفترة",
-    "الوحدة", "كمية الملف", "كمية البرنامج", "الرصيد قبل", "الرصيد بعد", "فرق التسوية", "السبب / النتيجة",
-  ];
-  const values: Array<Array<string | number | null>> = rows.map((row) => [
-    row.status === "settled" ? "تمت التسوية" : row.status === "unchanged" ? "مطابق - بلا حركة" : "لم تتم التسوية",
-    row.rowNumber, row.source, row.productName, row.sku, row.barcode, row.daftraProductReference,
-    row.unitName, row.importedQuantity, row.programQuantity, row.beforeQuantity, row.afterQuantity, row.difference, row.reason,
-  ]);
-  const lines: Array<Array<string | number | null>> = [[title], [`تاريخ الإصدار: ${new Date().toLocaleString("ar-SA")}`], [], headers, ...values];
-  const csv = lines
-    .map((line) => line.map(csvValue).join(","))
-    .join("\r\n");
-  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-  const href = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = href;
-  link.download = `${kind === "settled" ? "تمت-التسوية" : "لم-تتم-التسوية"}-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(href);
-}
-
 export default function ProductImportExport({
   showExport = true,
   locations,
@@ -199,6 +165,45 @@ export default function ProductImportExport({
         caughtError instanceof Error
           ? caughtError.message
           : "حدث خطأ غير متوقع أثناء الاستيراد."
+      );
+    } finally {
+      setIsWorking(false);
+    }
+  }
+
+  async function downloadSettlementReport(
+    kind: "settled" | "unsettled",
+    rows: ImportReportRow[]
+  ) {
+    if (rows.length === 0) return;
+
+    setIsWorking(true);
+    setError("");
+    try {
+      const response = await fetch("/api/products/import/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, rows }),
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(result?.error ?? "تعذر إصدار تقرير Excel.");
+      }
+
+      const blob = await response.blob();
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = `${kind === "settled" ? "تمت-التسوية" : "لم-تتم-التسوية"}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(href);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "حدث خطأ غير متوقع أثناء إصدار التقرير."
       );
     } finally {
       setIsWorking(false);
@@ -380,21 +385,21 @@ export default function ProductImportExport({
             <div className="mt-2 flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => exportSettlementReport("settled", summary.settledRows)}
-                disabled={summary.settledRows.length === 0}
+                onClick={() => downloadSettlementReport("settled", summary.settledRows)}
+                disabled={isWorking || summary.settledRows.length === 0}
                 className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download size={15} />
-                تصدير ما تمت تسويته ({summary.settledRows.length})
+                تصدير Excel — تمت تسويته ({summary.settledRows.length})
               </button>
               <button
                 type="button"
-                onClick={() => exportSettlementReport("unsettled", summary.unsettledRows)}
-                disabled={summary.unsettledRows.length === 0}
+                onClick={() => downloadSettlementReport("unsettled", summary.unsettledRows)}
+                disabled={isWorking || summary.unsettledRows.length === 0}
                 className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download size={15} />
-                تصدير ما لم تتم تسويته ({summary.unsettledRows.length})
+                تصدير Excel — لم تتم تسويته ({summary.unsettledRows.length})
               </button>
               <a
                 href="/inventory/transactions"
