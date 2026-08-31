@@ -7,6 +7,25 @@ export const dynamic = "force-dynamic";
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
 
+type InventorySearchRow = {
+  id: string;
+  product_id: string;
+  location_id: string;
+  available_quantity: number | string | null;
+  reserved_quantity: number | string | null;
+  minimum_quantity: number | string | null;
+  maximum_quantity: number | string | null;
+  last_count_date: string | null;
+  updated_at: string;
+  product_name: string;
+  product_sku: string;
+  location_name: string;
+  location_code: string;
+  unit_name: string | null;
+  barcodes: string[] | null;
+  total_count: number | string | null;
+};
+
 export async function GET(request: NextRequest) {
   const session = await getReportAccess();
 
@@ -65,7 +84,7 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    const rows = data ?? [];
+    const rows = (data ?? []) as InventorySearchRow[];
     const total = rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
 
     const balances = rows.map((row) => ({
