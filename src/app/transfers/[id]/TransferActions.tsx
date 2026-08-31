@@ -63,6 +63,10 @@ type Props = {
   items: TransferItem[];
   products: ProductSearchResult[];
   notes: string | null;
+  canApprove: boolean;
+  canPrepare: boolean;
+  canShip: boolean;
+  canReceive: boolean;
 };
 
 export default function TransferActions({
@@ -71,17 +75,15 @@ export default function TransferActions({
   items,
   products,
   notes,
+  canApprove,
+  canPrepare,
+  canShip,
+  canReceive,
 }: Props) {
   const router = useRouter();
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [editOpen, setEditOpen] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
 
   function canEdit() {
     return canEditTransferStatus(status as TransferStatus);
@@ -93,55 +95,33 @@ export default function TransferActions({
       error?: string;
     }>
   ) {
-    if (loading) {
-      return;
-    }
+    if (loading) return;
 
     setLoading(true);
     setError("");
 
     try {
-      const result =
-        await action();
+      const result = await action();
 
       if (!result.success) {
-        setError(
-          result.error ||
-            "تعذر تنفيذ العملية."
-        );
+        setError(result.error || "تعذر تنفيذ العملية.");
         return;
       }
 
       router.refresh();
-
-      await new Promise(
-        (resolve) =>
-          setTimeout(resolve, 300)
-      );
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "حدث خطأ غير متوقع."
-      );
+      setError(err instanceof Error ? err.message : "حدث خطأ غير متوقع.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleCancel() {
-    const confirmed =
-      window.confirm(
-        "هل أنت متأكد من إلغاء طلب النقل؟"
-      );
+    const confirmed = window.confirm("هل أنت متأكد من إلغاء طلب النقل؟");
+    if (!confirmed) return;
 
-    if (!confirmed) {
-      return;
-    }
-
-    await execute(() =>
-      cancelTransfer(transferId)
-    );
+    await execute(() => cancelTransfer(transferId));
   }
 
   return (
@@ -154,13 +134,10 @@ export default function TransferActions({
         )}
 
         <div className="flex flex-wrap gap-2">
-          {/* التعديل */}
           {canEdit() && (
             <ActionButton
               label="تعديل الطلب"
-              icon={
-                <Pencil size={17} />
-              }
+              icon={<Pencil size={17} />}
               loading={loading}
               onClick={() => {
                 setError("");
@@ -170,94 +147,47 @@ export default function TransferActions({
             />
           )}
 
-          {/* الاعتماد */}
-          {status === "pending" && (
+          {status === "pending" && canApprove && (
             <ActionButton
               label="اعتماد الطلب"
-              icon={
-                <CheckCircle2
-                  size={17}
-                />
-              }
+              icon={<CheckCircle2 size={17} />}
               loading={loading}
-              onClick={() =>
-                execute(() =>
-                  approveTransfer(
-                    transferId
-                  )
-                )
-              }
+              onClick={() => execute(() => approveTransfer(transferId))}
               variant="teal"
             />
           )}
 
-          {/* التجهيز */}
-          {status === "approved" && (
+          {status === "approved" && canPrepare && (
             <ActionButton
               label="بدء التجهيز"
-              icon={
-                <PackageCheck
-                  size={17}
-                />
-              }
+              icon={<PackageCheck size={17} />}
               loading={loading}
-              onClick={() =>
-                execute(() =>
-                  prepareTransfer(
-                    transferId
-                  )
-                )
-              }
+              onClick={() => execute(() => prepareTransfer(transferId))}
               variant="purple"
             />
           )}
 
-          {/* الشحن */}
-          {status === "preparing" && (
+          {status === "preparing" && canShip && (
             <ActionButton
               label="شحن الطلب"
-              icon={
-                <Truck size={17} />
-              }
+              icon={<Truck size={17} />}
               loading={loading}
-              onClick={() =>
-                execute(() =>
-                  shipTransfer(
-                    transferId
-                  )
-                )
-              }
+              onClick={() => execute(() => shipTransfer(transferId))}
               variant="indigo"
             />
           )}
 
-          {/* الاستلام */}
-          {status === "shipped" && (
+          {status === "shipped" && canReceive && (
             <ActionButton
               label="تأكيد الاستلام"
-              icon={
-                <PackageOpen
-                  size={17}
-                />
-              }
+              icon={<PackageOpen size={17} />}
               loading={loading}
-              onClick={() =>
-                execute(() =>
-                  receiveTransfer(
-                    transferId
-                  )
-                )
-              }
+              onClick={() => execute(() => receiveTransfer(transferId))}
               variant="green"
             />
           )}
 
-          {/* الإلغاء */}
-          {[
-            "pending",
-            "approved",
-            "preparing",
-          ].includes(status) && (
+          {["pending", "approved", "preparing"].includes(status) && (
             <button
               type="button"
               onClick={handleCancel}
@@ -265,14 +195,10 @@ export default function TransferActions({
               className="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? (
-                <Loader2
-                  size={16}
-                  className="animate-spin"
-                />
+                <Loader2 size={16} className="animate-spin" />
               ) : (
                 <Ban size={16} />
               )}
-
               إلغاء
             </button>
           )}
@@ -285,9 +211,7 @@ export default function TransferActions({
           initialItems={items}
           products={products}
           initialNotes={notes}
-          onClose={() =>
-            setEditOpen(false)
-          }
+          onClose={() => setEditOpen(false)}
           onSaved={() => {
             setEditOpen(false);
             router.refresh();
@@ -297,6 +221,7 @@ export default function TransferActions({
     </>
   );
 }
+
 function ActionButton({
   label,
   icon,
@@ -308,28 +233,14 @@ function ActionButton({
   icon: React.ReactNode;
   loading: boolean;
   onClick: () => void;
-  variant:
-    | "teal"
-    | "purple"
-    | "indigo"
-    | "green"
-    | "slate";
+  variant: "teal" | "purple" | "indigo" | "green" | "slate";
 }) {
   const colors = {
-    slate:
-      "bg-slate-800 hover:bg-slate-900",
-
-    teal:
-      "bg-teal-600 hover:bg-teal-700 hover:shadow-teal-100",
-
-    purple:
-      "bg-purple-600 hover:bg-purple-700 hover:shadow-purple-100",
-
-    indigo:
-      "bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-100",
-
-    green:
-      "bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-100",
+    slate: "bg-slate-800 hover:bg-slate-900",
+    teal: "bg-teal-600 hover:bg-teal-700 hover:shadow-teal-100",
+    purple: "bg-purple-600 hover:bg-purple-700 hover:shadow-purple-100",
+    indigo: "bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-100",
+    green: "bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-100",
   };
 
   return (
@@ -339,21 +250,12 @@ function ActionButton({
       disabled={loading}
       className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 ${colors[variant]}`}
     >
-      {loading ? (
-        <Loader2
-          size={16}
-          className="animate-spin"
-        />
-      ) : (
-        icon
-      )}
-
-      {loading
-        ? "جاري التنفيذ..."
-        : label}
+      {loading ? <Loader2 size={16} className="animate-spin" /> : icon}
+      {loading ? "جاري التنفيذ..." : label}
     </button>
   );
 }
+
 function TransferEditModal({
   transferId,
   initialItems,
@@ -369,29 +271,17 @@ function TransferEditModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [rows, setRows] =
-    useState<EditRow[]>(
-      initialItems.map((item) => ({
-        id: item.id,
-        product_id: item.product_id,
-        unit_id: item.unit_id,
-        quantity: String(
-          item.requested_quantity
-        ),
-      }))
-    );
-
-  const [notes, setNotes] =
-    useState(
-      initialNotes ?? ""
-    );
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
+  const [rows, setRows] = useState<EditRow[]>(
+    initialItems.map((item) => ({
+      id: item.id,
+      product_id: item.product_id,
+      unit_id: item.unit_id,
+      quantity: String(item.requested_quantity),
+    }))
+  );
+  const [notes, setNotes] = useState(initialNotes ?? "");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<
     Map<string, ProductSearchResult>
   >(() => new Map(products.map((product) => [product.id, product])));
@@ -410,40 +300,27 @@ function TransferEditModal({
 
   function removeRow(id: string) {
     setRows((current) =>
-      current.length === 1
-        ? current
-        : current.filter(
-            (row) =>
-              row.id !== id
-          )
+      current.length === 1 ? current : current.filter((row) => row.id !== id)
     );
   }
 
-  function updateRow(
-    id: string,
-    field: keyof EditRow,
-    value: string
-  ) {
+  function updateRow(id: string, field: keyof EditRow, value: string) {
     setRows((current) =>
-      current.map((row) => {
-        if (row.id !== id) {
-          return row;
-        }
-
-        return {
-          ...row,
-          [field]: value,
-        };
-      })
+      current.map((row) =>
+        row.id === id
+          ? {
+              ...row,
+              [field]: value,
+            }
+          : row
+      )
     );
   }
 
   function selectProduct(rowId: string, product: ProductSearchResult | null) {
     setRows((current) =>
       current.map((row) => {
-        if (row.id !== rowId) {
-          return row;
-        }
+        if (row.id !== rowId) return row;
 
         return {
           ...row,
@@ -469,90 +346,55 @@ function TransferEditModal({
     setError("");
 
     if (rows.length === 0) {
-      setError(
-        "أضف منتجًا واحدًا على الأقل."
-      );
+      setError("أضف منتجًا واحدًا على الأقل.");
       return;
     }
 
-    const invalid =
-      rows.find((row) => {
-        const quantity =
-          Number(row.quantity);
-
-        return (
-          !row.product_id ||
-          !row.unit_id ||
-          !Number.isFinite(
-            quantity
-          ) ||
-          quantity <= 0
-        );
-      });
+    const invalid = rows.find((row) => {
+      const quantity = Number(row.quantity);
+      return (
+        !row.product_id ||
+        !row.unit_id ||
+        !Number.isFinite(quantity) ||
+        quantity <= 0
+      );
+    });
 
     if (invalid) {
-      setError(
-        "تأكد من تحديد المنتج والوحدة والكمية لكل صنف."
-      );
+      setError("تأكد من تحديد المنتج والوحدة والكمية لكل صنف.");
       return;
     }
 
-    const duplicateProducts =
-      new Set<string>();
-
+    const duplicateProducts = new Set<string>();
     for (const row of rows) {
-      if (
-        duplicateProducts.has(
-          row.product_id
-        )
-      ) {
-        setError(
-          "لا يمكن تكرار نفس المنتج في الطلب."
-        );
+      if (duplicateProducts.has(row.product_id)) {
+        setError("لا يمكن تكرار نفس المنتج في الطلب.");
         return;
       }
-
-      duplicateProducts.add(
-        row.product_id
-      );
+      duplicateProducts.add(row.product_id);
     }
 
     setLoading(true);
 
     try {
-      const result =
-        await updateTransferRequest({
-          transferId,
-          items: rows.map(
-            (row) => ({
-              product_id:
-                row.product_id,
-              unit_id:
-                row.unit_id,
-              requested_quantity:
-                Number(
-                  row.quantity
-                ),
-            })
-          ),
-          notes,
-        });
+      const result = await updateTransferRequest({
+        transferId,
+        items: rows.map((row) => ({
+          product_id: row.product_id,
+          unit_id: row.unit_id,
+          requested_quantity: Number(row.quantity),
+        })),
+        notes,
+      });
 
       if (!result.success) {
-        setError(
-          result.error ??
-            "تعذر تعديل الطلب."
-        );
+        setError(result.error ?? "تعذر تعديل الطلب.");
         return;
       }
 
       onSaved();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "حدث خطأ غير متوقع."
-      );
+      setError(err instanceof Error ? err.message : "حدث خطأ غير متوقع.");
     } finally {
       setLoading(false);
     }
@@ -561,13 +403,9 @@ function TransferEditModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
       <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-        {/* الرأس */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              تعديل طلب النقل
-            </h2>
-
+            <h2 className="text-lg font-bold text-slate-900">تعديل طلب النقل</h2>
             <p className="mt-1 text-xs text-slate-400">
               يمكنك تعديل المنتجات والكميات والملاحظات.
             </p>
@@ -593,10 +431,7 @@ function TransferEditModal({
           <div className="overflow-hidden rounded-2xl border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-5 py-4">
               <div>
-                <h3 className="font-semibold text-slate-800">
-                  أصناف الطلب
-                </h3>
-
+                <h3 className="font-semibold text-slate-800">أصناف الطلب</h3>
                 <p className="mt-1 text-xs text-slate-400">
                   عدّل نوع المنتج أو الكمية.
                 </p>
@@ -620,15 +455,12 @@ function TransferEditModal({
                     <th className="px-5 py-3 text-xs font-semibold text-slate-500">
                       المنتج
                     </th>
-
                     <th className="px-5 py-3 text-xs font-semibold text-slate-500">
                       الوحدة
                     </th>
-
                     <th className="px-5 py-3 text-xs font-semibold text-slate-500">
                       الكمية
                     </th>
-
                     <th className="w-16 px-5 py-3" />
                   </tr>
                 </thead>
@@ -636,16 +468,10 @@ function TransferEditModal({
                 <tbody className="divide-y divide-slate-100">
                   {rows.map((row) => {
                     const product = selectedProducts.get(row.product_id);
-
-                    const units =
-                      product?.product_units ??
-                      [];
+                    const units = product?.product_units ?? [];
 
                     return (
-                      <tr
-                        key={row.id}
-                        className="transition hover:bg-slate-50/50"
-                      >
+                      <tr key={row.id} className="transition hover:bg-slate-50/50">
                         <td className="px-5 py-4">
                           <ProductSearchPicker
                             value={row.product_id}
@@ -659,46 +485,20 @@ function TransferEditModal({
 
                         <td className="px-5 py-4">
                           <select
-                            value={
-                              row.unit_id
-                            }
+                            value={row.unit_id}
                             onChange={(event) =>
-                              updateRow(
-                                row.id,
-                                "unit_id",
-                                event.target.value
-                              )
+                              updateRow(row.id, "unit_id", event.target.value)
                             }
-                            disabled={
-                              loading ||
-                              !product
-                            }
+                            disabled={loading || !product}
                             className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50 disabled:bg-slate-100"
                           >
-                            <option value="">
-                              اختر الوحدة
-                            </option>
-
-                            {units.map(
-                              (item) => (
-                                <option
-                                  key={
-                                    item.id
-                                  }
-                                  value={
-                                    item.unit_id
-                                  }
-                                >
-                                  {item.units
-                                    ?.name ??
-                                    "وحدة"}
-                                  {item.units
-                                    ?.symbol
-                                    ? ` (${item.units.symbol})`
-                                    : ""}
-                                </option>
-                              )
-                            )}
+                            <option value="">اختر الوحدة</option>
+                            {units.map((item) => (
+                              <option key={item.id} value={item.unit_id}>
+                                {item.units?.name ?? "وحدة"}
+                                {item.units?.symbol ? ` (${item.units.symbol})` : ""}
+                              </option>
+                            ))}
                           </select>
                         </td>
 
@@ -707,15 +507,9 @@ function TransferEditModal({
                             type="number"
                             min="0.01"
                             step="any"
-                            value={
-                              row.quantity
-                            }
+                            value={row.quantity}
                             onChange={(event) =>
-                              updateRow(
-                                row.id,
-                                "quantity",
-                                event.target.value
-                              )
+                              updateRow(row.id, "quantity", event.target.value)
                             }
                             disabled={loading}
                             className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
@@ -725,21 +519,11 @@ function TransferEditModal({
                         <td className="px-5 py-4">
                           <button
                             type="button"
-                            onClick={() =>
-                              removeRow(
-                                row.id
-                              )
-                            }
-                            disabled={
-                              loading ||
-                              rows.length ===
-                                1
-                            }
+                            onClick={() => removeRow(row.id)}
+                            disabled={loading || rows.length === 1}
                             className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
                           >
-                            <Trash2
-                              size={17}
-                            />
+                            <Trash2 size={17} />
                           </button>
                         </td>
                       </tr>
@@ -754,14 +538,9 @@ function TransferEditModal({
             <label className="mb-2 block text-sm font-semibold text-slate-700">
               ملاحظات
             </label>
-
             <textarea
               value={notes}
-              onChange={(event) =>
-                setNotes(
-                  event.target.value
-                )
-              }
+              onChange={(event) => setNotes(event.target.value)}
               disabled={loading}
               rows={3}
               className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-teal-400 focus:bg-white focus:ring-4 focus:ring-teal-50 disabled:bg-slate-100"
@@ -785,9 +564,7 @@ function TransferEditModal({
               disabled={loading}
               className="rounded-xl bg-slate-900 px-7 py-3 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading
-                ? "جاري الحفظ..."
-                : "حفظ التعديلات"}
+              {loading ? "جاري الحفظ..." : "حفظ التعديلات"}
             </button>
           </div>
         </div>
