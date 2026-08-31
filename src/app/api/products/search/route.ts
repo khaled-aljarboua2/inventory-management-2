@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 50;
+const SOURCE_LIMIT = 100;
 
 const PRODUCT_SELECT = `
   id,
@@ -69,14 +70,14 @@ export async function GET(request: Request) {
     const query = url.searchParams.get("q")?.trim() ?? "";
     const limit = boundedLimit(url.searchParams.get("limit"));
 
-    const baseQuery = () =>
+    const baseQuery = (sourceLimit = limit) =>
       supabase
         .from("products")
         .select(PRODUCT_SELECT)
         .eq("company_id", profile.company_id)
         .eq("is_active", true)
         .order("name")
-        .limit(limit);
+        .limit(sourceLimit);
 
     if (!query) {
       const { data, error } = await baseQuery();
@@ -90,16 +91,15 @@ export async function GET(request: Request) {
       });
     }
 
-    // Keep individual filters parameterized instead of interpolating the
-    // search term into a PostgREST `or` expression.
     const [byName, bySku, barcodeMatches] = await Promise.all([
-      baseQuery().ilike("name", `%${query}%`),
-      baseQuery().ilike("sku", `%${query}%`),
+      baseQuery(SOURCE_LIMIT).ilike("name", `%${query}%`),
+      baseQuery(SOURCE_LIMIT).ilike("sku", `%${query}%`),
       supabase
         .from("product_barcodes")
-        .select("product_id")
+        .select("product_id, products!inner(company_id)")
+        .eq("products.company_id", profile.company_id)
         .ilike("barcode", `%${query}%`)
-        .limit(limit),
+        .limit(SOURCE_LIMIT),
     ]);
 
     if (byName.error || bySku.error || barcodeMatches.error) {
@@ -115,7 +115,7 @@ export async function GET(request: Request) {
     );
 
     const byBarcode = barcodeProductIds.length
-      ? await baseQuery().in("id", barcodeProductIds)
+      ? await baseQuery(SOURCE_LIMIT).in("id", barcodeProductIds)
       : { data: [], error: null };
 
     if (byBarcode.error) {
@@ -132,11 +132,31 @@ export async function GET(request: Request) {
       productsById.set(product.id, product);
     }
 
+    const normalizedQuery = query.toLocaleLowerCase();
     const products = normalizeProducts(
       Array.from(productsById.values()) as Parameters<
         typeof normalizeProducts
       >[0]
-    ).slice(0, limit);
+    )
+      .sort((left, right) => {
+        const leftExact =
+          left.sku.toLocaleLowerCase() === normalizedQuery ||
+          left.barcodes.some(
+            (barcode) => barcode.toLocaleLowerCase() === normalizedQuery
+          );
+        const rightExact =
+          right.sku.toLocaleLowerCase() === normalizedQuery ||
+          right.barcodes.some(
+            (barcode) => barcode.toLocaleLowerCase() === normalizedQuery
+          );
+
+        if (leftExact !== rightExact) {
+          return leftExact ? -1 : 1;
+        }
+
+        return left.name.localeCompare(right.name, "ar");
+      })
+      .slice(0, limit);
 
     return NextResponse.json({ products });
   } catch (error) {
@@ -183,19 +203,17 @@ function normalizeProducts(
     }>;
   }>
 ) {
-  return products
-    .map((product) => ({
-      id: product.id,
-      name: product.name,
-      sku: product.sku,
-      is_active: product.is_active,
-      product_units: (product.product_units ?? []).map((unit) => ({
-        ...unit,
-        units: firstRelation(unit.units),
-      })),
-      barcodes: (product.product_barcodes ?? [])
-        .map((item) => item.barcode?.trim())
-        .filter((barcode): barcode is string => Boolean(barcode)),
-    }))
-    .sort((left, right) => left.name.localeCompare(right.name));
+  return products.map((product) => ({
+    id: product.id,
+    name: product.name,
+    sku: product.sku,
+    is_active: product.is_active,
+    product_units: (product.product_units ?? []).map((unit) => ({
+      ...unit,
+      units: firstRelation(unit.units),
+    })),
+    barcodes: (product.product_barcodes ?? [])
+      .map((item) => item.barcode?.trim())
+      .filter((barcode): barcode is string => Boolean(barcode)),
+  }));
 }
