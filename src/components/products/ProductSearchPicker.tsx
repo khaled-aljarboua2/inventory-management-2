@@ -98,7 +98,7 @@ export default function ProductSearchPicker({
           setLoading(false);
         }
       }
-    }, 200);
+    }, query.trim() ? 350 : 0);
 
     return () => {
       controller.abort();
