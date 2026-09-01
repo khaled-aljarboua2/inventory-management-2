@@ -46,11 +46,12 @@ export default function SidebarNav({
     allowed("purchases.view") ||
     allowed("suppliers.view");
 
+  const hasReportsSection = allowed("stock.view");
+
   const hasManagementSection =
     allowed("locations.view") ||
     allowed("users.view") ||
     allowed("users.manage_access") ||
-    allowed("stock.view") ||
     allowed("settings.view");
 
   return (
@@ -141,6 +142,18 @@ export default function SidebarNav({
         </>
       )}
 
+      {hasReportsSection && (
+        <>
+          <SectionTitle>التقارير</SectionTitle>
+
+          <NavLink
+            href="/reports"
+            icon={<BarChart3 size={18} />}
+            label="التقارير"
+          />
+        </>
+      )}
+
       {hasManagementSection && (
         <>
           <SectionTitle>الإدارة</SectionTitle>
@@ -174,14 +187,6 @@ export default function SidebarNav({
               href="/roles"
               icon={<ShieldCheck size={18} />}
               label="الأدوار والصلاحيات"
-            />
-          )}
-
-          {allowed("stock.view") && (
-            <NavLink
-              href="/reports"
-              icon={<BarChart3 size={18} />}
-              label="التقارير"
             />
           )}
 
