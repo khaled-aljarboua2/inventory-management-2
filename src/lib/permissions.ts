@@ -67,6 +67,12 @@ type CurrentUserProfile = {
     name: string;
     description: string | null;
   } | null;
+  locations: {
+    id: string;
+    name: string;
+    code: string;
+    type: string;
+  } | null;
 };
 
 type CurrentUserContext = {
@@ -115,6 +121,13 @@ export async function getCurrentUserContext(): Promise<CurrentUserContext> {
             id,
             name,
             description
+          ),
+
+          locations (
+            id,
+            name,
+            code,
+            type
           )
         `)
         .eq("auth_user_id", user.id)
@@ -132,6 +145,9 @@ export async function getCurrentUserContext(): Promise<CurrentUserContext> {
           ...profileResult.data,
           roles: firstRelation(
             profileResult.data.roles
+          ),
+          locations: firstRelation(
+            profileResult.data.locations
           ),
         }
       : null;
