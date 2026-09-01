@@ -456,3 +456,343 @@ body {
     font-size: 0.9375rem;
   }
 }
+/* =========================================================
+   WAREVANCE — GLOBAL UI REFRESH
+   ضع هذا الكود في نهاية globals.css
+========================================================= */
+
+:root {
+  --wv-page-bg: #f5f7f8;
+  --wv-surface: #ffffff;
+  --wv-surface-soft: #f9fafb;
+
+  --wv-text: #172126;
+  --wv-text-secondary: #66737a;
+  --wv-text-muted: #98a2a8;
+
+  --wv-border: #e2e8ea;
+  --wv-border-soft: #edf1f2;
+
+  --wv-radius-sm: 8px;
+  --wv-radius-md: 12px;
+  --wv-radius-lg: 16px;
+
+  --wv-page-width: 1680px;
+
+  --wv-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.02),
+    0 1px 4px rgba(16, 24, 40, 0.03);
+}
+
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+html {
+  background: var(--wv-page-bg);
+}
+
+body {
+  background:
+    linear-gradient(
+      180deg,
+      #f8fafb 0px,
+      var(--wv-page-bg) 220px
+    );
+
+  color: var(--wv-text);
+
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1;
+
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
+
+main {
+  width: 100%;
+  max-width: var(--wv-page-width);
+
+  margin-inline: auto;
+
+  padding-top: 24px;
+  padding-bottom: 32px;
+}
+
+
+/* =========================================================
+   TEXT
+========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--wv-text);
+  letter-spacing: -0.015em;
+}
+
+h1 {
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+h2 {
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+h3 {
+  font-weight: 650;
+}
+
+p {
+  line-height: 1.7;
+}
+
+
+/* =========================================================
+   CARDS / PANELS
+========================================================= */
+
+[class*="rounded-xl"],
+[class*="rounded-2xl"] {
+  border-color: var(--wv-border);
+}
+
+.bg-card,
+[class*="bg-card"] {
+  box-shadow: var(--wv-shadow);
+}
+
+
+/* =========================================================
+   TABLES
+========================================================= */
+
+table {
+  width: 100%;
+
+  border-collapse: separate;
+  border-spacing: 0;
+
+  background: var(--wv-surface);
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* table header */
+
+thead {
+  background: var(--wv-surface-soft);
+}
+
+thead th {
+  color: #526068;
+
+  font-size: 12.5px;
+  font-weight: 650;
+
+  letter-spacing: 0.01em;
+
+  border-bottom: 1px solid var(--wv-border);
+}
+
+
+/* table cells */
+
+th,
+td {
+  padding-top: 13px;
+  padding-bottom: 13px;
+
+  vertical-align: middle;
+}
+
+tbody td {
+  color: #27343a;
+
+  border-bottom-color: var(--wv-border-soft);
+}
+
+
+/* row hover */
+
+tbody tr {
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+tbody tr:hover {
+  background: #fafcfc;
+}
+
+
+/* last table row */
+
+tbody tr:last-child td {
+  border-bottom-color: transparent;
+}
+
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+input,
+textarea,
+select {
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+input,
+textarea {
+  background-color: #ffffff;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9aa5aa;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+button {
+  font-weight: 550;
+
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   LINKS
+========================================================= */
+
+a {
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    opacity 120ms ease;
+}
+
+
+/* =========================================================
+   DIALOGS / DROPDOWNS
+========================================================= */
+
+[role="dialog"] {
+  border-color: var(--wv-border);
+}
+
+[role="menu"],
+[role="listbox"] {
+  border-color: var(--wv-border);
+
+  box-shadow:
+    0 8px 30px rgba(16, 24, 40, 0.08),
+    0 2px 8px rgba(16, 24, 40, 0.04);
+}
+
+
+/* =========================================================
+   SELECTION
+========================================================= */
+
+::selection {
+  background: rgba(15, 118, 110, 0.16);
+}
+
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c9d1d4 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c9d1d4;
+
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #adb9bd;
+}
+
+
+/* =========================================================
+   MOBILE / TABLET
+========================================================= */
+
+@media (max-width: 1024px) {
+  main {
+    padding-top: 18px;
+    padding-bottom: 24px;
+  }
+
+  th,
+  td {
+    padding-top: 11px;
+    padding-bottom: 11px;
+  }
+}
+
+
+@media (max-width: 640px) {
+  main {
+    padding-top: 14px;
+    padding-bottom: 20px;
+  }
+
+  h1 {
+    letter-spacing: -0.01em;
+  }
+}
