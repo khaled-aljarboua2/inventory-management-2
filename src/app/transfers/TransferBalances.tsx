@@ -21,6 +21,10 @@ type Balance = {
   } | null;
   location: Location | null;
   barcodes: string[];
+  base_unit: {
+    name: string;
+    symbol: string | null;
+  } | null;
 };
 
 type Pagination = {
@@ -36,6 +40,11 @@ function formatQuantity(value: number) {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+function unitLabel(unit: Balance["base_unit"]) {
+  if (!unit) return "";
+  return unit.symbol?.trim() || unit.name.trim();
 }
 
 export default function TransferBalances() {
@@ -226,28 +235,39 @@ export default function TransferBalances() {
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {balances.map((balance) => (
-                  <tr key={balance.id} className="transition-colors hover:bg-teal-50/40">
-                    <td className="px-6 py-4 font-semibold text-slate-800">
-                      {balance.product?.name ?? "—"}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs text-slate-500">
-                      {balance.product?.sku ?? "—"}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs text-slate-500">
-                      {balance.barcodes.length > 0 ? balance.barcodes.join(" · ") : "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-slate-800">{balance.location?.name ?? "—"}</p>
-                      <p className="mt-1 text-xs text-slate-400">{balance.location?.code ?? ""}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span dir="ltr" className="font-mono text-sm font-bold tabular-nums text-slate-900">
-                        {formatQuantity(balance.available_quantity)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {balances.map((balance) => {
+                  const unit = unitLabel(balance.base_unit);
+
+                  return (
+                    <tr key={balance.id} className="transition-colors hover:bg-teal-50/40">
+                      <td className="px-6 py-4 font-semibold text-slate-800">
+                        {balance.product?.name ?? "—"}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-slate-500">
+                        {balance.product?.sku ?? "—"}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-slate-500">
+                        {balance.barcodes.length > 0 ? balance.barcodes.join(" · ") : "—"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-medium text-slate-800">{balance.location?.name ?? "—"}</p>
+                        <p className="mt-1 text-xs text-slate-400">{balance.location?.code ?? ""}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+                          <span dir="ltr" className="font-mono text-sm font-bold tabular-nums text-slate-900">
+                            {formatQuantity(balance.available_quantity)}
+                          </span>
+                          {unit ? (
+                            <span className="text-xs font-medium text-slate-500">
+                              {unit}
+                            </span>
+                          ) : null}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
