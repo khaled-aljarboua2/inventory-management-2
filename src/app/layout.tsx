@@ -3,6 +3,7 @@ import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import "./globals.css";
+import "./warevance-ui.css";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
