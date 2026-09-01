@@ -23,6 +23,15 @@ type BalanceRow = {
     | null;
 };
 
+type ProductUnitRow = {
+  product_id: string;
+  is_base: boolean | null;
+  units:
+    | { name: string; symbol: string | null }
+    | { name: string; symbol: string | null }[]
+    | null;
+};
+
 function parsePositiveInteger(value: string | null, fallback: number) {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -149,17 +158,29 @@ export async function GET(request: NextRequest) {
       new Set(balances.map((balance) => balance.product_id))
     );
     const barcodesByProduct = new Map<string, string[]>();
+    const baseUnitByProduct = new Map<
+      string,
+      { name: string; symbol: string | null }
+    >();
 
     if (currentProductIds.length > 0) {
-      const { data: barcodeRows, error: barcodeError } = await session.supabase
-        .from("product_barcodes")
-        .select("product_id, barcode, is_default")
-        .in("product_id", currentProductIds)
-        .order("is_default", { ascending: false });
+      const [barcodeResponse, unitResponse] = await Promise.all([
+        session.supabase
+          .from("product_barcodes")
+          .select("product_id, barcode, is_default")
+          .in("product_id", currentProductIds)
+          .order("is_default", { ascending: false }),
+        session.supabase
+          .from("product_units")
+          .select("product_id, is_base, units!inner(name, symbol)")
+          .in("product_id", currentProductIds)
+          .eq("is_base", true),
+      ]);
 
-      if (barcodeError) throw barcodeError;
+      if (barcodeResponse.error) throw barcodeResponse.error;
+      if (unitResponse.error) throw unitResponse.error;
 
-      for (const row of barcodeRows ?? []) {
+      for (const row of barcodeResponse.data ?? []) {
         const barcode = row.barcode?.trim();
         if (!barcode) continue;
 
@@ -168,6 +189,16 @@ export async function GET(request: NextRequest) {
           current.push(barcode);
           barcodesByProduct.set(row.product_id, current);
         }
+      }
+
+      for (const row of (unitResponse.data ?? []) as ProductUnitRow[]) {
+        const unit = firstRelation(row.units);
+        if (!unit) continue;
+
+        baseUnitByProduct.set(row.product_id, {
+          name: unit.name,
+          symbol: unit.symbol,
+        });
       }
     }
 
@@ -183,6 +214,7 @@ export async function GET(request: NextRequest) {
         product: firstRelation(balance.products),
         location: firstRelation(balance.locations),
         barcodes: barcodesByProduct.get(balance.product_id) ?? [],
+        base_unit: baseUnitByProduct.get(balance.product_id) ?? null,
       })),
       locations,
       pagination: {
