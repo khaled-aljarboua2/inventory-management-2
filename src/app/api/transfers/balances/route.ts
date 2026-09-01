@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
       }
 
       for (const row of (unitResponse.data ?? []) as ProductUnitRow[]) {
-        const unit = firstRelation(row.units);
+        const unit = Array.isArray(row.units) ? row.units[0] : row.units;
         if (!unit) continue;
 
         baseUnitByProduct.set(row.product_id, {
