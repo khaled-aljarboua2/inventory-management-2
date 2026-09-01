@@ -1,5 +1,6 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import GlobalSearchBridge from "./GlobalSearchBridge";
 import {
   getCurrentUserContext,
 } from "@/lib/permissions";
@@ -25,6 +26,23 @@ export default async function DashboardLayout({
     redirect("/login?error=account_disabled");
   }
 
+  const locationName = profile.locations?.name?.trim() ?? "";
+  const topbarProfile = locationName
+    ? {
+        ...profile,
+        roles: profile.roles
+          ? {
+              ...profile.roles,
+              name: `${profile.roles.name} · ${locationName}`,
+            }
+          : {
+              id: "location-only",
+              name: locationName,
+              description: null,
+            },
+      }
+    : profile;
+
   return (
     <div className="relative min-h-screen bg-background">
       <input
@@ -39,8 +57,10 @@ export default async function DashboardLayout({
 
       <div className="flex min-h-screen min-w-0 flex-col md:mr-64">
         <Topbar
-          profile={profile}
+          profile={topbarProfile}
         />
+
+        <GlobalSearchBridge />
 
         <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
           {children}
