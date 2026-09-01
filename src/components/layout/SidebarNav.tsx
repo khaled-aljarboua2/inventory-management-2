@@ -1,25 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
-  ArrowRightLeft,
+  Boxes,
   ClipboardList,
+  ClipboardCheck,
+  Ruler,
+  ArrowRightLeft,
   ShoppingCart,
   Truck,
-  Users,
-  Settings,
-  ClipboardCheck,
-  ChevronDown,
-  BarChart3,
-  Boxes,
-  Ruler,
   Building2,
   Warehouse,
+  Users,
   ShieldCheck,
+  BarChart3,
+  Settings,
 } from "lucide-react";
-import { useState } from "react";
 
 type Props = {
   permissions: Set<string>;
@@ -31,464 +30,243 @@ export default function SidebarNav({
   const allowed = (permission: string) =>
     permissions.has(permission);
 
-  const [inventoryOpen, setInventoryOpen] =
-    useState(true);
-
-  const [purchasesOpen, setPurchasesOpen] =
-    useState(true);
-
-  const [masterOpen, setMasterOpen] =
-    useState(true);
-
-  const [generalSettingsOpen, setGeneralSettingsOpen] =
-    useState(true);
-
-  // ============================================================
-  // الأقسام
-  // ============================================================
-
-  const hasInventory =
-    allowed("stock.view") ||
-    allowed("stock.count") ||
-    allowed("stock.adjust") ||
-    allowed("stock.receive") ||
+  const canViewTransfers =
     allowed("transfers.view") ||
     allowed("transfers.create") ||
     allowed("transfers.receive") ||
     allowed("transfers.update");
 
-  const hasPurchases =
+  const hasInventorySection =
+    allowed("products.view") ||
+    allowed("stock.view") ||
+    allowed("stock.count");
+
+  const hasOperationsSection =
+    canViewTransfers ||
     allowed("purchases.view") ||
     allowed("suppliers.view");
 
-  const hasMaster =
-    allowed("products.view") ||
-    allowed("locations.view");
-
-  const hasManagement =
+  const hasManagementSection =
+    allowed("locations.view") ||
     allowed("users.view") ||
     allowed("users.manage_access") ||
+    allowed("stock.view") ||
     allowed("settings.view");
 
   return (
-    <nav className="px-3 py-5">
-      {/* ========================================================
-          الرئيسية
-      ========================================================= */}
-
+    <nav className="px-3 py-4">
       {allowed("dashboard.view") && (
-        <>
-          <SectionTitle>
-            الرئيسية
-          </SectionTitle>
+        <NavLink
+          href="/dashboard"
+          icon={<LayoutDashboard size={19} />}
+          label="الرئيسية"
+          prominent
+        />
+      )}
 
-          <NavLink
-            href="/dashboard"
-            icon={
-              <LayoutDashboard size={19} />
-            }
-            label="لوحة التحكم"
-          />
+      {hasInventorySection && (
+        <>
+          <SectionTitle>المخزون</SectionTitle>
+
+          {allowed("products.view") && (
+            <NavLink
+              href="/products"
+              icon={<Package size={18} />}
+              label="المنتجات"
+            />
+          )}
+
+          {allowed("stock.view") && (
+            <NavLink
+              href="/inventory"
+              icon={<Boxes size={18} />}
+              label="أرصدة المخزون"
+              exact
+            />
+          )}
+
+          {allowed("stock.view") && (
+            <NavLink
+              href="/inventory/transactions"
+              icon={<ClipboardList size={18} />}
+              label="حركات المخزون"
+            />
+          )}
+
+          {allowed("stock.count") && (
+            <NavLink
+              href="/inventory/counts"
+              icon={<ClipboardCheck size={18} />}
+              label="الجرد"
+            />
+          )}
+
+          {allowed("products.view") && (
+            <NavLink
+              href="/units"
+              icon={<Ruler size={18} />}
+              label="الوحدات"
+            />
+          )}
         </>
       )}
 
-      {/* ========================================================
-          إدارة المخزون
-      ========================================================= */}
-
-      {hasInventory && (
+      {hasOperationsSection && (
         <>
-          <SectionTitle className="mt-7">
-            إدارة المخزون
-          </SectionTitle>
+          <SectionTitle>العمليات</SectionTitle>
 
-          <MenuButton
-            open={inventoryOpen}
-            onClick={() =>
-              setInventoryOpen(!inventoryOpen)
-            }
-            icon={
-              <Boxes size={19} />
-            }
-            label="المخزون"
-          />
+          {canViewTransfers && (
+            <NavLink
+              href="/transfers"
+              icon={<ArrowRightLeft size={18} />}
+              label="طلبات النقل"
+            />
+          )}
 
-          <SubMenu open={inventoryOpen}>
-            {allowed("stock.view") && (
-              <NavLink
-                href="/inventory"
-                icon={
-                  <Package size={17} />
-                }
-                label="أرصدة المخزون"
-                sub
-              />
-            )}
+          {allowed("purchases.view") && (
+            <NavLink
+              href="/purchases"
+              icon={<ShoppingCart size={18} />}
+              label="المشتريات"
+            />
+          )}
 
-            {allowed("stock.count") && (
-              <NavLink
-                href="/inventory/counts"
-                icon={
-                  <ClipboardCheck size={17} />
-                }
-                label="الجرد"
-                sub
-              />
-            )}
-
-            {allowed("stock.view") && (
-              <NavLink
-                href="/inventory/transactions"
-                icon={
-                  <ClipboardList size={17} />
-                }
-                label="حركة المخزون"
-                sub
-              />
-            )}
-
-            {(
-              allowed("transfers.view") ||
-              allowed("transfers.create") ||
-              allowed("transfers.receive") ||
-              allowed("transfers.update")
-            ) && (
-              <NavLink
-                href="/transfers"
-                icon={
-                  <ArrowRightLeft size={17} />
-                }
-                label="طلبات النقل"
-                sub
-              />
-            )}
-
-            {allowed("stock.view") && (
-              <NavLink
-                href="/reports"
-                icon={
-                  <BarChart3 size={17} />
-                }
-                label="التقارير"
-                sub
-              />
-            )}
-          </SubMenu>
+          {allowed("suppliers.view") && (
+            <NavLink
+              href="/suppliers"
+              icon={<Truck size={18} />}
+              label="الموردون"
+            />
+          )}
         </>
       )}
 
-      {/* ========================================================
-          المشتريات
-      ========================================================= */}
-
-      {hasPurchases && (
+      {hasManagementSection && (
         <>
-          <SectionTitle className="mt-7">
-            المشتريات
-          </SectionTitle>
+          <SectionTitle>الإدارة</SectionTitle>
 
-          <MenuButton
-            open={purchasesOpen}
-            onClick={() =>
-              setPurchasesOpen(!purchasesOpen)
-            }
-            icon={
-              <ShoppingCart size={19} />
-            }
-            label="المشتريات"
-          />
+          {allowed("locations.view") && (
+            <NavLink
+              href="/branches"
+              icon={<Building2 size={18} />}
+              label="الفروع"
+            />
+          )}
 
-          <SubMenu open={purchasesOpen}>
-            {allowed("purchases.view") && (
-              <NavLink
-                href="/purchases"
-                icon={
-                  <ShoppingCart size={17} />
-                }
-                label="أوامر الشراء"
-                sub
-              />
-            )}
+          {allowed("locations.view") && (
+            <NavLink
+              href="/warehouses"
+              icon={<Warehouse size={18} />}
+              label="المستودعات"
+            />
+          )}
 
-            {allowed("suppliers.view") && (
-              <NavLink
-                href="/suppliers"
-                icon={
-                  <Truck size={17} />
-                }
-                label="الموردون"
-                sub
-              />
-            )}
-          </SubMenu>
-        </>
-      )}
+          {allowed("users.view") && (
+            <NavLink
+              href="/users"
+              icon={<Users size={18} />}
+              label="المستخدمون"
+            />
+          )}
 
-      {/* ========================================================
-          البيانات الأساسية
-      ========================================================= */}
+          {allowed("users.manage_access") && (
+            <NavLink
+              href="/roles"
+              icon={<ShieldCheck size={18} />}
+              label="الأدوار والصلاحيات"
+            />
+          )}
 
-      {hasMaster && (
-        <>
-          <SectionTitle className="mt-7">
-            البيانات الأساسية
-          </SectionTitle>
+          {allowed("stock.view") && (
+            <NavLink
+              href="/reports"
+              icon={<BarChart3 size={18} />}
+              label="التقارير"
+            />
+          )}
 
-          <MenuButton
-            open={masterOpen}
-            onClick={() =>
-              setMasterOpen(!masterOpen)
-            }
-            icon={
-              <Package size={19} />
-            }
-            label="البيانات الأساسية"
-          />
-
-          <SubMenu open={masterOpen}>
-            {allowed("products.view") && (
-              <NavLink
-                href="/products"
-                icon={
-                  <Package size={17} />
-                }
-                label="المنتجات"
-                sub
-              />
-            )}
-
-            {allowed("products.view") && (
-              <NavLink
-                href="/units"
-                icon={
-                  <Ruler size={17} />
-                }
-                label="الوحدات"
-                sub
-              />
-            )}
-
-            {allowed("locations.view") && (
-              <NavLink
-                href="/branches"
-                icon={
-                  <Building2 size={17} />
-                }
-                label="الفروع"
-                sub
-              />
-            )}
-
-            {allowed("locations.view") && (
-              <NavLink
-                href="/warehouses"
-                icon={
-                  <Warehouse size={17} />
-                }
-                label="المستودعات"
-                sub
-              />
-            )}
-          </SubMenu>
-        </>
-      )}
-
-      {/* ========================================================
-          الإدارة
-      ========================================================= */}
-
-      {hasManagement && (
-        <>
-          <SectionTitle className="mt-7">
-          الإعدادات العامة
-          </SectionTitle>
-
-          <MenuButton
-            open={generalSettingsOpen}
-            onClick={() =>
-              setGeneralSettingsOpen(!generalSettingsOpen)
-            }
-            icon={<Settings size={19} />}
-            label="الإعدادات العامة"
-          />
-
-          <SubMenu open={generalSettingsOpen}>
-            {allowed("settings.view") && (
-              <NavLink
-                href="/settings"
-                icon={<Settings size={17} />}
-                label="إعدادات النظام"
-                sub
-              />
-            )}
-
-            {allowed("users.view") && (
-              <NavLink
-                href="/users"
-                icon={<Users size={17} />}
-                label="المستخدمون"
-                sub
-              />
-            )}
-
-            {allowed("users.manage_access") && (
-              <NavLink
-                href="/roles"
-                icon={<ShieldCheck size={17} />}
-                label="الأدوار والصلاحيات"
-                sub
-              />
-            )}
-          </SubMenu>
+          {allowed("settings.view") && (
+            <NavLink
+              href="/settings"
+              icon={<Settings size={18} />}
+              label="الإعدادات"
+            />
+          )}
         </>
       )}
     </nav>
   );
 }
 
-/* ==============================================================
-   عنوان القسم
-================================================================ */
-
 function SectionTitle({
   children,
-  className = "",
 }: {
   children: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <p
-      className={`mb-3 px-3 text-xs font-semibold tracking-wider text-teal-100/70 ${className}`}
-    >
-      {children}
-    </p>
-  );
-}
-
-/* ==============================================================
-   زر القائمة
-================================================================ */
-
-function MenuButton({
-  open,
-  onClick,
-  icon,
-  label,
-}: {
-  open: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="
-        group mb-1 flex w-full
-        items-center justify-between
-        rounded-xl
-        px-3.5 py-3
-        text-[15px]
-        font-medium
-        text-white
-        transition
-        hover:bg-teal-800/50
-      "
-    >
-      <div className="flex items-center gap-3">
-        <span className="text-teal-100 transition-colors group-hover:text-white">
-          {icon}
-        </span>
-
-        <span>{label}</span>
-      </div>
-
-      <ChevronDown
-        size={17}
-        className={`text-teal-100 transition-transform ${
-          open ? "rotate-180" : ""
-        }`}
-      />
-    </button>
-  );
-}
-
-/* ==============================================================
-   القائمة الفرعية
-================================================================ */
-
-function SubMenu({
-  open,
-  children,
-}: {
-  open: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className={`overflow-hidden transition-all duration-200 ${
-        open
-          ? "max-h-96 opacity-100"
-          : "max-h-0 opacity-0"
-      }`}
-    >
-      <div className="mr-5 mt-1 space-y-1 border-r border-white/20 pr-3">
+    <div className="mb-2 mt-5 flex items-center gap-3 px-3">
+      <span className="whitespace-nowrap text-[12px] font-medium text-teal-100/65">
         {children}
-      </div>
+      </span>
+      <span className="h-px flex-1 bg-white/10" />
     </div>
   );
 }
-
-/* ==============================================================
-   الرابط
-================================================================ */
 
 function NavLink({
   href,
   icon,
   label,
-  sub = false,
+  exact = false,
+  prominent = false,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
-  sub?: boolean;
+  exact?: boolean;
+  prominent?: boolean;
 }) {
+  const pathname = usePathname();
+
+  const active = exact
+    ? pathname === href
+    : pathname === href ||
+      pathname.startsWith(`${href}/`);
+
   return (
     <Link
       href={href}
       prefetch={false}
-      className={
-        sub
-          ? `
-            group flex items-center gap-3
-            rounded-lg
-            px-3 py-2.5
-            text-[14px]
-            text-teal-50
-            transition
-            hover:bg-teal-800/50
-            hover:text-white
-          `
-          : `
-            group mb-1 flex items-center gap-3
-            rounded-xl
-            px-3.5 py-3
-            text-[15px]
-            font-medium
-            text-white
-            transition
-            hover:bg-teal-800/50
-          `
-      }
+      aria-current={active ? "page" : undefined}
+      className={`
+        group mb-1 flex w-full items-center gap-3
+        rounded-xl px-3.5
+        ${prominent ? "py-3" : "py-2.5"}
+        text-[14px] font-medium
+        transition-all duration-150
+        ${
+          active
+            ? "bg-teal-500/85 text-white shadow-sm ring-1 ring-white/10"
+            : "text-teal-50 hover:bg-white/10 hover:text-white"
+        }
+      `}
     >
-      <span className="text-teal-100 transition-colors group-hover:text-white">
+      <span
+        className={`
+          shrink-0 transition-colors
+          ${
+            active
+              ? "text-white"
+              : "text-teal-100/85 group-hover:text-white"
+          }
+        `}
+      >
         {icon}
       </span>
 
-      <span>{label}</span>
+      <span className="min-w-0 truncate">
+        {label}
+      </span>
     </Link>
   );
 }
