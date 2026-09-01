@@ -1,1 +1,297 @@
-/* ==========================================================================\n   WAREVANCE — Unified application presentation layer\n   Visual-only rules scoped to the authenticated dashboard shell.\n   No business logic, permissions, forms, or data behavior is changed here.\n   ========================================================================== */\n\n:root {\n  --wv-ui-panel-radius: 1rem;\n  --wv-ui-control-radius: 0.75rem;\n  --wv-ui-border: #dde7e5;\n  --wv-ui-border-soft: #e9efed;\n  --wv-ui-surface: #ffffff;\n  --wv-ui-surface-soft: #f7faf9;\n  --wv-ui-text: #172523;\n  --wv-ui-text-muted: #667773;\n  --wv-ui-teal: #0f766e;\n  --wv-ui-teal-soft: #ecf8f6;\n  --wv-ui-shadow: 0 1px 2px rgba(15, 23, 42, 0.025), 0 8px 24px rgba(15, 23, 42, 0.035);\n}\n\n.dark {\n  --wv-ui-border: rgba(204, 251, 241, 0.11);\n  --wv-ui-border-soft: rgba(204, 251, 241, 0.075);\n  --wv-ui-surface: #13211f;\n  --wv-ui-surface-soft: #10201e;\n  --wv-ui-text: #ecfdf9;\n  --wv-ui-text-muted: #9db2ae;\n  --wv-ui-teal: #2dd4bf;\n  --wv-ui-teal-soft: rgba(45, 212, 191, 0.08);\n  --wv-ui-shadow: none;\n}\n\n/* --------------------------------------------------------------------------\n   Page rhythm\n   -------------------------------------------------------------------------- */\n\n#mobile-sidebar-toggle ~ div > main {\n  padding-block-end: 2.5rem;\n}\n\n#mobile-sidebar-toggle ~ div > main > :where(div, main) {\n  width: 100%;\n}\n\n#mobile-sidebar-toggle ~ div > main > :where(div, main).space-y-7,\n#mobile-sidebar-toggle ~ div > main > :where(div, main).space-y-6,\n#mobile-sidebar-toggle ~ div > main > :where(div, main).space-y-5 {\n  row-gap: 1.15rem;\n}\n\n/* --------------------------------------------------------------------------\n   Unified page headers\n   Works with the existing page markup, including both plain and card headers.\n   -------------------------------------------------------------------------- */\n\n#mobile-sidebar-toggle ~ div > main\n  > :where(div, main)\n  > :first-child:has(h1),\n#mobile-sidebar-toggle ~ div > main\n  > :where(div, main)\n  > section:first-child:has(h1) {\n  position: relative;\n  overflow: hidden;\n  border: 1px solid var(--wv-ui-border);\n  border-radius: var(--wv-ui-panel-radius);\n  background: linear-gradient(135deg, #ffffff 0%, #ffffff 72%, #f4fbf9 100%);\n  padding: 1.15rem 1.35rem;\n  box-shadow: var(--wv-ui-shadow);\n}\n\n#mobile-sidebar-toggle ~ div > main\n  > :where(div, main)\n  > :first-child:has(h1)::before,\n#mobile-sidebar-toggle ~ div > main\n  > :where(div, main)\n  > section:first-child:has(h1)::before {\n  content: \"\";\n  position: absolute;\n  inset-block: 0;\n  inset-inline-start: 0;\n  width: 3px;\n  background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%);\n}\n\n.dark #mobile-sidebar-toggle ~ div > main\n  > :where(div, main)\n  > :first-child:has(h1),\n.dark #mobile-sidebar-toggle ~ div > main\n  > :where(div, main)\n  > section:first-child:has(h1) {\n  background: linear-gradient(135deg, #13211f 0%, #13211f 74%, #102b27 100%);\n}\n\n#mobile-sidebar-toggle ~ div > main h1 {\n  color: var(--wv-ui-text);\n  font-size: clamp(1.45rem, 1.2rem + 0.55vw, 1.9rem);\n  font-weight: 700;\n  letter-spacing: -0.025em;\n}\n\n#mobile-sidebar-toggle ~ div > main h1 + p {\n  margin-top: 0.35rem;\n  max-width: 48rem;\n  color: var(--wv-ui-text-muted);\n  line-height: 1.75;\n}\n\n#mobile-sidebar-toggle ~ div > main h2 {\n  color: var(--wv-ui-text);\n  font-weight: 700;\n  letter-spacing: -0.018em;\n}\n\n/* Breadcrumbs and page eyebrow text */\n#mobile-sidebar-toggle ~ div > main\n  :where(.text-slate-400, .text-slate-500):has(+ h1),\n#mobile-sidebar-toggle ~ div > main\n  :where(.text-slate-400, .text-slate-500):has(~ h1) {\n  color: #7b8c88;\n}\n\n/* --------------------------------------------------------------------------\n   Panels and cards\n   -------------------------------------------------------------------------- */\n\n#mobile-sidebar-toggle ~ div > main\n  :where(section, div).rounded-2xl.bg-white,\n#mobile-sidebar-toggle ~ div > main\n  :where(section, div).rounded-3xl.bg-white {\n  border-color: var(--wv-ui-border);\n  border-radius: var(--wv-ui-panel-radius);\n  box-shadow: var(--wv-ui-shadow);\n}\n\n#mobile-sidebar-toggle ~ div > main\n  :where(section, div).rounded-2xl.bg-slate-50,\n#mobile-sidebar-toggle ~ div > main\n  :where(section, div).rounded-xl.bg-slate-50 {\n  border-color: var(--wv-ui-border-soft);\n  background: var(--wv-ui-surface-soft);\n}\n\n/* KPI / summary grids: tighter and more dashboard-like */\n#mobile-sidebar-toggle ~ div > main\n  :where(.grid):has(> .bg-white.rounded-2xl)\n  > .bg-white.rounded-2xl {\n  min-height: 112px;\n  padding: 1rem 1.05rem;\n}\n\n#mobile-sidebar-toggle ~ div > main\n  :where(.grid):has(> .bg-white.rounded-2xl)\n  > .bg-white.rounded-2xl:hover {\n  border-color: #cbded9;\n  transform: translateY(-1px);\n  transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;\n}\n\n.dark #mobile-sidebar-toggle ~ div > main\n  :where(.grid):has(> .bg-white.rounded-2xl)\n  > .bg-white.rounded-2xl:hover {\n  border-color: rgba(94, 234, 212, 0.18);\n}\n\n/* --------------------------------------------------------------------------\n   Data tables\n   -------------------------------------------------------------------------- */\n\n#mobile-sidebar-toggle ~ div > main :where(.overflow-x-auto, .overflow-auto):has(table) {\n  border-radius: var(--wv-ui-panel-radius);\n  scrollbar-gutter: stable;\n}\n\n#mobile-sidebar-toggle ~ div > main table {\n  background: var(--wv-ui-surface);\n}\n\n#mobile-sidebar-toggle ~ div > main thead {\n  background: #f5f9f8;\n}\n\n#mobile-sidebar-toggle ~ div > main th {\n  height: 46px;\n  padding-block: 0.7rem;\n  padding-inline: 0.9rem;\n  color: #526460;\n  font-size: 0.78rem;\n  font-weight: 650;\n  white-space: nowrap;\n}\n\n#mobile-sidebar-toggle ~ div > main td {\n  min-height: 50px;\n  padding-block: 0.72rem;\n  padding-inline: 0.9rem;\n  color: #33433f;\n  vertical-align: middle;\n}\n\n#mobile-sidebar-toggle ~ div > main tbody tr {\n  background: transparent;\n}\n\n#mobile-sidebar-toggle ~ div > main tbody tr:hover {\n  background: #f8fbfa;\n}\n\n#mobile-sidebar-toggle ~ div > main tbody tr:last-child td {\n  border-bottom-color: transparent;\n}\n\n.dark #mobile-sidebar-toggle ~ div > main thead {\n  background: rgba(255, 255, 255, 0.025);\n}\n\n.dark #mobile-sidebar-toggle ~ div > main th {\n  color: #a9bfba;\n}\n\n.dark #mobile-sidebar-toggle ~ div > main td {\n  color: #d7e5e2;\n}\n\n.dark #mobile-sidebar-toggle ~ div > main tbody tr:hover {\n  background: rgba(45, 212, 191, 0.035);\n}\n\n/* --------------------------------------------------------------------------\n   Search, filters and form controls\n   -------------------------------------------------------------------------- */\n\n#mobile-sidebar-toggle ~ div > main\n  :where(input:not([type=checkbox]):not([type=radio]), select, textarea) {\n  border-color: var(--wv-ui-border);\n  border-radius: var(--wv-ui-control-radius);\n  background: var(--wv-ui-surface);\n  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;\n}\n\n#mobile-sidebar-toggle ~ div > main\n  :where(input:not([type=checkbox]):not([type=radio]), select):not([class*=\"h-\"]) {\n  min-height: 42px;\n}\n\n#mobile-sidebar-toggle ~ div > main\n  :where(input:not([type=checkbox]):not([type=radio]), select, textarea):hover {\n  border-color: #c8d8d5;\n}\n\n#mobile-sidebar-toggle ~ div > main\n  :where(input:not([type=checkbox]):not([type=radio]), select, textarea):focus {\n  border-color: #2dd4bf;\n  outline: none;\n  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.085);\n}\n\n#mobile-sidebar-toggle ~ div > main input::placeholder,\n#mobile-sidebar-toggle ~ div > main textarea::placeholder {\n  color: #97a7a3;\n}\n\n.dark #mobile-sidebar-toggle ~ div > main\n  :where(input:not([type=checkbox]):not([type=radio]), select, textarea):hover {\n  border-color: rgba(94, 234, 212, 0.22);\n}\n\n/* Make groups containing search/filter controls read as a single toolbar */\n#mobile-sidebar-toggle ~ div > main\n  :where(section, div):has(> form > input):has(> form),\n#mobile-sidebar-toggle ~ div > main\n  form:has(input[type=search]) {\n  border-radius: var(--wv-ui-panel-radius);\n}\n\n/* --------------------------------------------------------------------------\n   Buttons and tabs\n   -------------------------------------------------------------------------- */\n\n#mobile-sidebar-toggle ~ div > main button,\n#mobile-sidebar-toggle ~ div > main a[role=\"button\"] {\n  border-radius: var(--wv-ui-control-radius);\n  font-weight: 600;\n}\n\n#mobile-sidebar-toggle ~ div > main\n  :where(button, a)[class*=\"bg-teal-600\"],\n#mobile-sidebar-toggle ~ div > main\n  :where(button, a)[class*=\"bg-teal-700\"] {\n  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.18);\n}\n\n#mobile-sidebar-toggle ~ div > main\n  :where(button, a)[class*=\"bg-teal-600\"]:hover,\n#mobile-sidebar-toggle ~ div > main\n  :where(button, a)[class*=\"bg-teal-700\"]:hover {\n  filter: saturate(1.04) brightness(0.96);\n}\n\n/* Secondary controls should stay quiet next to the primary action. */\n#mobile-sidebar-toggle ~ div > main\n  :where(button, a)[class*=\"border-slate-200\"][class*=\"bg-white\"] {\n  border-color: var(--wv-ui-border);\n  background: var(--wv-ui-surface);\n  box-shadow: none;\n}\n\n/* --------------------------------------------------------------------------\n   Status badges / chips\n   -------------------------------------------------------------------------- */\n\n#mobile-sidebar-toggle ~ div > main\n  :where(span, div)[class*=\"rounded-full\"][class*=\"bg-teal-\"],\n#mobile-sidebar-toggle ~ div > main\n  :where(span, div)[class*=\"rounded-full\"][class*=\"bg-green-\"] {\n  border: 1px solid rgba(13, 148, 136, 0.12);\n}\n\n#mobile-sidebar-toggle ~ div > main\n  :where(span, div)[class*=\"rounded-full\"][class*=\"bg-amber-\"] {\n  border: 1px solid rgba(217, 119, 6, 0.12);\n}\n\n#mobile-sidebar-toggle ~ div > main\n  :where(span, div)[class*=\"rounded-full\"][class*=\"bg-red-\"] {\n  border: 1px solid rgba(220, 38, 38, 0.12);\n}\n\n/* --------------------------------------------------------------------------\n   Empty states, alerts, and informational boxes\n   -------------------------------------------------------------------------- */\n\n#mobile-sidebar-toggle ~ div > main\n  :where(.bg-red-50, .bg-amber-50, .bg-teal-50).rounded-2xl {\n  border-radius: var(--wv-ui-panel-radius);\n  box-shadow: none;\n}\n\n/* --------------------------------------------------------------------------\n   Responsive layout polish\n   -------------------------------------------------------------------------- */\n\n@media (min-width: 1024px) {\n  #mobile-sidebar-toggle ~ div > main {\n    padding-inline: 1.6rem;\n    padding-block-start: 1.35rem;\n  }\n}\n\n@media (max-width: 767px) {\n  #mobile-sidebar-toggle ~ div > main\n    > :where(div, main)\n    > :first-child:has(h1),\n  #mobile-sidebar-toggle ~ div > main\n    > :where(div, main)\n    > section:first-child:has(h1) {\n    padding: 1rem;\n    border-radius: 0.9rem;\n  }\n\n  #mobile-sidebar-toggle ~ div > main h1 {\n    font-size: 1.4rem;\n  }\n\n  #mobile-sidebar-toggle ~ div > main th,\n  #mobile-sidebar-toggle ~ div > main td {\n    padding-inline: 0.75rem;\n  }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  #mobile-sidebar-toggle ~ div > main *,\n  #mobile-sidebar-toggle ~ div > main *::before,\n  #mobile-sidebar-toggle ~ div > main *::after {\n    scroll-behavior: auto !important;\n    transition-duration: 0.01ms !important;\n  }\n}\n
+/* ========================================================================== */
+/* WAREVANCE — Unified application presentation layer                         */
+/* Visual-only rules scoped to the authenticated dashboard shell.             */
+/* ========================================================================== */
+
+:root {
+  --wv-ui-panel-radius: 1rem;
+  --wv-ui-control-radius: 0.75rem;
+  --wv-ui-border: #dde7e5;
+  --wv-ui-border-soft: #e9efed;
+  --wv-ui-surface: #ffffff;
+  --wv-ui-surface-soft: #f7faf9;
+  --wv-ui-text: #172523;
+  --wv-ui-text-muted: #667773;
+  --wv-ui-teal: #0f766e;
+  --wv-ui-teal-soft: #ecf8f6;
+  --wv-ui-shadow: 0 1px 2px rgba(15, 23, 42, 0.025), 0 8px 24px rgba(15, 23, 42, 0.035);
+}
+
+.dark {
+  --wv-ui-border: rgba(204, 251, 241, 0.11);
+  --wv-ui-border-soft: rgba(204, 251, 241, 0.075);
+  --wv-ui-surface: #13211f;
+  --wv-ui-surface-soft: #10201e;
+  --wv-ui-text: #ecfdf9;
+  --wv-ui-text-muted: #9db2ae;
+  --wv-ui-teal: #2dd4bf;
+  --wv-ui-teal-soft: rgba(45, 212, 191, 0.08);
+  --wv-ui-shadow: none;
+}
+
+/* Page rhythm */
+#mobile-sidebar-toggle ~ div > main {
+  padding-block-end: 2.5rem;
+}
+
+#mobile-sidebar-toggle ~ div > main > :where(div, main) {
+  width: 100%;
+}
+
+#mobile-sidebar-toggle ~ div > main > :where(div, main).space-y-7,
+#mobile-sidebar-toggle ~ div > main > :where(div, main).space-y-6,
+#mobile-sidebar-toggle ~ div > main > :where(div, main).space-y-5 {
+  row-gap: 1.15rem;
+}
+
+/* Unified page headers */
+#mobile-sidebar-toggle ~ div > main > :where(div, main) > :first-child:has(h1),
+#mobile-sidebar-toggle ~ div > main > :where(div, main) > section:first-child:has(h1) {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--wv-ui-border);
+  border-radius: var(--wv-ui-panel-radius);
+  background: linear-gradient(135deg, #ffffff 0%, #ffffff 72%, #f4fbf9 100%);
+  padding: 1.15rem 1.35rem;
+  box-shadow: var(--wv-ui-shadow);
+}
+
+#mobile-sidebar-toggle ~ div > main > :where(div, main) > :first-child:has(h1)::before,
+#mobile-sidebar-toggle ~ div > main > :where(div, main) > section:first-child:has(h1)::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%);
+}
+
+.dark #mobile-sidebar-toggle ~ div > main > :where(div, main) > :first-child:has(h1),
+.dark #mobile-sidebar-toggle ~ div > main > :where(div, main) > section:first-child:has(h1) {
+  background: linear-gradient(135deg, #13211f 0%, #13211f 74%, #102b27 100%);
+}
+
+#mobile-sidebar-toggle ~ div > main h1 {
+  color: var(--wv-ui-text);
+  font-size: clamp(1.45rem, 1.2rem + 0.55vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+#mobile-sidebar-toggle ~ div > main h1 + p {
+  margin-top: 0.35rem;
+  max-width: 48rem;
+  color: var(--wv-ui-text-muted);
+  line-height: 1.75;
+}
+
+#mobile-sidebar-toggle ~ div > main h2 {
+  color: var(--wv-ui-text);
+  font-weight: 700;
+  letter-spacing: -0.018em;
+}
+
+#mobile-sidebar-toggle ~ div > main :where(.text-slate-400, .text-slate-500):has(+ h1),
+#mobile-sidebar-toggle ~ div > main :where(.text-slate-400, .text-slate-500):has(~ h1) {
+  color: #7b8c88;
+}
+
+/* Panels and cards */
+#mobile-sidebar-toggle ~ div > main :where(section, div).rounded-2xl.bg-white,
+#mobile-sidebar-toggle ~ div > main :where(section, div).rounded-3xl.bg-white {
+  border-color: var(--wv-ui-border);
+  border-radius: var(--wv-ui-panel-radius);
+  box-shadow: var(--wv-ui-shadow);
+}
+
+#mobile-sidebar-toggle ~ div > main :where(section, div).rounded-2xl.bg-slate-50,
+#mobile-sidebar-toggle ~ div > main :where(section, div).rounded-xl.bg-slate-50 {
+  border-color: var(--wv-ui-border-soft);
+  background: var(--wv-ui-surface-soft);
+}
+
+#mobile-sidebar-toggle ~ div > main :where(.grid):has(> .bg-white.rounded-2xl) > .bg-white.rounded-2xl {
+  min-height: 112px;
+  padding: 1rem 1.05rem;
+}
+
+#mobile-sidebar-toggle ~ div > main :where(.grid):has(> .bg-white.rounded-2xl) > .bg-white.rounded-2xl:hover {
+  border-color: #cbded9;
+  transform: translateY(-1px);
+  transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.dark #mobile-sidebar-toggle ~ div > main :where(.grid):has(> .bg-white.rounded-2xl) > .bg-white.rounded-2xl:hover {
+  border-color: rgba(94, 234, 212, 0.18);
+}
+
+/* Tables */
+#mobile-sidebar-toggle ~ div > main :where(.overflow-x-auto, .overflow-auto):has(table) {
+  border-radius: var(--wv-ui-panel-radius);
+  scrollbar-gutter: stable;
+}
+
+#mobile-sidebar-toggle ~ div > main table {
+  background: var(--wv-ui-surface);
+}
+
+#mobile-sidebar-toggle ~ div > main thead {
+  background: #f5f9f8;
+}
+
+#mobile-sidebar-toggle ~ div > main th {
+  height: 46px;
+  padding-block: 0.7rem;
+  padding-inline: 0.9rem;
+  color: #526460;
+  font-size: 0.78rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+#mobile-sidebar-toggle ~ div > main td {
+  min-height: 50px;
+  padding-block: 0.72rem;
+  padding-inline: 0.9rem;
+  color: #33433f;
+  vertical-align: middle;
+}
+
+#mobile-sidebar-toggle ~ div > main tbody tr {
+  background: transparent;
+}
+
+#mobile-sidebar-toggle ~ div > main tbody tr:hover {
+  background: #f8fbfa;
+}
+
+#mobile-sidebar-toggle ~ div > main tbody tr:last-child td {
+  border-bottom-color: transparent;
+}
+
+.dark #mobile-sidebar-toggle ~ div > main thead {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.dark #mobile-sidebar-toggle ~ div > main th {
+  color: #a9bfba;
+}
+
+.dark #mobile-sidebar-toggle ~ div > main td {
+  color: #d7e5e2;
+}
+
+.dark #mobile-sidebar-toggle ~ div > main tbody tr:hover {
+  background: rgba(45, 212, 191, 0.035);
+}
+
+/* Search, filters and controls */
+#mobile-sidebar-toggle ~ div > main :where(input:not([type=checkbox]):not([type=radio]), select, textarea) {
+  border-color: var(--wv-ui-border);
+  border-radius: var(--wv-ui-control-radius);
+  background: var(--wv-ui-surface);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+#mobile-sidebar-toggle ~ div > main :where(input:not([type=checkbox]):not([type=radio]), select):not([class*="h-"]) {
+  min-height: 42px;
+}
+
+#mobile-sidebar-toggle ~ div > main :where(input:not([type=checkbox]):not([type=radio]), select, textarea):hover {
+  border-color: #c8d8d5;
+}
+
+#mobile-sidebar-toggle ~ div > main :where(input:not([type=checkbox]):not([type=radio]), select, textarea):focus {
+  border-color: #2dd4bf;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.085);
+}
+
+#mobile-sidebar-toggle ~ div > main input::placeholder,
+#mobile-sidebar-toggle ~ div > main textarea::placeholder {
+  color: #97a7a3;
+}
+
+.dark #mobile-sidebar-toggle ~ div > main :where(input:not([type=checkbox]):not([type=radio]), select, textarea):hover {
+  border-color: rgba(94, 234, 212, 0.22);
+}
+
+#mobile-sidebar-toggle ~ div > main :where(section, div):has(> form > input):has(> form),
+#mobile-sidebar-toggle ~ div > main form:has(input[type=search]) {
+  border-radius: var(--wv-ui-panel-radius);
+}
+
+/* Buttons and tabs */
+#mobile-sidebar-toggle ~ div > main button,
+#mobile-sidebar-toggle ~ div > main a[role="button"] {
+  border-radius: var(--wv-ui-control-radius);
+  font-weight: 600;
+}
+
+#mobile-sidebar-toggle ~ div > main :where(button, a)[class*="bg-teal-600"],
+#mobile-sidebar-toggle ~ div > main :where(button, a)[class*="bg-teal-700"] {
+  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.18);
+}
+
+#mobile-sidebar-toggle ~ div > main :where(button, a)[class*="bg-teal-600"]:hover,
+#mobile-sidebar-toggle ~ div > main :where(button, a)[class*="bg-teal-700"]:hover {
+  filter: saturate(1.04) brightness(0.96);
+}
+
+#mobile-sidebar-toggle ~ div > main :where(button, a)[class*="border-slate-200"][class*="bg-white"] {
+  border-color: var(--wv-ui-border);
+  background: var(--wv-ui-surface);
+  box-shadow: none;
+}
+
+/* Badges */
+#mobile-sidebar-toggle ~ div > main :where(span, div)[class*="rounded-full"][class*="bg-teal-"],
+#mobile-sidebar-toggle ~ div > main :where(span, div)[class*="rounded-full"][class*="bg-green-"] {
+  border: 1px solid rgba(13, 148, 136, 0.12);
+}
+
+#mobile-sidebar-toggle ~ div > main :where(span, div)[class*="rounded-full"][class*="bg-amber-"] {
+  border: 1px solid rgba(217, 119, 6, 0.12);
+}
+
+#mobile-sidebar-toggle ~ div > main :where(span, div)[class*="rounded-full"][class*="bg-red-"] {
+  border: 1px solid rgba(220, 38, 38, 0.12);
+}
+
+#mobile-sidebar-toggle ~ div > main :where(.bg-red-50, .bg-amber-50, .bg-teal-50).rounded-2xl {
+  border-radius: var(--wv-ui-panel-radius);
+  box-shadow: none;
+}
+
+@media (min-width: 1024px) {
+  #mobile-sidebar-toggle ~ div > main {
+    padding-inline: 1.6rem;
+    padding-block-start: 1.35rem;
+  }
+}
+
+@media (max-width: 767px) {
+  #mobile-sidebar-toggle ~ div > main > :where(div, main) > :first-child:has(h1),
+  #mobile-sidebar-toggle ~ div > main > :where(div, main) > section:first-child:has(h1) {
+    padding: 1rem;
+    border-radius: 0.9rem;
+  }
+
+  #mobile-sidebar-toggle ~ div > main h1 {
+    font-size: 1.4rem;
+  }
+
+  #mobile-sidebar-toggle ~ div > main th,
+  #mobile-sidebar-toggle ~ div > main td {
+    padding-inline: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #mobile-sidebar-toggle ~ div > main *,
+  #mobile-sidebar-toggle ~ div > main *::before,
+  #mobile-sidebar-toggle ~ div > main *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
