@@ -125,19 +125,8 @@ export default function TransfersList({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [firstLoad, setFirstLoad] = useState(true);
 
   useEffect(() => {
-    if (
-      firstLoad &&
-      page === 1 &&
-      deferredSearch.trim() === "" &&
-      statusFilter === "all"
-    ) {
-      setFirstLoad(false);
-      return;
-    }
-
     const controller = new AbortController();
     const timer = window.setTimeout(
       async () => {
@@ -186,7 +175,7 @@ export default function TransfersList({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [deferredSearch, statusFilter, page, firstLoad]);
+  }, [deferredSearch, statusFilter, page]);
 
   function formatDate(date: string) {
     return new Intl.DateTimeFormat("ar-SA", {

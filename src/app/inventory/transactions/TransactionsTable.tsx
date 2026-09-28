@@ -60,7 +60,6 @@ export default function TransactionsTable({
   const [directionFilter, setDirectionFilter] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [firstLoad, setFirstLoad] = useState(true);
 
   const hasFilters =
     search.trim() !== "" ||
@@ -69,18 +68,6 @@ export default function TransactionsTable({
     directionFilter !== "all";
 
   useEffect(() => {
-    if (
-      firstLoad &&
-      page === 1 &&
-      deferredSearch.trim() === "" &&
-      locationFilter === "all" &&
-      transactionFilter === "all" &&
-      directionFilter === "all"
-    ) {
-      setFirstLoad(false);
-      return;
-    }
-
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setLoading(true);
@@ -132,7 +119,6 @@ export default function TransactionsTable({
     locationFilter,
     transactionFilter,
     directionFilter,
-    firstLoad,
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / ROWS_PER_PAGE));

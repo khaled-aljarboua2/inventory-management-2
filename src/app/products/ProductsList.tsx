@@ -52,19 +52,8 @@ export default function ProductsList({
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [firstLoad, setFirstLoad] = useState(true);
 
   useEffect(() => {
-    if (
-      firstLoad &&
-      currentPage === 1 &&
-      deferredSearch.trim() === "" &&
-      filter === "all"
-    ) {
-      setFirstLoad(false);
-      return;
-    }
-
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setLoading(true);
@@ -108,7 +97,7 @@ export default function ProductsList({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [currentPage, deferredSearch, filter, firstLoad]);
+  }, [currentPage, deferredSearch, filter]);
 
   const totalPages = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
