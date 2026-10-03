@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { loginWithUsernameOrEmail } from "./actions";
+import DashboardLoading from "@/components/dashboard/DashboardLoading";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loginSucceeded, setLoginSucceeded] = useState(false);
 
   useEffect(() => {
     const animationFrame = window.requestAnimationFrame(() => {
@@ -60,13 +62,19 @@ export default function LoginPage() {
         return;
       }
 
+      setLoginSucceeded(true);
       router.replace("/dashboard");
     } catch (error) {
+      setLoginSucceeded(false);
       setError(
         error instanceof Error ? error.message : "حدث خطأ غير متوقع."
       );
       setLoading(false);
     }
+  }
+
+  if (loginSucceeded) {
+    return <DashboardLoading />;
   }
 
   return (

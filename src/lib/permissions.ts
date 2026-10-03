@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { firstRelation } from "@/lib/supabase/relations";
 
@@ -87,7 +88,9 @@ type CurrentUserContext = {
  * - عدم استدعاء auth.getUser() أكثر من مرة في نفس العملية.
  * - تحميل profile والصلاحيات بالتوازي بعد الحصول على المستخدم.
  */
-export async function getCurrentUserContext(): Promise<CurrentUserContext> {
+// React cache shares this result only within the current server render.
+// Each new request validates its own session and reloads permissions.
+export const getCurrentUserContext = cache(async (): Promise<CurrentUserContext> => {
   const supabase = await createClient();
 
   const {
@@ -176,7 +179,7 @@ export async function getCurrentUserContext(): Promise<CurrentUserContext> {
     profile,
     permissions,
   };
-}
+});
 
 /**
  * توافق مع الاستدعاءات الحالية في المشروع.

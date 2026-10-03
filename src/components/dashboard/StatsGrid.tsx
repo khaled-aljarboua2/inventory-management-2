@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
-import { firstRelation } from "@/lib/supabase/relations";
+import { getCurrentUserContext } from "@/lib/permissions";
 import StatCard from "./StatCard";
 
 export default async function StatsGrid() {
@@ -18,11 +18,9 @@ export default async function StatsGrid() {
   // المستخدم الحالي
   // ============================================================
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { profile: currentUser } = await getCurrentUserContext();
 
-  if (!user) {
+  if (!currentUser) {
     return (
       <div
         dir="rtl"
@@ -37,26 +35,7 @@ export default async function StatsGrid() {
   // بيانات المستخدم
   // ============================================================
 
-  const {
-    data: currentUser,
-    error: currentUserError,
-  } = await supabase
-    .from("users")
-    .select(`
-      id,
-      company_id,
-      location_id,
-      is_active,
-      roles (
-        id,
-        name
-      )
-    `)
-    .eq("auth_user_id", user.id)
-    .eq("is_active", true)
-    .single();
-
-  if (currentUserError || !currentUser) {
+  if (!currentUser.is_active) {
     return (
       <div
         dir="rtl"
@@ -68,7 +47,7 @@ export default async function StatsGrid() {
   }
 
   const roleName =
-    firstRelation(currentUser.roles)?.name ?? "";
+    currentUser.roles?.name ?? "";
 
   const isBranchUser =
     roleName.toLowerCase() === "branch";
