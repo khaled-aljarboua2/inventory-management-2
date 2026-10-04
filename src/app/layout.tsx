@@ -21,12 +21,6 @@ export const metadata: Metadata = {
   title: "WAREVANCE",
   description: "WAREVANCE لإدارة المخزون والفروع",
 
-  icons: {
-    icon: "/warevance-favicon.png",
-    shortcut: "/warevance-favicon.png",
-    apple: "/warevance-favicon.png",
-  },
-
   openGraph: {
     title: "WAREVANCE",
     description: "WAREVANCE لإدارة المخزون والفروع",
