@@ -217,9 +217,9 @@ export default function ProductForm({
       dir="rtl"
       className="
         overflow-hidden
-        rounded-2xl
+        rounded-3xl
         border
-        border-slate-200
+        border-slate-100
         bg-white
         shadow-sm
       "
@@ -264,7 +264,7 @@ export default function ProductForm({
               w-11
               items-center
               justify-center
-              rounded-xl
+              rounded-2xl
               bg-teal-600
               text-white
               shadow-md
@@ -298,7 +298,7 @@ export default function ProductForm({
                 flex
                 items-start
                 gap-2.5
-                rounded-xl
+                rounded-2xl
                 border
                 border-red-200
                 bg-red-50
@@ -323,7 +323,7 @@ export default function ProductForm({
                 flex
                 items-start
                 gap-2.5
-                rounded-xl
+                rounded-2xl
                 border
                 border-emerald-200
                 bg-emerald-50
@@ -344,13 +344,13 @@ export default function ProductForm({
         </div>
       )}
 
-      <div className="space-y-4 p-5 sm:p-6">
+      <div className="space-y-6 bg-slate-50/60 p-5 sm:p-7">
 
         {/* =====================================================
             Product Information
         ====================================================== */}
 
-        <section className="rounded-xl border border-slate-200 bg-white">
+        <section className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
           <div
             className="
               flex
@@ -358,8 +358,8 @@ export default function ProductForm({
               gap-2.5
               border-b
               border-slate-100
-              px-4
-              py-3.5
+              px-5 sm:px-6
+              py-4
             "
           >
             <div
@@ -369,7 +369,7 @@ export default function ProductForm({
                 w-8
                 items-center
                 justify-center
-                rounded-lg
+                rounded-2xl
                 bg-teal-50
                 text-teal-600
               "
@@ -388,12 +388,12 @@ export default function ProductForm({
             </div>
           </div>
 
-          <div className="grid gap-4 p-4 md:grid-cols-2">
+          <div className="grid gap-5 p-5 sm:p-6 md:grid-cols-2">
 
             {/* SKU */}
 
             <div>
-              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <Hash size={13} />
                 رمز المنتج (SKU)
               </label>
@@ -408,13 +408,13 @@ export default function ProductForm({
                 disabled={loading}
                 placeholder="مثال: PRD-001"
                 className="
-                  h-10
+                  h-12
                   w-full
-                  rounded-lg
+                  rounded-2xl
                   border
-                  border-slate-200
+                  border-slate-100
                   bg-slate-50
-                  px-3
+                  px-4
                   font-mono
                   text-xs
                   outline-none
@@ -434,7 +434,7 @@ export default function ProductForm({
             {/* Name */}
 
             <div>
-              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <PackagePlus size={13} />
                 اسم المنتج
               </label>
@@ -449,13 +449,13 @@ export default function ProductForm({
                 disabled={loading}
                 placeholder="اسم المنتج"
                 className="
-                  h-10
+                  h-12
                   w-full
-                  rounded-lg
+                  rounded-2xl
                   border
-                  border-slate-200
+                  border-slate-100
                   bg-slate-50
-                  px-3
+                  px-4
                   text-xs
                   outline-none
                   transition
@@ -474,7 +474,7 @@ export default function ProductForm({
             {/* Category */}
 
             <div>
-              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <Tag size={13} />
                 التصنيف
               </label>
@@ -489,14 +489,14 @@ export default function ProductForm({
                   }
                   disabled={loading}
                   className="
-                    h-10
+                    h-12
                     w-full
                     appearance-none
-                    rounded-lg
+                    rounded-2xl
                     border
-                    border-slate-200
+                    border-slate-100
                     bg-slate-50
-                    px-3
+                    px-4
                     pl-9
                     text-xs
                     outline-none
@@ -543,7 +543,7 @@ export default function ProductForm({
             {/* Brand */}
 
             <div>
-              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <Tag size={13} />
                 العلامة التجارية
               </label>
@@ -558,14 +558,14 @@ export default function ProductForm({
                   }
                   disabled={loading}
                   className="
-                    h-10
+                    h-12
                     w-full
                     appearance-none
-                    rounded-lg
+                    rounded-2xl
                     border
-                    border-slate-200
+                    border-slate-100
                     bg-slate-50
-                    px-3
+                    px-4
                     pl-9
                     text-xs
                     outline-none
@@ -610,7 +610,7 @@ export default function ProductForm({
             {/* Minimum */}
 
             <div className="md:col-span-2">
-              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <Boxes size={13} />
                 الحد الأدنى للمخزون
               </label>
@@ -627,13 +627,13 @@ export default function ProductForm({
                 }
                 disabled={loading}
                 className="
-                  h-10
+                  h-12
                   w-full
-                  rounded-lg
+                  rounded-2xl
                   border
-                  border-slate-200
+                  border-slate-100
                   bg-slate-50
-                  px-3
+                  px-4
                   text-xs
                   outline-none
                   transition
@@ -649,7 +649,7 @@ export default function ProductForm({
               />
             </div>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 md:col-span-2">
+            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 md:col-span-2">
               <input
                 type="checkbox"
                 checked={isMadeToOrder}
@@ -679,7 +679,7 @@ export default function ProductForm({
             Unit
         ====================================================== */}
 
-        <section className="rounded-xl border border-slate-200 bg-slate-50/50">
+        <section className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
           <div
             className="
               flex
@@ -687,9 +687,9 @@ export default function ProductForm({
               justify-between
               gap-3
               border-b
-              border-slate-200
-              px-4
-              py-3.5
+              border-slate-100
+              px-5 sm:px-6
+              py-4
             "
           >
             <div className="flex items-center gap-2.5">
@@ -700,7 +700,7 @@ export default function ProductForm({
                   w-8
                   items-center
                   justify-center
-                  rounded-lg
+                  rounded-2xl
                   bg-teal-50
                   text-teal-600
                 "
@@ -740,12 +740,12 @@ export default function ProductForm({
             )}
           </div>
 
-          <div className="grid gap-4 p-4 md:grid-cols-3">
+          <div className="grid gap-5 p-5 sm:p-6 md:grid-cols-3">
 
             {/* Unit */}
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+              <label className="mb-2 block text-xs font-semibold text-slate-700">
                 الوحدة
               </label>
 
@@ -762,14 +762,14 @@ export default function ProductForm({
                     loadingUnits
                   }
                   className="
-                    h-10
+                    h-12
                     w-full
                     appearance-none
-                    rounded-lg
+                    rounded-2xl
                     border
-                    border-slate-200
+                    border-slate-100
                     bg-white
-                    px-3
+                    px-4
                     pl-9
                     text-xs
                     outline-none
@@ -817,7 +817,7 @@ export default function ProductForm({
             {/* Conversion */}
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+              <label className="mb-2 block text-xs font-semibold text-slate-700">
                 معامل التحويل
               </label>
 
@@ -835,13 +835,13 @@ export default function ProductForm({
                   loading || isBase
                 }
                 className="
-                  h-10
+                  h-12
                   w-full
-                  rounded-lg
+                  rounded-2xl
                   border
-                  border-slate-200
+                  border-slate-100
                   bg-white
-                  px-3
+                  px-4
                   text-xs
                   outline-none
                   transition
@@ -864,7 +864,7 @@ export default function ProductForm({
             {/* Base */}
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+              <label className="mb-2 block text-xs font-semibold text-slate-700">
                 نوع الوحدة
               </label>
 
@@ -878,18 +878,18 @@ export default function ProductForm({
                 disabled={loading}
                 className={`
                   flex
-                  h-10
+                  h-12
                   w-full
                   items-center
                   justify-between
-                  rounded-lg
+                  rounded-2xl
                   border
-                  px-3
+                  px-4
                   transition
                   ${
                     isBase
                       ? "border-teal-200 bg-teal-50 text-teal-700"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      : "border-slate-100 bg-white text-slate-600 hover:border-slate-300"
                   }
                 `}
               >
@@ -927,7 +927,7 @@ export default function ProductForm({
             Barcode
         ====================================================== */}
 
-        <section className="rounded-xl border border-slate-200 bg-slate-50/50">
+        <section className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
           <div
             className="
               flex
@@ -935,9 +935,9 @@ export default function ProductForm({
               justify-between
               gap-3
               border-b
-              border-slate-200
-              px-4
-              py-3.5
+              border-slate-100
+              px-5 sm:px-6
+              py-4
             "
           >
             <div className="flex items-center gap-2.5">
@@ -948,7 +948,7 @@ export default function ProductForm({
                   w-8
                   items-center
                   justify-center
-                  rounded-lg
+                  rounded-2xl
                   bg-teal-50
                   text-teal-600
                 "
@@ -988,12 +988,12 @@ export default function ProductForm({
             )}
           </div>
 
-          <div className="grid gap-4 p-4 md:grid-cols-3">
+          <div className="grid gap-5 p-5 sm:p-6 md:grid-cols-3">
 
             {/* Barcode */}
 
             <div>
-              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <Barcode size={13} />
                 رقم الباركود
               </label>
@@ -1010,13 +1010,13 @@ export default function ProductForm({
                 disabled={loading}
                 placeholder="مثال: 6281234567890"
                 className="
-                  h-10
+                  h-12
                   w-full
-                  rounded-lg
+                  rounded-2xl
                   border
-                  border-slate-200
+                  border-slate-100
                   bg-white
-                  px-3
+                  px-4
                   font-mono
                   text-xs
                   outline-none
@@ -1033,7 +1033,7 @@ export default function ProductForm({
             {/* Barcode unit */}
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+              <label className="mb-2 block text-xs font-semibold text-slate-700">
                 وحدة الباركود
               </label>
 
@@ -1047,14 +1047,14 @@ export default function ProductForm({
                   }
                   disabled={loading}
                   className="
-                    h-10
+                    h-12
                     w-full
                     appearance-none
-                    rounded-lg
+                    rounded-2xl
                     border
-                    border-slate-200
+                    border-slate-100
                     bg-white
-                    px-3
+                    px-4
                     pl-9
                     text-xs
                     outline-none
@@ -1100,7 +1100,7 @@ export default function ProductForm({
             {/* Default */}
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+              <label className="mb-2 block text-xs font-semibold text-slate-700">
                 إعداد الباركود
               </label>
 
@@ -1117,20 +1117,20 @@ export default function ProductForm({
                 }
                 className={`
                   flex
-                  h-10
+                  h-12
                   w-full
                   items-center
                   justify-between
-                  rounded-lg
+                  rounded-2xl
                   border
-                  px-3
+                  px-4
                   transition
                   ${
                     !barcode.trim()
-                      ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                      ? "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-400"
                       : barcodeDefault
                         ? "border-teal-200 bg-teal-50 text-teal-700"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        : "border-slate-100 bg-white text-slate-600 hover:border-slate-300"
                   }
                 `}
               >
@@ -1168,7 +1168,7 @@ export default function ProductForm({
             Description
         ====================================================== */}
 
-        <section className="rounded-xl border border-slate-200 bg-white">
+        <section className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
           <div
             className="
               flex
@@ -1176,8 +1176,8 @@ export default function ProductForm({
               gap-2.5
               border-b
               border-slate-100
-              px-4
-              py-3.5
+              px-5 sm:px-6
+              py-4
             "
           >
             <div
@@ -1187,7 +1187,7 @@ export default function ProductForm({
                 w-8
                 items-center
                 justify-center
-                rounded-lg
+                rounded-2xl
                 bg-slate-100
                 text-slate-600
               "
@@ -1206,7 +1206,7 @@ export default function ProductForm({
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-5 sm:p-6">
             <textarea
               value={description}
               onChange={(event) =>
@@ -1220,9 +1220,9 @@ export default function ProductForm({
               className="
                 w-full
                 resize-none
-                rounded-lg
+                rounded-2xl
                 border
-                border-slate-200
+                border-slate-100
                 bg-slate-50
                 px-3
                 py-2.5
@@ -1274,11 +1274,11 @@ export default function ProductForm({
             className="
               group
               inline-flex
-              h-10
+              h-12
               items-center
               justify-center
               gap-2
-              rounded-lg
+              rounded-2xl
               bg-teal-600
               px-6
               text-xs
