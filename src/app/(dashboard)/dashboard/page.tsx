@@ -35,25 +35,6 @@ export default function DashboardPage() {
         >
           <div className="flex items-center justify-between gap-6">
             <div className="min-w-0">
-              <div
-                className="
-                  mb-3
-                  inline-flex
-                  items-center
-                  gap-2
-                  rounded-full
-                  bg-teal-50
-                  px-3
-                  py-1.5
-                  text-xs
-                  font-semibold
-                  text-teal-700
-                "
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-teal-600" />
-                WAREVANCE
-              </div>
-
               <h1
                 className="
                   text-2xl
