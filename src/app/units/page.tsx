@@ -2,7 +2,6 @@ import {
   Ruler,
   Plus,
   Layers3,
-  CheckCircle2,
 } from "lucide-react";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -180,7 +179,7 @@ export default async function UnitsPage() {
             الإحصائيات
         ========================== */}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:max-w-md">
           {/* إجمالي الوحدات */}
 
           <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
@@ -210,34 +209,6 @@ export default async function UnitsPage() {
             </div>
           </div>
 
-          {/* حالة النظام */}
-
-          <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
-            <div className="absolute -left-8 -top-8 h-24 w-24 rounded-full bg-emerald-100/60 blur-2xl" />
-
-            <div className="relative flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">
-                  حالة الوحدات
-                </p>
-
-                <p className="mt-2 text-xl font-bold text-slate-900">
-                  جاهزة للاستخدام
-                </p>
-
-                <p className="mt-2 text-xs text-slate-400">
-                  يمكن ربطها بالمنتجات
-                </p>
-              </div>
-
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-all duration-300 group-hover:scale-110">
-                <CheckCircle2
-                  size={23}
-                  strokeWidth={1.9}
-                />
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* =========================
