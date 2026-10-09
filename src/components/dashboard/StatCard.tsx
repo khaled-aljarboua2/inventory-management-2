@@ -21,35 +21,30 @@ export default function StatCard({
       iconBg: string;
       iconText: string;
       accent: string;
-      dot: string;
     }
   > = {
     teal: {
       iconBg: "bg-teal-50",
       iconText: "text-teal-600",
       accent: "bg-teal-600",
-      dot: "bg-teal-500",
     },
 
     green: {
       iconBg: "bg-emerald-50",
       iconText: "text-emerald-600",
       accent: "bg-emerald-600",
-      dot: "bg-emerald-500",
     },
 
     orange: {
       iconBg: "bg-amber-50",
       iconText: "text-amber-600",
       accent: "bg-amber-500",
-      dot: "bg-amber-500",
     },
 
     purple: {
       iconBg: "bg-violet-50",
       iconText: "text-violet-600",
       accent: "bg-violet-600",
-      dot: "bg-violet-500",
     },
   };
 
@@ -143,17 +138,7 @@ export default function StatCard({
 
         {/* الوصف */}
 
-        <div className="mt-5 flex min-w-0 items-center gap-2">
-          <span
-            className={`
-              h-1.5
-              w-1.5
-              shrink-0
-              rounded-full
-              ${theme.dot}
-            `}
-          />
-
+        <div className="mt-5 flex min-w-0 items-center">
           <span className="truncate text-xs font-medium text-slate-500">
             {description}
           </span>

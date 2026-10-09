@@ -297,10 +297,6 @@ export default function UnitsTable({ units }: Props) {
                 </th>
 
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500">
-                  الحالة
-                </th>
-
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500">
                   الإجراءات
                 </th>
               </tr>
@@ -310,7 +306,7 @@ export default function UnitsTable({ units }: Props) {
               {units.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={3}
                     className="px-6 py-16 text-center"
                   >
                     <div className="mx-auto flex max-w-sm flex-col items-center">
@@ -383,14 +379,6 @@ export default function UnitsTable({ units }: Props) {
                           —
                         </span>
                       )}
-                    </td>
-
-                    {/* الحالة */}
-                    <td className="px-6 py-5">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        جاهزة
-                      </span>
                     </td>
 
                     {/* الإجراءات */}
