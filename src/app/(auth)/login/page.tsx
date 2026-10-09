@@ -8,7 +8,6 @@ import {
   EyeOff,
   LockKeyhole,
   UserRound,
-  ShieldCheck,
   ArrowLeft,
   PackageCheck,
   ArrowRightLeft,
@@ -115,11 +114,6 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-12 max-w-sm">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold text-teal-50">
-                <span className="h-1.5 w-1.5 rounded-full bg-teal-300" />
-                نظام إدارة المخزون والفروع
-              </div>
-
               <h1 className="text-3xl font-bold leading-[1.55] tracking-tight text-white">
                 إدارة أوضح للمخزون،
                 <br />
@@ -138,8 +132,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="relative flex items-center gap-2 border-t border-white/10 pt-6 text-xs text-teal-50/55">
-            <ShieldCheck size={15} />
+          <div className="relative border-t border-white/10 pt-6 text-xs text-teal-50/55">
             <span>WAREVANCE · Inventory & Branch Management</span>
           </div>
         </aside>
@@ -159,11 +152,6 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-8">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
-                <ShieldCheck size={15} />
-                دخول آمن
-              </div>
-
               <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
                 تسجيل الدخول
               </h2>
